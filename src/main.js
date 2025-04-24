@@ -1,3 +1,7 @@
+// Import necessary modules
+import * as utils from './js/utils.js';
+
+const DATA_VERSION = "1.1"; 
 
         // Initialize variables
         let tags = [];
@@ -5,11 +9,16 @@
         const presetTags = ['sleep', 'read', 'study', 'socialize', 'write', 'sport', 'music', 'hygiene', 'tv', 'online', 'home tasks'];
 
         let timerInterval;
-        let sessionStartTime;
-        let sessionPauseTime = 0;
-        let isSessionPaused = false;
+
+        let currentSession = {
+            startTime: null,
+            isPaused: false,
+            pauseStart: null,
+            accumulatedPauseTime: 0, // in seconds
+            isBreak: false
+        };
+
         let sessions = [];
-        let breakSessions = []; // Array to store break sessions
         let configs = [];
         let markedDays = [];
         let currentTab = 'tracker';
@@ -42,6 +51,7 @@
         const pauseBtn = document.getElementById('pause-btn');
         const currentTimeEl = document.getElementById('current-time');
         const sessionDurationEl = document.getElementById('session-duration');
+        const breakDurationEl = document.getElementById('break-duration');
         const todayTotalEl = document.getElementById('today-total');
         const sessionNotes = document.getElementById('session-notes');
         const notesInput = document.getElementById('notes');
@@ -111,7 +121,7 @@
         const settingsTabs = {
             general: document.getElementById('general-settings'),
             salary: document.getElementById('salary-settings'),
-	    tags: document.getElementById('tags-settings'), 
+	        tags: document.getElementById('tags-settings'), 
             backup: document.getElementById('backup-settings')
         };
         const yearlyStatsTable = document.getElementById('yearly-stats-table');
@@ -125,7 +135,6 @@
             loadSessions();
             loadConfigs();
             loadMarkedDays();
-            loadBreakSessions();  //todo remove
             loadTags();
             createStars();
             initializeCurrentSessionTags();
@@ -135,7 +144,7 @@
             if (darkMode) { enableDarkMode();   }
             
             // Set default date for mark day modal
-            markDateInput.value = formatDate(new Date());
+            markDateInput.value = utils.formatDate(new Date());
             
             // Populate year selector
             populateYearSelector();
@@ -170,7 +179,7 @@
             // Session tracking
             startBtn.addEventListener('click', startSession);
             stopBtn.addEventListener('click', stopSession);
-            pauseBtn.addEventListener('click', pauseSession);
+            pauseBtn.addEventListener('click', togglePause);
             saveSessionBtn.addEventListener('click', saveSession);
             
             // Session management
@@ -226,198 +235,191 @@
         // Update current time display
         function updateCurrentTime() {
             const now = new Date();
-            currentTimeEl.textContent = formatTime(now);
-        }
-
-        // Format time as HH:MM:SS
-        function formatTime(date) {
-            return date.toLocaleTimeString();
-        }
-
-        // Format date as YYYY-MM-DD
-        function formatDate(date) {
-            const d = new Date(date);
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // Format duration as HH:MM:SS
-        function formatDuration(seconds) {
-            const hrs = Math.floor(seconds / 3600);
-            const mins = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-        }
-
-        // Parse duration string to seconds
-        function parseDuration(duration) {
-            const [hrs, mins, secs] = duration.split(':').map(Number);
-            return hrs * 3600 + mins * 60 + secs;
+            currentTimeEl.textContent = utils.formatTime(now);
         }
 
         // Start a new session
         function startSession() {
-            sessionStartTime = new Date();
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-            pauseBtn.disabled = false;
-            startBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            startBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
-            stopBtn.classList.remove('bg-gray-200');
-            stopBtn.classList.add('bg-red-500', 'hover:bg-red-600', 'text-white');
-            pauseBtn.classList.remove('bg-gray-200');
-            pauseBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'text-white');
+            clearInterval(timerInterval);
+
+            currentSession = {
+                startTime: new Date(),
+                isPaused: false,
+                pauseStart: null,
+                accumulatedPauseTime: 0,
+                isBreak: false
+            };
+
+            updateButtonStates(true);
             
-            // Update session duration in real-time
-            timerInterval = setInterval(() => {
-                const now = new Date();
-                const duration = Math.floor((now - sessionStartTime) / 1000);
-                sessionDurationEl.textContent = formatDuration(duration);
-                sessionDurationEl.classList.add('blink');
-            }, 1000);
-        }
-
-        // Pause the current session
-        function pauseSession() {
-            if (!sessionStartTime) return;
-            
-            if (isSessionPaused) {
-                // Resume session
-                const pauseDuration = (new Date() - sessionPauseTime) / 1000;
-                sessionStartTime = new Date(sessionStartTime.getTime() + pauseDuration * 1000);
-
-                // Save the break session
-                const breakSession = {
-                    id: Date.now(),
-                    date: formatDate(sessionPauseTime),
-                    startTime: sessionPauseTime.toISOString(),
-                    endTime: new Date().toISOString(),
-                    duration: formatDuration(pauseDuration),
-                    durationSec: pauseDuration,
-                    notes: 'Break session',
-                    dayType: getDayType(formatDate(sessionPauseTime)),
-                    tags: ['rest'],
-                    mood: 5, // Default mood for break sessions
-                    isBreak: true
-                };
-                
-                sessions.unshift(breakSession);
-                saveSessionsToStorage();
-                //todo remove
-                breakSessions.push(breakSession);
-                saveBreakSessionsToStorage();
-
-                isSessionPaused = false;
-                pauseBtn.innerHTML = '<i class="fas fa-pause mr-2"></i> Pause';
-                timerInterval = setInterval(() => {
-                    const now = new Date();
-                    const duration = Math.floor((now - sessionStartTime) / 1000);
-                    sessionDurationEl.textContent = formatDuration(duration);
-                    sessionDurationEl.classList.add('blink');
-                }, 1000);
-
-            } else {
-                // Pause session
-                clearInterval(timerInterval);
-                sessionPauseTime = new Date();
-                isSessionPaused = true;
-                pauseBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Resume';
-                sessionDurationEl.classList.remove('blink');
-            }
-        }
+            timerInterval = setInterval(updateTimerDisplay, 1000);        }
 
         // Stop the current session
         function stopSession() {
+            if (!currentSession.startTime) return;
+
             clearInterval(timerInterval);
             sessionDurationEl.classList.remove('blink');
 
             // Save any ongoing break session
-            if (isSessionPaused) {
-                const pauseDuration = (new Date() - sessionPauseTime) / 1000;
+            if (currentSession.isPaused && currentSession.isBreak) {
+                const now = new Date();
+                const pauseDuration = Math.floor((now - currentSession.pauseStart) / 1000);
+                
                 const breakSession = {
-                    id: Date.now(),
-                    startTime: sessionPauseTime.toISOString(),
-                    endTime: new Date().toISOString(),
-                    duration: formatDuration(pauseDuration),
+                    id: now,
+                    date: utils.formatDate(currentSession.pauseStart),
+                    startTime: currentSession.pauseStart.toISOString(),
+                    endTime: now.toISOString(),
+                    duration:utils.formatDuration(pauseDuration),
                     durationSec: pauseDuration,
-                    type: 'break'
+                    notes: 'Break session',
+                    dayType: getDayType(utils.formatDate(currentSession.pauseStart)),
+                    tags: ['rest'],
+                    mood: 5,
+                    isBreak: true
                 };
-                breakSessions.push(breakSession);
-                saveBreakSessionsToStorage();
+
+                currentSession.accumulatedPauseTime += pauseDuration;
+                
+                sessions.unshift(breakSession);
+                saveSessionsToStorage();
+                renderRecentSessions();
+                updateTodayTotal();
+
             }
+            document.getElementById('current-session-start-time-input').value = currentSession.startTime.getTime();
+            //TODO save accumulated pause time within the session, to not affect real end time, but to be able to restore actual work time
+            document.getElementById('current-session-end-time-input').value = new Date().getTime();// - currentSession.accumulatedPauseTime*1000;
+            document.getElementById('current-session-accumulated-rest-duration-input').value = currentSession.accumulatedPauseTime;
+
+            // Reset session
+            currentSession = {
+                startTime: null,
+                isPaused: false,
+                pauseStart: null,
+                accumulatedPauseTime: 0,
+                isBreak: false
+            };
             
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            pauseBtn.disabled = true;
-            startBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            startBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
-            stopBtn.classList.add('bg-gray-200');
-            stopBtn.classList.remove('bg-red-500', 'hover:bg-red-600', 'text-white');
-            pauseBtn.classList.add('bg-gray-200');
-            pauseBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'text-white');
-            pauseBtn.innerHTML = '<i class="fas fa-pause mr-2"></i> Pause';
+            updateButtonStates(false);
             
             // Show notes input
             sessionNotes.classList.remove('hidden');
         }
 
-        // Save the current session
-        function saveSession() {
-            const endTime = new Date();
-            const duration = Math.floor((endTime - sessionStartTime) / 1000);
-            const notes = notesInput.value.trim();
-            const date = formatDate(sessionStartTime);
-            const dayType = getDayType(date);
-
-            const selectedTags = []; 
-            document.querySelectorAll('#current-session-tags .tag').forEach(tag => {
-                if (tag.classList.contains('selected')) {
-                    selectedTags.push(tag.dataset.tag);
+        function togglePause() {
+            if (!currentSession.startTime) return;
+            
+            if (currentSession.isPaused) {
+                // Resume session
+                const now = new Date();
+                const pauseDuration = Math.floor((now - currentSession.pauseStart) / 1000);
+                currentSession.accumulatedPauseTime += pauseDuration;
+                
+                
+                // If resuming from a break, save the break session
+                if (currentSession.isBreak) {
+                    const breakSession = {
+                        id: Date.now(),
+                        date: utils.formatDate(currentSession.pauseStart),
+                        startTime: currentSession.pauseStart.toISOString(),
+                        endTime: now.toISOString(),
+                        duration: utils.formatDuration(pauseDuration),
+                        durationSec: pauseDuration,
+                        notes: 'Break session',
+                        dayType: getDayType(utils.formatDate(currentSession.pauseStart)),
+                        tags: ['rest'],
+                        mood: 5,
+                        isBreak: true
+                    };
+                    
+                    sessions.unshift(breakSession);
+                    saveSessionsToStorage();
+                    renderRecentSessions();
+                    updateTodayTotal();
+                    
+                    // Switch back to work session, but keep the accumulated pause time within the session
+                    currentSession.isPaused = false;
+                    currentSession.pauseStart = null;                    
+                    currentSession.isBreak = false;
                 }
-            });
-	    
-	    if (selectedTags.length === 0) {
-		selectedTags.push('work'); // if nothing selected, then mark it work by default
-	    }
-            
-            const session = {
-                id: Date.now(),
-                date: date,
-                startTime: sessionStartTime.toISOString(),
-                endTime: endTime.toISOString(),
-                duration: formatDuration(duration),
-                durationSec: duration,
-                notes: notes,
-                dayType: dayType,
-                tags: selectedTags,
-                mood: parseFloat(document.getElementById('current-session-mood-input').value),
-            };
-            
-            sessions.unshift(session);
-            saveSessionsToStorage();
-            renderRecentSessions();
-            updateTodayTotal();
-            sessionNotes.classList.add('hidden');
-            notesInput.value = '';
-            sessionDurationEl.textContent = '00:00:00';
-
-            // Reset mood and tags for next session
-            document.getElementById('current-session-mood').dataset.rating = '5';
-            document.getElementById('current-session-mood-input').value = '5';
-            document.getElementById('current-mood-value').textContent = '5.0';
-            createStarsForCurrentSession();
-            initializeCurrentSessionTags();
-
-            //todo remove
-            breakSessions = []; // Clear break sessions
-            
-            // If on stats tab, update stats
-            if (currentTab === 'stats') {
-                updateStatistics();
+                
+                pauseBtn.innerHTML = '<i class="fas fa-pause mr-2"></i> Pause';
+            } else {
+                // Pause session
+                currentSession.isPaused = true;
+                currentSession.pauseStart = new Date();
+                pauseBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Resume';
+                
+                // switch to break mode
+                if (!currentSession.isBreak) { currentSession.isBreak = true; }
             }
+            
+            // Update UI immediately
+            updateTimerDisplay();
         }
+
+    // Save the current session
+    function saveSession() {
+        const sessionStartTime = new Date(document.getElementById('current-session-start-time-input').value*1);
+        const sessionEndTime = new Date(document.getElementById('current-session-end-time-input').value*1);
+        const accumulatedPauseTimeSec = document.getElementById('current-session-accumulated-rest-duration-input').value*1;
+        const duration = Math.floor((sessionEndTime - sessionStartTime) / 1000) - accumulatedPauseTimeSec;
+        const notes = notesInput.value.trim();
+        const date = utils.formatDate(sessionStartTime);
+        const dayType = getDayType(date);
+
+        const selectedTags = []; 
+        document.querySelectorAll('#current-session-tags .tag').forEach(tag => {
+            if (tag.classList.contains('selected')) {
+                selectedTags.push(tag.dataset.tag);
+            }
+        });
+    
+        if (selectedTags.length === 0) {
+            selectedTags.push('work'); // if nothing selected, then mark it work by default
+        }
+            
+        const session = {
+            id: Date.now(),
+            date: date,
+            startTime: sessionStartTime.toISOString(),
+            endTime: sessionEndTime.toISOString(),
+            duration: utils.formatDuration(duration),
+            durationSec: duration,
+            accumulatedPauseTimeSec: accumulatedPauseTimeSec,
+            notes: notes,
+            dayType: dayType,
+            tags: selectedTags,
+            mood: parseFloat(document.getElementById('current-session-mood-input').value),
+        };
+        
+        sessions.unshift(session);
+        saveSessionsToStorage();
+        renderRecentSessions();
+        updateTodayTotal();
+        sessionNotes.classList.add('hidden');
+        notesInput.value = '';
+        sessionDurationEl.textContent = '00:00:00';
+        breakDurationEl.textContent = '00:00:00';
+
+        // Reset mood and tags for next session
+        document.getElementById('current-session-mood').dataset.rating = '5';
+        document.getElementById('current-session-mood-input').value = '5';
+        document.getElementById('current-mood-value').textContent = '5.0';
+        document.getElementById('current-session-start-time-input').value = '0';
+        document.getElementById('current-session-end-time-input').value = '0';
+        document.getElementById('current-session-accumulated-rest-duration-input').value = '0';
+        createStarsForCurrentSession();
+        initializeCurrentSessionTags();
+
+        
+        // If on stats tab, update stats
+        if (currentTab === 'stats') {
+            updateStatistics();
+        }
+    }
 
         // Load sessions from storage
         function loadSessions() {
@@ -437,7 +439,7 @@
                 sessions = [
                     {
                         id: 1,
-                        date: formatDate(now),
+                        date: utils.formatDate(now),
                         startTime: new Date(now.getTime() - 2 * 3600 * 1000).toISOString(),
                         endTime: new Date(now.getTime() - 3600 * 1000).toISOString(),
                         duration: '01:00:00',
@@ -447,7 +449,7 @@
                     },
                     {
                         id: 2,
-                        date: formatDate(now),
+                        date: utils.formatDate(now),
                         startTime: new Date(now.getTime() - 4 * 3600 * 1000).toISOString(),
                         endTime: new Date(now.getTime() - 3 * 3600 * 1000).toISOString(),
                         duration: '01:00:00',
@@ -457,7 +459,7 @@
                     },
                     {
                         id: 3,
-                        date: formatDate(yesterday),
+                        date: utils.formatDate(yesterday),
                         startTime: new Date(yesterday.getTime() - 3 * 3600 * 1000).toISOString(),
                         endTime: new Date(yesterday.getTime() - 2 * 3600 * 1000).toISOString(),
                         duration: '01:00:00',
@@ -478,19 +480,6 @@
         // Save sessions to storage
         function saveSessionsToStorage() {
             localStorage.setItem('workTimeSessions', JSON.stringify(sessions));
-        }
-
-        // Save break sessions to storage
-        function saveBreakSessionsToStorage() {
-            localStorage.setItem('workTimeBreakSessions', JSON.stringify(breakSessions));
-        }
-
-        // Load break sessions from storage
-        function loadBreakSessions() {
-            const savedBreakSessions = localStorage.getItem('workTimeBreakSessions');
-            if (savedBreakSessions) {
-                breakSessions = JSON.parse(savedBreakSessions);
-            }
         }
 
         // Load configs from storage
@@ -625,8 +614,8 @@
             <div class="flex justify-between items-start">
                 <div>
                     <h3 class="font-medium text-gray-800 dark:text-white">${session.date}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-300">${formatTime(new Date(session.startTime))} - ${formatTime(new Date(session.endTime))}</p>
-                    <span class="inline-block mt-1 text-xs px-2 py-1 rounded-full ${getDayTypeBadgeClass(session.dayType)}">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">${utils.formatTime(new Date(session.startTime))} - ${utils.formatTime(new Date(session.endTime))}</p>
+                    <span class="inline-block mt-1 text-xs px-2 py-1 rounded-full ${utils.getDayTypeBadgeClass(session.dayType)}">
                         ${session.dayType}
                     </span>
                 </div>
@@ -682,20 +671,7 @@
                 });
             });
         }
-
-        // Get badge class for day type
-        function getDayTypeBadgeClass(dayType) {
-            switch (dayType) {
-                case 'Weekend':
-                    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:bg-opacity-20 dark:text-red-300';
-                case 'Holiday':
-                    return 'bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-20 dark:text-green-300';
-                case 'Vacation':
-                    return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:bg-opacity-20 dark:text-purple-300';
-                default:
-                    return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:bg-opacity-20 dark:text-blue-300';
-            }
-        }
+        
 
         // Render all sessions (for sessions tab)
         function renderAllSessions(filteredSessions = null) {
@@ -746,9 +722,9 @@
                     
                     const sessionInfo = document.createElement('div');
                     
-                    const timeRange = document.createElement('div');
+                    const timeRange = document.createElement('div');    
                     timeRange.className = 'text-sm font-medium dark:text-white';
-                    timeRange.textContent = `${formatTime(new Date(session.startTime))} - ${formatTime(new Date(session.endTime))}`;
+                    timeRange.textContent = `${utils.formatTime(new Date(session.startTime))} - ${utils.formatTime(new Date(session.endTime))}`;
                     
                     const duration = document.createElement('div');
                     duration.className = 'text-xs text-gray-500 dark:text-gray-300';
@@ -776,10 +752,10 @@
 
         // Update today's total time
         function updateTodayTotal() {
-            const today = formatDate(new Date());
+            const today = utils.formatDate(new Date());
             const todaySessions = sessions.filter(session => session.date === today);
             const totalSec = todaySessions.reduce((sum, session) => sum + session.durationSec, 0);
-            todayTotalEl.textContent = formatDuration(totalSec);
+            todayTotalEl.textContent = utils.formatDuration(totalSec);
         }
 
         // Switch between tabs
@@ -863,17 +839,7 @@
             sessionModal.classList.remove('hidden');
         }
 
-        // Format datetime for input[type=datetime-local]
-        function formatDateTimeLocal(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-        }
-
+        
         // Hide session modal
         function hideSessionModal() {
             sessionModal.classList.add('hidden');
@@ -881,7 +847,7 @@
 
         // Show mark day modal
         function showMarkDayModal(dayType = 'Holiday') {
-            markDateInput.value = formatDate(new Date());
+            markDateInput.value = utils.formatDate(new Date());
             markDayTypeInput.value = dayType;
             dayDescriptionInput.value = '';
             markDayModal.classList.remove('hidden');
@@ -964,8 +930,8 @@
             document.getElementById('modal-title').textContent = 'Edit Session';
             document.getElementById('session-id').value = session.id;
             
-            startTimeInput.value = formatDateTimeLocal(new Date(session.startTime));
-            endTimeInput.value = formatDateTimeLocal(new Date(session.endTime));
+            startTimeInput.value = utils.formatDateTimeLocal(new Date(session.startTime));
+            endTimeInput.value = utils.formatDateTimeLocal(new Date(session.endTime));
             dayTypeInput.value = session.dayType || 'Workday';
             modalNotes.value = session.notes || '';
 
@@ -1043,10 +1009,10 @@
                 if (index !== -1) {
                     sessions[index] = {
                         ...sessions[index],
-                        date: formatDate(startTime),
+                        date: utils.formatDate(startTime),
                         startTime: startTime.toISOString(),
                         endTime: endTime.toISOString(),
-                        duration: formatDuration(duration),
+                        duration:utils.formatDuration(duration),
                         durationSec: duration,
                         dayType: dayType,
                         notes: notes,
@@ -1059,10 +1025,10 @@
                 // Add new session
                 const newSession = {
                     id: Date.now(),
-                    date: formatDate(startTime),
+                    date: utils.formatDate(startTime),
                     startTime: startTime.toISOString(),
                     endTime: endTime.toISOString(),
-                    duration: formatDuration(duration),
+                    duration:utils.formatDuration(duration),
                     durationSec: duration,
                     dayType: dayType,
                     notes: notes,
@@ -1217,9 +1183,9 @@
             const totalSec = filteredSessions.reduce((sum, session) => sum + session.durationSec, 0);
             const avgSec = Math.round(totalSec / filteredSessions.length);
             
-            totalTimeEl.textContent = formatDuration(totalSec);
+            totalTimeEl.textContent = utils.formatDuration(totalSec);
             sessionsCountEl.textContent = filteredSessions.length;
-            avgDurationEl.textContent = formatDuration(avgSec);
+            avgDurationEl.textContent = utils.formatDuration(avgSec);
             
             // Prepare data for charts based on current period
             let labels = [];
@@ -1234,7 +1200,7 @@
                 for (let i = 6; i >= 0; i--) {
                     const date = new Date(now);
                     date.setDate(date.getDate() - i);
-                    const dateStr = formatDate(date);
+                    const dateStr = utils.formatDate(date);
                     
                     const daySessions = filteredSessions.filter(s => s.date === dateStr);
                     const dayTotal = daySessions.reduce((sum, s) => sum + s.durationSec, 0);
@@ -2029,11 +1995,24 @@
 
         // Export all data
         function exportAllData() {
+             // Prepare sessions with guaranteed tags
+            const sessionsToExport = sessions.map(session => ({
+                ...session,
+                tags: Array.isArray(session.tags) && session.tags.length > 0 
+                    ? session.tags 
+                    : ['work'],
+                mood: typeof session.mood === 'number' && !isNaN(session.mood)
+                ? session.mood
+                : 5 
+            }));
+
             const data = {
-                sessions: sessions,
+                sessions: sessionsToExport,
                 configs: configs,
                 markedDays: markedDays,
-                exportedAt: new Date().toISOString()
+                tags: tags, 
+                exportedAt: new Date().toISOString(),
+                version: DATA_VERSION
             };
             
             const dataStr = JSON.stringify(data, null, 2);
@@ -2057,12 +2036,57 @@
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
+
+                    // Validate imported data structure
+                    if (!data || typeof data !== 'object') {
+                        throw new Error('Invalid data format');
+                    }
+
+                    // Check version compatibility
+                    if (data.version && data.version !== DATA_VERSION) {
+                        if (!confirm(`This backup was created with version ${data.version} (current is ${DATA_VERSION}). Continue with import?`)) {
+                            return;
+                        }
+                    }
                     
                     if (confirm('Are you sure you want to import this data? This will overwrite your current sessions, configs, and marked days.')) {
-                        if (data.sessions) sessions = data.sessions;
-                        if (data.configs) configs = data.configs;
-                        if (data.markedDays) markedDays = data.markedDays;
+                        // Reset all data first
+                        sessions = [];
+                        configs = [];
+                        markedDays = [];
                         
+                        // Import data with fallbacks for missing properties
+                        if (Array.isArray(data.sessions)) {
+                            sessions = data.sessions.map(session => ({
+                                ...session,
+                                tags: Array.isArray(session.tags) && session.tags.length > 0 
+                                    ? session.tags 
+                                    : ['work'],
+                                mood: typeof session.mood === 'number' && !isNaN(session.mood)
+                                    ? session.mood
+                                    : 5
+                            }));
+                        }
+                        
+                        if (Array.isArray(data.configs)) {
+                            configs = data.configs;
+                        }
+                        
+                        if (Array.isArray(data.markedDays)) {
+                            markedDays = data.markedDays;
+                        }
+
+                        if (Array.isArray(data.tags)) {
+                            tags = data.tags;
+                        } else {
+                            // Initialize default tags if none in import
+                            tags = [
+                                ...defaultTags.map(tag => ({ name: tag, isDefault: true, isEnabled: true, isCustom: false })),
+                                ...presetTags.map(tag => ({ name: tag, isDefault: false, isEnabled: true, isCustom: false }))
+                            ];
+                        }
+                        
+                        saveTagsToStorage();
                         saveSessionsToStorage();
                         saveConfigsToStorage();
                         saveMarkedDaysToStorage();
@@ -2071,10 +2095,13 @@
                         loadSessions();
                         loadConfigs();
                         loadMarkedDays();
-                        
-                        if (currentTab === 'stats') {
-                            updateStatistics();
-                        }
+                        loadTags();
+
+                        switchTab(currentTab);
+                        updateStatistics();
+                        renderRecentSessions();
+                        renderAllSessions();
+                        updateTodayTotal();
                         
                         alert('Data imported successfully!');
                     }
@@ -2129,3 +2156,43 @@
                 action();
             }
         }
+
+    function updateButtonStates(isRunning) {
+        startBtn.disabled = isRunning;
+        stopBtn.disabled = !isRunning;
+        pauseBtn.disabled = !isRunning;
+        
+        if (isRunning) {
+            startBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            startBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+            stopBtn.classList.remove('bg-gray-200');
+            stopBtn.classList.add('bg-red-500', 'hover:bg-red-600', 'text-white');
+            pauseBtn.classList.remove('bg-gray-200');
+            pauseBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'text-white');
+        } else {
+            startBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            startBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+            stopBtn.classList.add('bg-gray-200');
+            stopBtn.classList.remove('bg-red-500', 'hover:bg-red-600', 'text-white');
+            pauseBtn.classList.add('bg-gray-200');
+            pauseBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'text-white');
+            pauseBtn.innerHTML = '<i class="fas fa-pause mr-2"></i> Pause';
+        }
+    }
+
+    function updateTimerDisplay() {
+        if (!(currentSession.startTime || currentSession.pauseStart)) return;
+        
+        const now = new Date();
+        let elapsedSeconds;
+        
+        if (currentSession.isPaused) { // When paused, show pause duration
+            elapsedSeconds = Math.floor((now - currentSession.pauseStart) / 1000)
+            + currentSession.accumulatedPauseTime;
+        } else { // When running, show actual session time minus any pauses
+            elapsedSeconds = Math.floor((now - currentSession.startTime) / 1000) 
+            - currentSession.accumulatedPauseTime;
+        }
+        // Update the appropriate display based on session type
+        document.getElementById(currentSession.isPaused ? 'break-duration' : 'session-duration').textContent = utils.formatDuration(elapsedSeconds);    
+    }
