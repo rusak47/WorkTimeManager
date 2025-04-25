@@ -50,8 +50,7 @@ const DATA_VERSION = "1.1";
         const stopBtn = document.getElementById('stop-btn');
         const pauseBtn = document.getElementById('pause-btn');
         const currentTimeEl = document.getElementById('current-time');
-        const sessionDurationEl = document.getElementById('session-duration');
-        const breakDurationEl = document.getElementById('break-duration');
+        const sessionDurationEl = document.getElementById('active-duration');
         const todayTotalEl = document.getElementById('today-total');
         const sessionNotes = document.getElementById('session-notes');
         const notesInput = document.getElementById('notes');
@@ -252,7 +251,8 @@ const DATA_VERSION = "1.1";
 
             updateButtonStates(true);
             
-            timerInterval = setInterval(updateTimerDisplay, 1000);        }
+            timerInterval = setInterval(updateTimerDisplay, 1000);        
+        }
 
         // Stop the current session
         function stopSession() {
@@ -263,35 +263,15 @@ const DATA_VERSION = "1.1";
 
             // Save any ongoing break session
             if (currentSession.isPaused && currentSession.isBreak) {
-                const now = new Date();
-                const pauseDuration = Math.floor((now - currentSession.pauseStart) / 1000);
-                
-                const breakSession = {
-                    id: now,
-                    date: utils.formatDate(currentSession.pauseStart),
-                    startTime: currentSession.pauseStart.toISOString(),
-                    endTime: now.toISOString(),
-                    duration:utils.formatDuration(pauseDuration),
-                    durationSec: pauseDuration,
-                    notes: 'Break session',
-                    dayType: getDayType(utils.formatDate(currentSession.pauseStart)),
-                    tags: ['rest'],
-                    mood: 5,
-                    isBreak: true
-                };
-
-                currentSession.accumulatedPauseTime += pauseDuration;
-                
-                sessions.unshift(breakSession);
-                saveSessionsToStorage();
-                renderRecentSessions();
-                updateTodayTotal();
-
+                saveBreakSession();
             }
             document.getElementById('current-session-start-time-input').value = currentSession.startTime.getTime();
             //TODO save accumulated pause time within the session, to not affect real end time, but to be able to restore actual work time
             document.getElementById('current-session-end-time-input').value = new Date().getTime();// - currentSession.accumulatedPauseTime*1000;
             document.getElementById('current-session-accumulated-rest-duration-input').value = currentSession.accumulatedPauseTime;
+
+            //switch timer to main session before resetting
+            updateTimerDisplay();
 
             // Reset session
             currentSession = {
@@ -311,39 +291,9 @@ const DATA_VERSION = "1.1";
         function togglePause() {
             if (!currentSession.startTime) return;
             
-            if (currentSession.isPaused) {
-                // Resume session
-                const now = new Date();
-                const pauseDuration = Math.floor((now - currentSession.pauseStart) / 1000);
-                currentSession.accumulatedPauseTime += pauseDuration;
-                
-                
+            if (currentSession.isPaused) { 
                 // If resuming from a break, save the break session
-                if (currentSession.isBreak) {
-                    const breakSession = {
-                        id: Date.now(),
-                        date: utils.formatDate(currentSession.pauseStart),
-                        startTime: currentSession.pauseStart.toISOString(),
-                        endTime: now.toISOString(),
-                        duration: utils.formatDuration(pauseDuration),
-                        durationSec: pauseDuration,
-                        notes: 'Break session',
-                        dayType: getDayType(utils.formatDate(currentSession.pauseStart)),
-                        tags: ['rest'],
-                        mood: 5,
-                        isBreak: true
-                    };
-                    
-                    sessions.unshift(breakSession);
-                    saveSessionsToStorage();
-                    renderRecentSessions();
-                    updateTodayTotal();
-                    
-                    // Switch back to work session, but keep the accumulated pause time within the session
-                    currentSession.isPaused = false;
-                    currentSession.pauseStart = null;                    
-                    currentSession.isBreak = false;
-                }
+                saveBreakSession();
                 
                 pauseBtn.innerHTML = '<i class="fas fa-pause mr-2"></i> Pause';
             } else {
@@ -359,6 +309,40 @@ const DATA_VERSION = "1.1";
             // Update UI immediately
             updateTimerDisplay();
         }
+
+    function saveBreakSession() {
+        const now = new Date();
+        const startTime = currentSession.isPaused ? currentSession.pauseStart : currentSession.startTime;
+        const duration = Math.floor((now - startTime) / 1000);
+            
+        if (currentSession.isPaused) {
+            currentSession.accumulatedPauseTime += duration;
+        }
+
+        const breakSession = {
+            id: Date.now(),
+            date: utils.formatDate(startTime),
+            startTime: startTime.toISOString(),
+            endTime: now.toISOString(),
+            duration: utils.formatDuration(duration),
+            durationSec: duration,
+            notes: 'Break session',
+            dayType: getDayType(utils.formatDate(startTime)),
+            tags: ['rest'],
+            mood: 5,
+            isBreak: true
+        };
+        
+        sessions.unshift(breakSession);
+        saveSessionsToStorage();
+        renderRecentSessions();
+        updateTodayTotal();
+        
+        // Switch back to work session, but keep the accumulated pause time within the session
+        currentSession.isPaused = false;
+        currentSession.pauseStart = null;                    
+        currentSession.isBreak = false;
+    }
 
     // Save the current session
     function saveSession() {
@@ -402,7 +386,6 @@ const DATA_VERSION = "1.1";
         sessionNotes.classList.add('hidden');
         notesInput.value = '';
         sessionDurationEl.textContent = '00:00:00';
-        breakDurationEl.textContent = '00:00:00';
 
         // Reset mood and tags for next session
         document.getElementById('current-session-mood').dataset.rating = '5';
@@ -924,7 +907,10 @@ const DATA_VERSION = "1.1";
 
         // Edit session
         function editSession(sessionId) {
+            console.debug("edit: "+sessionId);
             const session = sessions.find(s => s.id === sessionId);
+            
+            console.debug("edit: "+session);
             if (!session) return;
             
             document.getElementById('modal-title').textContent = 'Edit Session';
@@ -2193,6 +2179,23 @@ const DATA_VERSION = "1.1";
             elapsedSeconds = Math.floor((now - currentSession.startTime) / 1000) 
             - currentSession.accumulatedPauseTime;
         }
+        
         // Update the appropriate display based on session type
-        document.getElementById(currentSession.isPaused ? 'break-duration' : 'session-duration').textContent = utils.formatDuration(elapsedSeconds);    
+        updateTimerDisplayEl(elapsedSeconds, currentSession.isBreak);
+    }
+
+    function updateTimerDisplayEl(seconds, isBreak) {
+        const display = document.getElementById('active-duration');
+        const container = document.querySelector('.duration-display');
+        const label = document.getElementById('duration-label');
+        
+        display.textContent = utils.formatDuration(seconds);
+        
+        if (isBreak) {
+            container.classList.add('break-mode');
+            label.textContent = 'Break Duration';
+        } else {
+            container.classList.remove('break-mode');
+            label.textContent = 'Session Duration';
+        }
     }

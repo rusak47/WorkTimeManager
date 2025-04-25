@@ -144,3 +144,24 @@
         .dark-mode select[multiple] option:checked {
             background-color: #1d4ed8;
         }
+
+        .duration-display.break-mode {
+            background-color: #fcdeba8a;
+            border-color: #fb923c;
+        }
+        .duration-display.break-mode #duration-label {
+            color: #f97316;
+        }
+        .duration-display.break-mode #active-duration {
+            color: #9a3412;
+        }
+        .dark-mode .duration-display.break-mode {
+            background-color: rgba(124, 45, 18, 0.1);
+            border-color: #9a3412;
+        }
+        .dark-mode .duration-display.break-mode #duration-label {
+            color: #fdba74;
+        }
+        .dark-mode .duration-display.break-mode #active-duration {
+            color: #fed7aa;
+        }

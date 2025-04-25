@@ -1,0 +1,13 @@
+ - store/read data on/from disk
+ - exclude breaks from total
+ - allow to write notes while session is running <- work tagging
+ - maybe allow multiple notes per session, i.e. array
+ - fix settings history export <-> session linkage to changes
+ - modify UI based on deepsite failed attempt
+ - re-try modularity with deepsite
+ - last sesion preview - alow to change layout to grid
+ - limit recent session shows only today
+ - check tab navigation while session is running 
+ - generate work statistics by work subtags
+ - while session is running show when it was started
+ - package into electron as a standalone app
