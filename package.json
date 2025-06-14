@@ -1,0 +1,23 @@
+{
+  "name": "org.rusak.worktimemanager",
+  "version": "1.0.0",
+  "description": "My Electron application with web project",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron src/.",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package": "electron-packager . --overwrite --platform=win32,darwin,linux --arch=x64 --prune=true --out=release-builds"
+  },
+  "keywords": [
+    "electron",
+    "desktop",
+    "application",
+    "time manager",
+    "time control"
+  ],
+  "author": "Vitaly.X",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}

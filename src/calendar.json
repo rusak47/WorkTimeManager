@@ -1,0 +1,251 @@
+{
+  "January": [
+    {
+      "date": "2025-01-01",
+      "description": "Jaungada diena",
+      "type": "holiday"
+    },
+    {
+      "date": "2025-01-20",
+      "description": "1991. gada barikāžu aizstāvju atceres diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-01-26",
+      "description": "Latvijas Republikas starptautiskās (de jure) atzīšanas diena",
+      "type": "memoriam"
+    }
+  ],
+  "February": [
+    {
+      "date": "2025-02-27",
+      "description": "Starptautisko nevalstisko organizāciju diena",
+      "type": "memoriam"
+    }
+  ],
+  "March": [
+    {
+      "date": "2025-03-02",
+      "description": "Nacionālo partizānu bruņotās pretošanās atceres diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-03-08",
+      "description": "Starptautiskā sieviešu diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-03-17",
+      "description": "Nacionālās pretošanās kustības piemiņas diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-03-25",
+      "description": "Komunistiskā genocīda upuru piemiņas diena",
+      "type": "memoriam"
+    }
+  ],
+  "April": [
+    {
+      "date": "2025-04-27",
+      "description": "Latgales kongresa diena",
+      "type": "memoriam"
+    }
+  ],
+  "May": [
+    {
+      "date": "2025-05-01",
+      "description": "Darba svētki, Latvijas Republikas Satversmes sapulces sasaukšanas diena",
+      "type": "holiday"
+    },
+    {
+      "date": "2025-05-04",
+      "description": "Latvijas Republikas Neatkarības atjaunošanas diena",
+      "type": "holiday"
+    },
+    {
+      "date": "2025-05-08",
+      "description": "Nacisma sagrāves diena un Otrā pasaules kara upuru piemiņas diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-05-09",
+      "description": "Eiropas diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-05-11",
+      "description": "Mātes diena",
+      "type": "holiday"
+    },
+    {
+      "date": "2025-05-15",
+      "description": "Starptautiskā ģimenes diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-05-17",
+      "description": "Ugunsdzēsēju un glābēju diena",
+      "type": "memoriam"
+    }
+  ],
+  "June": [
+    {
+      "date": "2025-06-01",
+      "description": "Starptautiskā bērnu aizsardzības diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-06-08",
+      "description": "Vasarsvētki",
+      "type": "holiday"
+    },
+    {
+      "date": "2025-06-14",
+      "description": "Komunistiskā genocīda upuru piemiņas diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-06-15",
+      "description": "Medicīnas darbinieku diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-06-17",
+      "description": "Latvijas Republikas okupācijas diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-06-22",
+      "description": "Varoņu piemiņas diena (Cēsu kaujas atceres diena)",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-06-23",
+      "description": "Līgo diena",
+      "type": "holiday"
+    },
+    {
+      "date": "2025-06-24",
+      "description": "Jāņu diena (vasaras saulgrieži)",
+      "type": "holiday"
+    }
+  ],
+  "July": [
+    {
+      "date": "2025-07-04",
+      "description": "Ebreju tautas genocīda upuru piemiņas diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-07-12",
+      "description": "Jūras svētku diena",
+      "type": "memoriam"
+    }
+  ],
+  "August": [
+    {
+      "date": "2025-08-11",
+      "description": "Latvijas brīvības cīnītāju piemiņas diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-08-21",
+      "description": "Konstitucionālā likuma “Par Latvijas Republikas valstisko statusu” pieņemšanas diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-08-23",
+      "description": "Staļinisma un nacisma upuru atceres diena",
+      "type": "memoriam"
+    }
+  ],
+  "September": [
+    {
+      "date": "2025-09-01",
+      "description": "Zinību diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-09-14",
+      "description": "Tēva diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-09-22",
+      "description": "Baltu vienības diena",
+      "type": "memoriam"
+    }
+  ],
+  "October": [
+    {
+      "date": "2025-10-01",
+      "description": "Starptautiskā senioru diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-10-05",
+      "description": "Skolotāju diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-10-15",
+      "description": "Valsts valodas diena",
+      "type": "memoriam"
+    }
+  ],
+  "November": [
+    {
+      "date": "2025-11-07",
+      "description": "Robežsargu diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-11-11",
+      "description": "Lāčplēša diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-11-18",
+      "description": "Latvijas Republikas Proklamēšanas diena",
+      "type": "holiday"
+    },
+    {
+      "date": "2025-11-21",
+      "description": "2013. gada 21. novembra traģēdijas atceres diena",
+      "type": "memoriam"
+    }
+  ],
+  "December": [
+    {
+      "date": "2025-12-05",
+      "description": "Policijas darbinieku diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-12-07",
+      "description": "Pret latviešu tautu vērstā totalitārā komunistiskā režīma genocīda upuru piemiņas diena",
+      "type": "memoriam"
+    },
+    {
+      "date": "2025-12-24",
+      "description": "Ziemassvētku vakars",
+      "type": "holiday"
+    },
+    {
+      "date": "2025-12-25",
+      "description": "Pirmie Ziemassvētki",
+      "type": "holiday"
+    },
+    {
+      "date": "2025-12-26",
+      "description": "Otrie Ziemassvētki",
+      "type": "holiday"
+    },
+    {
+      "date": "2025-12-31",
+      "description": "Vecgada diena",
+      "type": "holiday"
+    }
+  ]
+}
