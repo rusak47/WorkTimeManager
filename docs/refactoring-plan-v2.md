@@ -1,8 +1,8 @@
 # WorkTimeManager Refactoring Plan v2
 
 **Author:** Claude Code session 2026-06-24  
-**Status:** Draft, awaiting implementation start  
-**Updated:** 2026-06-24 — calendar2json format finalised (country wrapper, `is_memoriam` flag, `resources/` path)  
+**Status:** Active — Phase 0,1 done · Phase 2,3 in progress  
+**Updated:** 2026-06-24 — Phase 0 (calendar service) and Phase 1 (tooling) implemented
 
 ---
 
@@ -14,7 +14,8 @@ resources/
 
 src/
 ├── app/                          # Modular application code
-│   ├── calendarService.js        # Phase 0 — shared calendar data contract
+│   ├── calendarService.js        # ✅ Phase 0 — implemented, 20 tests, 98.8% coverage
+│   ├── calendarService.test.js   # ✅ Phase 0 — Vitest tests
 │   ├── state.js                  # Phase 4 — centralized reactive state
 │   ├── sessionManager.js         # Phase 5 — session CRUD + business logic
 │   ├── statsManager.js           # Phase 5 — statistics computation
@@ -27,10 +28,10 @@ src/
 │   └── utils.js                  # Keep, extend — format/parse helpers
 ├── storage/
 │   └── storage.js                # Phase 3 — IPC-driven file persistence
-├── main.js                       # Phase 2 — Electron main process (shrunk)
+├── main.js                       # Phase 2 — Electron main process with IPC handlers
 ├── preload.js                    # Phase 2 — contextBridge API definition
 ├── index.html                    # Phase 7 — cleaned up, inline styles removed
-├── css/styles.css                # Phase 7 — consolidated styles
+├── css/styles.css                # Phase 7 — consolidated styles (tailwind import added)
 └── test/
     └── ...                       # Phase 8 — Vitest tests
 ```
@@ -291,7 +292,6 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-const DATA_FILE = path.join(app.getPath('userData'), 'work-time-data.json');
 const DATA_FILE = path.join(app.getPath('userData'), 'work-time-data.json');
 const RESOURCES_DIR = path.join(__dirname, 'resources');
 
@@ -591,15 +591,15 @@ document.addEventListener('DOMContentLoaded', init);
 ## Implementation Order
 
 ```
-Phase 0 ─→ Phase 1 ─→ Phase 2 ─→ Phase 3 ─→ Phase 4 ─→ Phase 5 ─→ Phase 6 ─→ Phase 7 ─→ Phase 8
-  CalSvc     Tooling     IPC       Storage     State      Core       UI        HTML       Tests
+Phase 0 ✓ ─→ Phase 1 ✓ ─→ Phase 2 ─→ Phase 3 ─→ Phase 4 ─→ Phase 5 ─→ Phase 6 ─→ Phase 7 ─→ Phase 8
+  CalSvc       Tooling        IPC       Storage     State      Core       UI        HTML       Tests
 ```
 
 Phases within a tier can be parallelized:
 
 ```
-Tier 1 (no deps):       Phase 0, Phase 1
-Tier 2 (needs IPC):     Phase 2, Phase 3
+Tier 1 (no deps):       ✅ Phase 0, ✅ Phase 1
+Tier 2 (needs IPC):     ▶ Phase 2, ▶ Phase 3
 Tier 3 (needs storage): Phase 4
 Tier 4 (needs state):   Phase 5, Phase 6
 Tier 5 (needs UI):      Phase 7
