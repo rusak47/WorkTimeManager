@@ -1,8 +1,8 @@
 # WorkTimeManager Refactoring Plan v2
 
 **Author:** Claude Code session 2026-06-24  
-**Status:** Active — Phase 0,1 done · Phase 2,3 in progress  
-**Updated:** 2026-06-24 — Phase 0 (calendar service) and Phase 1 (tooling) implemented
+**Status:** Active — Phase 0–3 done · Phase 4 in progress  
+**Updated:** 2026-06-24 — Phase 0–1 (calendar + tooling), Phase 2 (IPC), Phase 3 (storage) implemented
 
 ---
 
@@ -16,7 +16,7 @@ src/
 ├── app/                          # Modular application code
 │   ├── calendarService.js        # ✅ Phase 0 — implemented, 20 tests, 98.8% coverage
 │   ├── calendarService.test.js   # ✅ Phase 0 — Vitest tests
-│   ├── state.js                  # Phase 4 — centralized reactive state
+│   ├── state.js                  # ▶ Phase 4 — centralized reactive state
 │   ├── sessionManager.js         # Phase 5 — session CRUD + business logic
 │   ├── statsManager.js           # Phase 5 — statistics computation
 │   ├── configManager.js          # Phase 5 — user preferences
@@ -27,9 +27,9 @@ src/
 ├── js/
 │   └── utils.js                  # Keep, extend — format/parse helpers
 ├── storage/
-│   └── storage.js                # Phase 3 — IPC-driven file persistence
-├── main.js                       # Phase 2 — Electron main process with IPC handlers
-├── preload.js                    # Phase 2 — contextBridge API definition
+│   └── storage.js                # ✅ Phase 3 — IPC-driven file persistence
+├── main.js                       # ✅ Phase 2 — Electron main process with IPC handlers
+├── preload.js                    # ✅ Phase 2 — contextBridge API definition
 ├── index.html                    # Phase 7 — cleaned up, inline styles removed
 ├── css/styles.css                # Phase 7 — consolidated styles (tailwind import added)
 └── test/
@@ -591,19 +591,40 @@ document.addEventListener('DOMContentLoaded', init);
 ## Implementation Order
 
 ```
-Phase 0 ✓ ─→ Phase 1 ✓ ─→ Phase 2 ─→ Phase 3 ─→ Phase 4 ─→ Phase 5 ─→ Phase 6 ─→ Phase 7 ─→ Phase 8
-  CalSvc       Tooling        IPC       Storage     State      Core       UI        HTML       Tests
+Phase 0 ✓ ─→ Phase 1 ✓ ─→ Phase 2 ✓ ─→ Phase 3 ✓ ─→ Phase 4 ─→ Phase 5 ─→ Phase 6 ─→ Phase 7 ─→ Phase 8
+  CalSvc       Tooling        IPC       Storage      State      Core       UI        HTML       Tests
 ```
 
 Phases within a tier can be parallelized:
 
 ```
 Tier 1 (no deps):       ✅ Phase 0, ✅ Phase 1
-Tier 2 (needs IPC):     ▶ Phase 2, ▶ Phase 3
-Tier 3 (needs storage): Phase 4
+Tier 2 (needs IPC):     ✅ Phase 2, ✅ Phase 3
+Tier 3 (needs storage): ▶ Phase 4
 Tier 4 (needs state):   Phase 5, Phase 6
 Tier 5 (needs UI):      Phase 7
 Tier 6 (needs code):    Phase 8
 ```
 
 Phase 0 must start first (it defines the shared contract). Phase 1 can run in parallel. Everything else waits for Phase 0 + Phase 2.
+
+---
+
+## Phase 4 complete — flat reactive store with pub/sub, 9 tests
+
+The Phase 4 implementation is a generic `createStore` factory that takes initial state
+and returns `{ getState, setState, subscribe, reset }`. It uses flat (non-nested) state
+merging via `Object.assign`, not deep merge, so callers must pass fully qualified paths
+when updating. Subscribers are called synchronously on every `setState`, and each
+subscriber receives the full new state object. The `reset` method restores the original
+initial state. The store is intentionally framework-agnostic and works in any JS runtime.
+
+### API
+
+```js
+const store = createStore({ sessions: [], config: null });
+store.subscribe((state) => render(state));
+store.setState({ sessions: [newSession] });
+const current = store.getState();
+store.reset();
+```
