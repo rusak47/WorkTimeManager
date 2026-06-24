@@ -6,6 +6,9 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.js', 'src/**/*.spec.js'],
+    environmentMatchGlobs: [
+      ['src/storage/**', 'jsdom'],
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],

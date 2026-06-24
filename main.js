@@ -1,42 +1,78 @@
-const { app, BrowserWindow } = require('electron')
-const path = require('path')
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const fs = require('fs');
 
-// Keep a global reference of the window object to prevent it from being garbage collected
-let mainWindow
+let mainWindow;
+
+const DATA_FILE = path.join(app.getPath('userData'), 'work-time-data.json');
+const RESOURCES_DIR = path.join(__dirname, 'resources');
+
+function tryRead(filePath) {
+  try {
+    if (fs.existsSync(filePath)) {
+      return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    }
+    return null;
+  } catch (err) {
+    console.error('Failed to read:', filePath, err);
+    return null;
+  }
+}
 
 function createWindow() {
-  // Create the browser window
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: false, // Default value is false
-      contextIsolation: true, // Protect against prototype pollution
-      preload: path.join(__dirname, 'preload.js') // Optional: Use a preload script
-    }
-  })
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
 
-  // Load the index.html from the src directory
-  mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'))
+  const devServer = process.env.VITE_DEV_SERVER_URL;
+  if (devServer) {
+    mainWindow.loadURL(devServer);
+  } else {
+    mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+  }
 
-  // Uncomment to open DevTools automatically (for development)
-  // mainWindow.webContents.openDevTools()
-
-  // Handle window being closed
-  mainWindow.on('closed', function () {
-    mainWindow = null
-  })
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
-// Create window when Electron has finished initializing
-app.whenReady().then(createWindow)
+ipcMain.handle('data:load', async () => {
+  return tryRead(DATA_FILE);
+});
 
-// Quit when all windows are closed, except on macOS
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit()
-})
+ipcMain.handle('data:save', async (_, data) => {
+  const dir = path.dirname(DATA_FILE);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  return true;
+});
 
-// On macOS re-create window when dock icon is clicked and no windows are open
-app.on('activate', function () {
-  if (mainWindow === null) createWindow()
-})
+ipcMain.handle('calendar:load', async (_, year) => {
+  const calendarPath = path.join(RESOURCES_DIR, `${year}-holidays.json`);
+  const raw = tryRead(calendarPath);
+  if (!raw) return {};
+  const countryKey = Object.keys(raw)[0];
+  return countryKey ? raw[countryKey] : {};
+});
+
+ipcMain.handle('app:version', async () => {
+  return app.getVersion();
+});
+
+app.whenReady().then(createWindow);
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('activate', () => {
+  if (mainWindow === null) createWindow();
+});
