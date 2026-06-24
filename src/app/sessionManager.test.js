@@ -1,0 +1,159 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createStore } from './state.js';
+import { createSessionManager } from './sessionManager.js';
+
+describe('sessionManager', () => {
+  let store;
+  let sm;
+
+  const sampleSession = {
+    date: '2026-06-24',
+    startTime: '2026-06-24T08:00:00.000Z',
+    endTime: '2026-06-24T10:00:00.000Z',
+    duration: '02:00:00',
+    durationSec: 7200,
+    dayType: 'Workday',
+    notes: 'Morning work',
+    tags: ['work'],
+    mood: 5,
+  };
+
+  beforeEach(() => {
+    store = createStore({ sessions: [] });
+    sm = createSessionManager(store);
+  });
+
+  it('getSessions returns empty array initially', () => {
+    expect(sm.getSessions()).toEqual([]);
+  });
+
+  it('addSession prepends a session and returns it with id', () => {
+    const session = sm.addSession(sampleSession);
+    expect(session.id).toBeTypeOf('number');
+    expect(session.duration).toBe('02:00:00');
+    expect(sm.getSessions()).toHaveLength(1);
+  });
+
+  it('getSessions returns sessions sorted newest first', () => {
+    const s1 = sm.addSession({ ...sampleSession, id: 1, date: '2026-06-23' });
+    const s2 = sm.addSession({ ...sampleSession, id: 2, date: '2026-06-24' });
+    expect(sm.getSessions()[0].id).toBe(2);
+  });
+
+  it('updateSession merges data into existing session', () => {
+    const session = sm.addSession({ ...sampleSession, id: 1 });
+    const updated = sm.updateSession(1, { notes: 'Updated notes', mood: 3 });
+    expect(updated.notes).toBe('Updated notes');
+    expect(updated.mood).toBe(3);
+    expect(updated.duration).toBe('02:00:00');
+  });
+
+  it('updateSession returns null for nonexistent id', () => {
+    expect(sm.updateSession(999, { notes: 'x' })).toBeNull();
+  });
+
+  it('deleteSession removes session by id', () => {
+    const s1 = sm.addSession({ ...sampleSession, id: 1 });
+    const s2 = sm.addSession({ ...sampleSession, id: 2 });
+    expect(sm.deleteSession(1)).toBe(true);
+    expect(sm.getSessions()).toHaveLength(1);
+    expect(sm.getSessions()[0].id).toBe(2);
+  });
+
+  it('deleteSession returns false for nonexistent id', () => {
+    expect(sm.deleteSession(999)).toBe(false);
+  });
+
+  it('resetSessions clears all sessions', () => {
+    sm.addSession(sampleSession);
+    sm.addSession(sampleSession);
+    sm.resetSessions();
+    expect(sm.getSessions()).toEqual([]);
+  });
+
+  it('getSessionsByFilter filters by date', () => {
+    sm.addSession({ ...sampleSession, id: 1, date: '2026-06-23' });
+    sm.addSession({ ...sampleSession, id: 2, date: '2026-06-24' });
+    const filtered = sm.getSessionsByFilter({ date: '2026-06-24' });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].date).toBe('2026-06-24');
+  });
+
+  it('getSessionsByFilter filters by year', () => {
+    sm.addSession({ ...sampleSession, id: 1, date: '2025-12-31' });
+    sm.addSession({ ...sampleSession, id: 2, date: '2026-06-24' });
+    const filtered = sm.getSessionsByFilter({ year: '2025' });
+    expect(filtered).toHaveLength(1);
+  });
+
+  it('getSessionsByFilter filters by dayType', () => {
+    sm.addSession({ ...sampleSession, id: 1, dayType: 'Workday' });
+    sm.addSession({ ...sampleSession, id: 2, dayType: 'Weekend' });
+    const filtered = sm.getSessionsByFilter({ dayType: 'Weekend' });
+    expect(filtered).toHaveLength(1);
+  });
+
+  it('getSessionsByFilter with no filters returns all sessions', () => {
+    sm.addSession(sampleSession);
+    sm.addSession(sampleSession);
+    expect(sm.getSessionsByFilter({})).toHaveLength(2);
+  });
+
+  it('startTracking sets tracker state', () => {
+    const tracker = sm.startTracking();
+    expect(tracker.startTime).toBeTypeOf('number');
+    expect(tracker.isPaused).toBe(false);
+    expect(tracker.accumulatedPauseTime).toBe(0);
+    expect(tracker.isBreak).toBe(false);
+  });
+
+  it('startTracking with isBreak true sets break mode', () => {
+    const tracker = sm.startTracking({ isBreak: true });
+    expect(tracker.isBreak).toBe(true);
+  });
+
+  it('getTracker returns current tracker state', () => {
+    sm.startTracking();
+    const tracker = sm.getTracker();
+    expect(tracker.startTime).toBeTypeOf('number');
+  });
+
+  it('pauseTracking sets paused state with timestamp', () => {
+    sm.startTracking();
+    const tracker = sm.pauseTracking();
+    expect(tracker.isPaused).toBe(true);
+    expect(tracker.pauseStart).toBeTypeOf('number');
+  });
+
+  it('resumeTracking accumulates pause time', () => {
+    sm.startTracking();
+    sm.pauseTracking();
+    const tracker = sm.resumeTracking();
+    expect(tracker.isPaused).toBe(false);
+    expect(tracker.pauseStart).toBeNull();
+    expect(tracker.accumulatedPauseTime).toBeGreaterThanOrEqual(0);
+  });
+
+  it('stopTracking finalises and returns a session from tracker', () => {
+    sm.startTracking();
+    const session = sm.stopTracking({ date: '2026-06-24', dayType: 'Workday' });
+    expect(session.date).toBe('2026-06-24');
+    expect(session.dayType).toBe('Workday');
+    expect(session.startTime).toBeTypeOf('string');
+    expect(session.durationSec).toBeGreaterThanOrEqual(0);
+    expect(sm.getTracker().startTime).toBeNull();
+  });
+
+  it('stopTracking without active tracker returns null', () => {
+    const result = sm.stopTracking({ date: '2026-06-24', dayType: 'Workday' });
+    expect(result).toBeNull();
+  });
+
+  it('resetTracker clears tracker to initial state', () => {
+    sm.startTracking();
+    sm.resetTracker();
+    const tracker = sm.getTracker();
+    expect(tracker.startTime).toBeNull();
+    expect(tracker.isPaused).toBe(false);
+  });
+});
