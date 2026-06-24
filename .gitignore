@@ -6,6 +6,9 @@ dist/
 release-builds/
 out/
 
+# Coverage reports
+coverage/
+
 # Abandoned experiments
 src/tmp/
 
