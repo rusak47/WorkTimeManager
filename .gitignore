@@ -1,2 +1,25 @@
-tmp
-test
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+release-builds/
+out/
+
+# Abandoned experiments
+src/tmp/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Session artifacts (AI assistant conversation summaries)
+session_*.md
