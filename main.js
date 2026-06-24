@@ -16,8 +16,8 @@ function createWindow() {
     }
   })
 
-  // Load the index.html of your web project
-  mainWindow.loadFile('index.html')
+  // Load the index.html from the src directory
+  mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'))
 
   // Uncomment to open DevTools automatically (for development)
   // mainWindow.webContents.openDevTools()

@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Time Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-active {
+            border-bottom: 3px solid #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .session-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .blink {
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .confirmation-modal {
+            animation: modalFadeIn 0.2s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Work Time Tracker</h1>
+            <p class="text-gray-600">Track your productivity sessions with precision</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-gray-200 mb-8">
+            <button id="tracker-tab" class="tab-active py-4 px-6 font-medium text-sm focus:outline-none">
+                <i class="fas fa-stopwatch mr-2"></i>Time Tracker
+            </button>
+            <button id="sessions-tab" class="py-4 px-6 font-medium text-sm text-gray-500 hover:text-gray-700 focus:outline-none">
+                <i class="fas fa-list mr-2"></i>Sessions
+            </button>
+            <button id="stats-tab" class="py-4 px-6 font-medium text-sm text-gray-500 hover:text-gray-700 focus:outline-none">
+                <i class="fas fa-chart-bar mr-2"></i>Statistics
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Time Tracker Tab -->
+            <div id="tracker-content" class="fade-in">
+                <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                        <div class="mb-4 md:mb-0">
+                            <h2 class="text-xl font-semibold text-gray-800">Current Session</h2>
+                            <p class="text-gray-600">Track your work session in real-time</p>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium flex items-center">
+                                <i class="fas fa-play mr-2"></i> Start Session
+                            </button>
+                            <button id="stop-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-medium flex items-center" disabled>
+                                <i class="fas fa-stop mr-2"></i> Stop Session
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <p class="text-sm text-blue-600 font-medium mb-1">Current Time</p>
+                            <p id="current-time" class="text-2xl font-bold text-blue-800">--:--:--</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <p class="text-sm text-green-600 font-medium mb-1">Session Duration</p>
+                            <p id="session-duration" class="text-2xl font-bold text-green-800">00:00:00</p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <p class="text-sm text-purple-600 font-medium mb-1">Today's Total</p>
+                            <p id="today-total" class="text-2xl font-bold text-purple-800">00:00:00</p>
+                        </div>
+                    </div>
+
+                    <div id="session-notes" class="mt-6 hidden">
+                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Session Notes</label>
+                        <textarea id="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Add notes about this session..."></textarea>
+                        <button id="save-session" class="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium">
+                            Save Session
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Sessions</h2>
+                    <div id="recent-sessions" class="space-y-3">
+                        <!-- Recent sessions will be loaded here -->
+                        <p class="text-gray-500 text-center py-8">No recent sessions found. Start tracking to see your sessions here.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sessions Management Tab -->
+            <div id="sessions-content" class="hidden fade-in">
+                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800">All Sessions</h2>
+                        <button id="add-session-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center">
+                            <i class="fas fa-plus mr-2"></i> Add Session
+                        </button>
+                    </div>
+
+                    <!-- Filter Controls -->
+                    <div class="flex flex-wrap gap-3 mb-6">
+                        <div>
+                            <label for="date-filter" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <input type="date" id="date-filter" class="border border-gray-300 rounded-md px-3 py-2">
+                        </div>
+                        <div>
+                            <label for="month-filter" class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                            <select id="month-filter" class="border border-gray-300 rounded-md px-3 py-2">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="year-filter" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                            <select id="year-filter" class="border border-gray-300 rounded-md px-3 py-2">
+                                <option value="">All Years</option>
+                                <option value="2023">2023</option>
+                                <option value="2024">2024</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button id="apply-filters" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium">
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sessions List -->
+                    <div id="all-sessions-list" class="space-y-3">
+                        <!-- All sessions will be loaded here -->
+                        <p class="text-gray-500 text-center py-8">No sessions found. Start tracking or add a session manually.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Tab -->
+            <div id="stats-content" class="hidden fade-in">
+                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6">Session Statistics</h2>
+                    
+                    <div class="flex flex-wrap gap-4 mb-8">
+                        <button id="daily-stats" class="bg-blue-600 text-white px-4 py-2 rounded-md font-medium">Daily</button>
+                        <button id="weekly-stats" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md font-medium">Weekly</button>
+                        <button id="monthly-stats" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md font-medium">Monthly</button>
+                        <button id="yearly-stats" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md font-medium">Yearly</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <p class="text-sm text-blue-600 font-medium mb-1">Total Time</p>
+                            <p id="total-time" class="text-2xl font-bold text-blue-800">00:00:00</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <p class="text-sm text-green-600 font-medium mb-1">Sessions Count</p>
+                            <p id="sessions-count" class="text-2xl font-bold text-green-800">0</p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <p class="text-sm text-purple-600 font-medium mb-1">Average Duration</p>
+                            <p id="avg-duration" class="text-2xl font-bold text-purple-800">00:00:00</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <canvas id="timeChart" height="300"></canvas>
+                    </div>
+
+                    <div>
+                        <canvas id="distributionChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Session Modal -->
+        <div id="session-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800" id="modal-title">Add New Session</h3>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="session-form">
+                    <input type="hidden" id="session-id">
+                    <div class="mb-4">
+                        <label for="start-time" class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                        <input type="datetime-local" id="start-time" class="w-full border border-gray-300 rounded-md px-3 py-2" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="end-time" class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                        <input type="datetime-local" id="end-time" class="w-full border border-gray-300 rounded-md px-3 py-2" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="modal-notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                        <textarea id="modal-notes" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-session" class="px-4 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium">
+                            Save Session
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md confirmation-modal">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Confirm Deletion</h3>
+                    <button id="close-delete-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <p class="mb-6 text-gray-700">Are you sure you want to delete this session? This action cannot be undone.</p>
+                
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-delete" class="px-4 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="button" id="confirm-delete" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium">
+                        Delete Session
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize variables
+        let timerInterval;
+        let sessionStartTime;
+        let sessions = [];
+        let currentTab = 'tracker';
+        let currentStatsPeriod = 'daily';
+        let timeChart, distributionChart;
+        let sessionToDelete = null;
+
+        // DOM Elements
+        const trackerTab = document.getElementById('tracker-tab');
+        const sessionsTab = document.getElementById('sessions-tab');
+        const statsTab = document.getElementById('stats-tab');
+        const trackerContent = document.getElementById('tracker-content');
+        const sessionsContent = document.getElementById('sessions-content');
+        const statsContent = document.getElementById('stats-content');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const currentTimeEl = document.getElementById('current-time');
+        const sessionDurationEl = document.getElementById('session-duration');
+        const todayTotalEl = document.getElementById('today-total');
+        const sessionNotes = document.getElementById('session-notes');
+        const notesInput = document.getElementById('notes');
+        const saveSessionBtn = document.getElementById('save-session');
+        const recentSessionsEl = document.getElementById('recent-sessions');
+        const allSessionsList = document.getElementById('all-sessions-list');
+        const addSessionBtn = document.getElementById('add-session-btn');
+        const sessionModal = document.getElementById('session-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        const cancelSessionBtn = document.getElementById('cancel-session');
+        const sessionForm = document.getElementById('session-form');
+        const startTimeInput = document.getElementById('start-time');
+        const endTimeInput = document.getElementById('end-time');
+        const modalNotes = document.getElementById('modal-notes');
+        const dateFilter = document.getElementById('date-filter');
+        const monthFilter = document.getElementById('month-filter');
+        const yearFilter = document.getElementById('year-filter');
+        const applyFiltersBtn = document.getElementById('apply-filters');
+        const dailyStatsBtn = document.getElementById('daily-stats');
+        const weeklyStatsBtn = document.getElementById('weekly-stats');
+        const monthlyStatsBtn = document.getElementById('monthly-stats');
+        const yearlyStatsBtn = document.getElementById('yearly-stats');
+        const totalTimeEl = document.getElementById('total-time');
+        const sessionsCountEl = document.getElementById('sessions-count');
+        const avgDurationEl = document.getElementById('avg-duration');
+        const deleteModal = document.getElementById('delete-modal');
+        const closeDeleteModalBtn = document.getElementById('close-delete-modal');
+        const cancelDeleteBtn = document.getElementById('cancel-delete');
+        const confirmDeleteBtn = document.getElementById('confirm-delete');
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            loadSessions();
+            setupEventListeners();
+        });
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Tab navigation
+            trackerTab.addEventListener('click', () => switchTab('tracker'));
+            sessionsTab.addEventListener('click', () => switchTab('sessions'));
+            statsTab.addEventListener('click', () => switchTab('stats'));
+            
+            // Session tracking
+            startBtn.addEventListener('click', startSession);
+            stopBtn.addEventListener('click', stopSession);
+            saveSessionBtn.addEventListener('click', saveSession);
+            
+            // Session management
+            addSessionBtn.addEventListener('click', showAddSessionModal);
+            closeModalBtn.addEventListener('click', hideSessionModal);
+            cancelSessionBtn.addEventListener('click', hideSessionModal);
+            sessionForm.addEventListener('submit', handleSessionFormSubmit);
+            applyFiltersBtn.addEventListener('click', applyFilters);
+            
+            // Statistics
+            dailyStatsBtn.addEventListener('click', () => switchStatsPeriod('daily'));
+            weeklyStatsBtn.addEventListener('click', () => switchStatsPeriod('weekly'));
+            monthlyStatsBtn.addEventListener('click', () => switchStatsPeriod('monthly'));
+            yearlyStatsBtn.addEventListener('click', () => switchStatsPeriod('yearly'));
+            
+            // Delete confirmation
+            closeDeleteModalBtn.addEventListener('click', hideDeleteModal);
+            cancelDeleteBtn.addEventListener('click', hideDeleteModal);
+            confirmDeleteBtn.addEventListener('click', confirmDeleteSession);
+        }
+
+        // Update current time display
+        function updateCurrentTime() {
+            const now = new Date();
+            currentTimeEl.textContent = formatTime(now);
+        }
+
+        // Format time as HH:MM:SS
+        function formatTime(date) {
+            return date.toLocaleTimeString();
+        }
+
+        // Format date as YYYY-MM-DD
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        // Format duration as HH:MM:SS
+        function formatDuration(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        // Parse duration string to seconds
+        function parseDuration(duration) {
+            const [hrs, mins, secs] = duration.split(':').map(Number);
+            return hrs * 3600 + mins * 60 + secs;
+        }
+
+        // Start a new session
+        function startSession() {
+            sessionStartTime = new Date();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            startBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            startBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+            stopBtn.classList.remove('bg-gray-200');
+            stopBtn.classList.add('bg-red-500', 'hover:bg-red-600', 'text-white');
+            
+            // Update session duration in real-time
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const duration = Math.floor((now - sessionStartTime) / 1000);
+                sessionDurationEl.textContent = formatDuration(duration);
+                sessionDurationEl.classList.add('blink');
+            }, 1000);
+        }
+
+        // Stop the current session
+        function stopSession() {
+            clearInterval(timerInterval);
+            sessionDurationEl.classList.remove('blink');
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            startBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            startBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+            stopBtn.classList.add('bg-gray-200');
+            stopBtn.classList.remove('bg-red-500', 'hover:bg-red-600', 'text-white');
+            
+            // Show notes input
+            sessionNotes.classList.remove('hidden');
+        }
+
+        // Save the current session
+        function saveSession() {
+            const endTime = new Date();
+            const duration = Math.floor((endTime - sessionStartTime) / 1000);
+            const notes = notesInput.value.trim();
+            
+            const session = {
+                id: Date.now(),
+                date: formatDate(sessionStartTime),
+                startTime: sessionStartTime.toISOString(),
+                endTime: endTime.toISOString(),
+                duration: formatDuration(duration),
+                durationSec: duration,
+                notes: notes
+            };
+            
+            sessions.unshift(session);
+            saveSessionsToCSV();
+            renderRecentSessions();
+            updateTodayTotal();
+            sessionNotes.classList.add('hidden');
+            notesInput.value = '';
+            sessionDurationEl.textContent = '00:00:00';
+            
+            // If on stats tab, update stats
+            if (currentTab === 'stats') {
+                updateStatistics();
+            }
+        }
+
+        // Load sessions from CSV (simulated with localStorage for this demo)
+        function loadSessions() {
+            // In a real app, you would load from a CSV file
+            // For this demo, we'll use localStorage
+            const savedSessions = localStorage.getItem('workTimeSessions');
+            if (savedSessions) {
+                sessions = JSON.parse(savedSessions);
+                renderRecentSessions();
+                renderAllSessions();
+                updateTodayTotal();
+                updateStatistics();
+            } else {
+                // Sample data for demo
+                const now = new Date();
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                sessions = [
+                    {
+                        id: 1,
+                        date: formatDate(now),
+                        startTime: new Date(now.getTime() - 2 * 3600 * 1000).toISOString(),
+                        endTime: new Date(now.getTime() - 3600 * 1000).toISOString(),
+                        duration: '01:00:00',
+                        durationSec: 3600,
+                        notes: 'Morning coding session'
+                    },
+                    {
+                        id: 2,
+                        date: formatDate(now),
+                        startTime: new Date(now.getTime() - 4 * 3600 * 1000).toISOString(),
+                        endTime: new Date(now.getTime() - 3 * 3600 * 1000).toISOString(),
+                        duration: '01:00:00',
+                        durationSec: 3600,
+                        notes: 'Project planning'
+                    },
+                    {
+                        id: 3,
+                        date: formatDate(yesterday),
+                        startTime: new Date(yesterday.getTime() - 3 * 3600 * 1000).toISOString(),
+                        endTime: new Date(yesterday.getTime() - 2 * 3600 * 1000).toISOString(),
+                        duration: '01:00:00',
+                        durationSec: 3600,
+                        notes: 'Team meeting'
+                    }
+                ];
+                
+                saveSessionsToCSV();
+                renderRecentSessions();
+                renderAllSessions();
+                updateTodayTotal();
+                updateStatistics();
+            }
+        }
+
+        // Save sessions to CSV (simulated with localStorage for this demo)
+        function saveSessionsToCSV() {
+            // In a real app, you would save to a CSV file
+            // For this demo, we'll use localStorage
+            localStorage.setItem('workTimeSessions', JSON.stringify(sessions));
+            
+            // This is how you would generate CSV content in a real app
+            /*
+            let csvContent = "Date,Start Time,End Time,Duration,Notes\n";
+            sessions.forEach(session => {
+                csvContent += `${session.date},${session.startTime},${session.endTime},${session.duration},"${session.notes}"\n`;
+            });
+            
+            // Then you would save this CSV string to a file
+            */
+        }
+
+        // Render recent sessions (for tracker tab)
+        function renderRecentSessions() {
+            if (sessions.length === 0) {
+                recentSessionsEl.innerHTML = '<p class="text-gray-500 text-center py-8">No recent sessions found. Start tracking to see your sessions here.</p>';
+                return;
+            }
+            
+            const recent = sessions.slice(0, 5);
+            recentSessionsEl.innerHTML = recent.map(session => `
+                <div class="session-card bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-medium text-gray-800">${session.date}</h3>
+                            <p class="text-sm text-gray-600">${formatTime(new Date(session.startTime))} - ${formatTime(new Date(session.endTime))}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">${session.duration}</span>
+                        </div>
+                    </div>
+                    ${session.notes ? `<p class="mt-2 text-gray-700">${session.notes}</p>` : ''}
+                    <div class="flex justify-end space-x-2 mt-3">
+                        <button class="edit-session text-blue-600 hover:text-blue-800 text-sm font-medium" data-id="${session.id}">
+                            <i class="fas fa-edit mr-1"></i>Edit
+                        </button>
+                        <button class="delete-session text-red-600 hover:text-red-800 text-sm font-medium" data-id="${session.id}">
+                            <i class="fas fa-trash-alt mr-1"></i>Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add event listeners to edit/delete buttons
+            document.querySelectorAll('.edit-session').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const sessionId = parseInt(e.currentTarget.getAttribute('data-id'));
+                    editSession(sessionId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-session').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const sessionId = parseInt(e.currentTarget.getAttribute('data-id'));
+                    showDeleteModal(sessionId);
+                });
+            });
+        }
+
+        // Render all sessions (for sessions tab)
+        function renderAllSessions(filteredSessions = null) {
+            const sessionsToRender = filteredSessions || sessions;
+            
+            if (sessionsToRender.length === 0) {
+                allSessionsList.innerHTML = '<p class="text-gray-500 text-center py-8">No sessions found. Start tracking or add a session manually.</p>';
+                return;
+            }
+            
+            allSessionsList.innerHTML = sessionsToRender.map(session => `
+                <div class="session-card bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-medium text-gray-800">${session.date}</h3>
+                            <p class="text-sm text-gray-600">${formatTime(new Date(session.startTime))} - ${formatTime(new Date(session.endTime))}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">${session.duration}</span>
+                        </div>
+                    </div>
+                    ${session.notes ? `<p class="mb-3 text-gray-700">${session.notes}</p>` : ''}
+                    <div class="flex justify-end space-x-2">
+                        <button class="edit-session text-blue-600 hover:text-blue-800 text-sm font-medium" data-id="${session.id}">
+                            <i class="fas fa-edit mr-1"></i>Edit
+                        </button>
+                        <button class="delete-session text-red-600 hover:text-red-800 text-sm font-medium" data-id="${session.id}">
+                            <i class="fas fa-trash-alt mr-1"></i>Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add event listeners to edit/delete buttons
+            document.querySelectorAll('.edit-session').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const sessionId = parseInt(e.currentTarget.getAttribute('data-id'));
+                    editSession(sessionId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-session').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const sessionId = parseInt(e.currentTarget.getAttribute('data-id'));
+                    showDeleteModal(sessionId);
+                });
+            });
+        }
+
+        // Update today's total time
+        function updateTodayTotal() {
+            const today = formatDate(new Date());
+            const todaySessions = sessions.filter(session => session.date === today);
+            const totalSec = todaySessions.reduce((sum, session) => sum + session.durationSec, 0);
+            todayTotalEl.textContent = formatDuration(totalSec);
+        }
+
+        // Switch between tabs
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab styling
+            trackerTab.classList.remove('tab-active');
+            trackerTab.classList.add('text-gray-500', 'hover:text-gray-700');
+            sessionsTab.classList.remove('tab-active');
+            sessionsTab.classList.add('text-gray-500', 'hover:text-gray-700');
+            statsTab.classList.remove('tab-active');
+            statsTab.classList.add('text-gray-500', 'hover:text-gray-700');
+            
+            // Hide all content
+            trackerContent.classList.add('hidden');
+            sessionsContent.classList.add('hidden');
+            statsContent.classList.add('hidden');
+            
+            // Show selected content and update tab styling
+            if (tab === 'tracker') {
+                trackerTab.classList.add('tab-active');
+                trackerTab.classList.remove('text-gray-500', 'hover:text-gray-700');
+                trackerContent.classList.remove('hidden');
+            } else if (tab === 'sessions') {
+                sessionsTab.classList.add('tab-active');
+                sessionsTab.classList.remove('text-gray-500', 'hover:text-gray-700');
+                sessionsContent.classList.remove('hidden');
+            } else if (tab === 'stats') {
+                statsTab.classList.add('tab-active');
+                statsTab.classList.remove('text-gray-500', 'hover:text-gray-700');
+                statsContent.classList.remove('hidden');
+                updateStatistics();
+            }
+        }
+
+        // Show add session modal
+        function showAddSessionModal() {
+            document.getElementById('modal-title').textContent = 'Add New Session';
+            document.getElementById('session-id').value = '';
+            
+            const now = new Date();
+            const oneHourAgo = new Date(now.getTime() - 3600 * 1000);
+            
+            startTimeInput.value = formatDateTimeLocal(oneHourAgo);
+            endTimeInput.value = formatDateTimeLocal(now);
+            modalNotes.value = '';
+            
+            sessionModal.classList.remove('hidden');
+        }
+
+        // Format datetime for input[type=datetime-local]
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Hide session modal
+        function hideSessionModal() {
+            sessionModal.classList.add('hidden');
+        }
+
+        // Show delete confirmation modal
+        function showDeleteModal(sessionId) {
+            sessionToDelete = sessionId;
+            deleteModal.classList.remove('hidden');
+        }
+
+        // Hide delete confirmation modal
+        function hideDeleteModal() {
+            sessionToDelete = null;
+            deleteModal.classList.add('hidden');
+        }
+
+        // Confirm session deletion
+        function confirmDeleteSession() {
+            if (!sessionToDelete) return;
+            
+            sessions = sessions.filter(s => s.id !== sessionToDelete);
+            saveSessionsToCSV();
+            renderRecentSessions();
+            renderAllSessions();
+            updateTodayTotal();
+            
+            if (currentTab === 'stats') {
+                updateStatistics();
+            }
+            
+            hideDeleteModal();
+        }
+
+        // Edit session
+        function editSession(sessionId) {
+            const session = sessions.find(s => s.id === sessionId);
+            if (!session) return;
+            
+            document.getElementById('modal-title').textContent = 'Edit Session';
+            document.getElementById('session-id').value = session.id;
+            
+            startTimeInput.value = formatDateTimeLocal(new Date(session.startTime));
+            endTimeInput.value = formatDateTimeLocal(new Date(session.endTime));
+            modalNotes.value = session.notes || '';
+            
+            sessionModal.classList.remove('hidden');
+        }
+
+        // Handle session form submit (add/edit)
+        function handleSessionFormSubmit(e) {
+            e.preventDefault();
+            
+            const sessionId = document.getElementById('session-id').value;
+            const startTime = new Date(startTimeInput.value);
+            const endTime = new Date(endTimeInput.value);
+            const notes = modalNotes.value.trim();
+            
+            if (endTime <= startTime) {
+                alert('End time must be after start time');
+                return;
+            }
+            
+            const duration = Math.floor((endTime - startTime) / 1000);
+            
+            if (sessionId) {
+                // Update existing session
+                const index = sessions.findIndex(s => s.id === parseInt(sessionId));
+                if (index !== -1) {
+                    sessions[index] = {
+                        ...sessions[index],
+                        date: formatDate(startTime),
+                        startTime: startTime.toISOString(),
+                        endTime: endTime.toISOString(),
+                        duration: formatDuration(duration),
+                        durationSec: duration,
+                        notes: notes
+                    };
+                }
+            } else {
+                // Add new session
+                const newSession = {
+                    id: Date.now(),
+                    date: formatDate(startTime),
+                    startTime: startTime.toISOString(),
+                    endTime: endTime.toISOString(),
+                    duration: formatDuration(duration),
+                    durationSec: duration,
+                    notes: notes
+                };
+                
+                sessions.unshift(newSession);
+            }
+            
+            saveSessionsToCSV();
+            renderRecentSessions();
+            renderAllSessions();
+            updateTodayTotal();
+            hideSessionModal();
+            
+            if (currentTab === 'stats') {
+                updateStatistics();
+            }
+        }
+
+        // Apply filters to sessions list
+        function applyFilters() {
+            const date = dateFilter.value;
+            const month = monthFilter.value;
+            const year = yearFilter.value;
+            
+            let filtered = [...sessions];
+            
+            if (date) {
+                filtered = filtered.filter(s => s.date === date);
+            }
+            
+            if (month) {
+                filtered = filtered.filter(s => {
+                    const sessionMonth = new Date(s.startTime).getMonth() + 1;
+                    return sessionMonth === parseInt(month);
+                });
+            }
+            
+            if (year) {
+                filtered = filtered.filter(s => {
+                    const sessionYear = new Date(s.startTime).getFullYear();
+                    return sessionYear === parseInt(year);
+                });
+            }
+            
+            renderAllSessions(filtered);
+        }
+
+        // Switch statistics period
+        function switchStatsPeriod(period) {
+            currentStatsPeriod = period;
+            
+            // Update button styling
+            dailyStatsBtn.classList.remove('bg-blue-600', 'text-white');
+            dailyStatsBtn.classList.add('bg-gray-200', 'text-gray-800');
+            weeklyStatsBtn.classList.remove('bg-blue-600', 'text-white');
+            weeklyStatsBtn.classList.add('bg-gray-200', 'text-gray-800');
+            monthlyStatsBtn.classList.remove('bg-blue-600', 'text-white');
+            monthlyStatsBtn.classList.add('bg-gray-200', 'text-gray-800');
+            yearlyStatsBtn.classList.remove('bg-blue-600', 'text-white');
+            yearlyStatsBtn.classList.add('bg-gray-200', 'text-gray-800');
+            
+            if (period === 'daily') {
+                dailyStatsBtn.classList.add('bg-blue-600', 'text-white');
+                dailyStatsBtn.classList.remove('bg-gray-200', 'text-gray-800');
+            } else if (period === 'weekly') {
+                weeklyStatsBtn.classList.add('bg-blue-600', 'text-white');
+                weeklyStatsBtn.classList.remove('bg-gray-200', 'text-gray-800');
+            } else if (period === 'monthly') {
+                monthlyStatsBtn.classList.add('bg-blue-600', 'text-white');
+                monthlyStatsBtn.classList.remove('bg-gray-200', 'text-gray-800');
+            } else if (period === 'yearly') {
+                yearlyStatsBtn.classList.add('bg-blue-600', 'text-white');
+                yearlyStatsBtn.classList.remove('bg-gray-200', 'text-gray-800');
+            }
+            
+            updateStatistics();
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            if (sessions.length === 0) {
+                totalTimeEl.textContent = '00:00:00';
+                sessionsCountEl.textContent = '0';
+                avgDurationEl.textContent = '00:00:00';
+                
+                // Clear charts if they exist
+                if (timeChart) {
+                    timeChart.destroy();
+                }
+                if (distributionChart) {
+                    distributionChart.destroy();
+                }
+                
+                return;
+            }
+            
+            // Calculate total stats
+            const totalSec = sessions.reduce((sum, session) => sum + session.durationSec, 0);
+            const avgSec = Math.round(totalSec / sessions.length);
+            
+            totalTimeEl.textContent = formatDuration(totalSec);
+            sessionsCountEl.textContent = sessions.length;
+            avgDurationEl.textContent = formatDuration(avgSec);
+            
+            // Prepare data for charts based on current period
+            let labels = [];
+            let data = [];
+            let backgroundColors = [];
+            
+            const now = new Date();
+            const colors = ['#3b82f6', '#10b981', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+            
+            if (currentStatsPeriod === 'daily') {
+                // Last 7 days
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(now);
+                    date.setDate(date.getDate() - i);
+                    const dateStr = formatDate(date);
+                    
+                    const daySessions = sessions.filter(s => s.date === dateStr);
+                    const dayTotal = daySessions.reduce((sum, s) => sum + s.durationSec, 0);
+                    
+                    labels.push(date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }));
+                    data.push(dayTotal / 3600); // Convert to hours
+                    backgroundColors.push(colors[i % colors.length]);
+                }
+            } else if (currentStatsPeriod === 'weekly') {
+                // Last 8 weeks
+                for (let i = 7; i >= 0; i--) {
+                    const weekStart = new Date(now);
+                    weekStart.setDate(weekStart.getDate() - (weekStart.getDay() + 7 * i));
+                    const weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekEnd.getDate() + 6);
+                    
+                    const weekSessions = sessions.filter(s => {
+                        const sessionDate = new Date(s.startTime);
+                        return sessionDate >= weekStart && sessionDate <= weekEnd;
+                    });
+                    
+                    const weekTotal = weekSessions.reduce((sum, s) => sum + s.durationSec, 0);
+                    
+                    labels.push(`Week ${i === 0 ? 'This' : i === 1 ? 'Last' : i}`);
+                    data.push(weekTotal / 3600); // Convert to hours
+                    backgroundColors.push(colors[i % colors.length]);
+                }
+            } else if (currentStatsPeriod === 'monthly') {
+                // Last 6 months
+                for (let i = 5; i >= 0; i--) {
+                    const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    
+                    const monthSessions = sessions.filter(s => {
+                        const sessionDate = new Date(s.startTime);
+                        return sessionDate.getFullYear() === month.getFullYear() && 
+                               sessionDate.getMonth() === month.getMonth();
+                    });
+                    
+                    const monthTotal = monthSessions.reduce((sum, s) => sum + s.durationSec, 0);
+                    
+                    labels.push(month.toLocaleDateString(undefined, { month: 'short', year: 'numeric' }));
+                    data.push(monthTotal / 3600); // Convert to hours
+                    backgroundColors.push(colors[i % colors.length]);
+                }
+            } else if (currentStatsPeriod === 'yearly') {
+                // Last 5 years
+                for (let i = 4; i >= 0; i--) {
+                    const year = now.getFullYear() - i;
+                    
+                    const yearSessions = sessions.filter(s => {
+                        const sessionDate = new Date(s.startTime);
+                        return sessionDate.getFullYear() === year;
+                    });
+                    
+                    const yearTotal = yearSessions.reduce((sum, s) => sum + s.durationSec, 0);
+                    
+                    labels.push(year.toString());
+                    data.push(yearTotal / 3600); // Convert to hours
+                    backgroundColors.push(colors[i % colors.length]);
+                }
+            }
+            
+            // Update or create time chart
+            const timeCtx = document.getElementById('timeChart').getContext('2d');
+            
+            if (timeChart) {
+                timeChart.destroy();
+            }
+            
+            timeChart = new Chart(timeCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Hours Worked',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors.map(c => c.replace('0.8', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const hours = context.raw;
+                                    const mins = Math.round((hours % 1) * 60);
+                                    return `${Math.floor(hours)}h ${mins}m`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Hours'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update or create distribution chart
+            const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+            
+            if (distributionChart) {
+                distributionChart.destroy();
+            }
+            
+            // Group sessions by notes/category for the pie chart
+            const categories = {};
+            sessions.forEach(session => {
+                const category = session.notes || 'Uncategorized';
+                if (!categories[category]) {
+                    categories[category] = 0;
+                }
+                categories[category] += session.durationSec;
+            });
+            
+            const categoryLabels = Object.keys(categories);
+            const categoryData = Object.values(categories).map(sec => sec / 3600); // Convert to hours
+            const categoryColors = categoryLabels.map((_, i) => colors[i % colors.length]);
+            
+            distributionChart = new Chart(distributionCtx, {
+                type: 'pie',
+                data: {
+                    labels: categoryLabels,
+                    datasets: [{
+                        data: categoryData,
+                        backgroundColor: categoryColors,
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw;
+                                    const percentage = Math.round((value / totalSec * 3600) * 100);
+                                    const hours = Math.floor(value);
+                                    const mins = Math.round((value % 1) * 60);
+                                    return `${label}: ${hours}h ${mins}m (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=rusak47/deepsite-test" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p></body>
+</html>

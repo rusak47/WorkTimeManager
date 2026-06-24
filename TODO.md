@@ -1,7 +1,6 @@
  - store/read data on/from disk
  - exclude breaks from total <- allow to select which tags to use (filtering)
- - allow to write notes while session is running <- early work tagging
- - add cancel session/or reset form on start?
+ - allow to write notes while session is running <- work tagging
  - save session instantly, yet open edit window
  - maybe allow multiple notes per session, i.e. array
  - fix settings history export <-> session linkage to changes
@@ -13,11 +12,11 @@
  - generate work statistics by work subtags
  - statistic - missing refresh button
  - while session is running show when it was started
+ - package into electron as a standalone app
  - early tagging - select tag pressing on start session (1 tag button dropdown)
- - allow to enter custom tag on the filter
- - fly by tags or/and text in session view
- - delete in-session view
- - layout template to switch on the fly
+ - allow to enter custom tag on the fly
+ - filter by tags or/and text in session view
+ - delete in sesion view
  - add calendar view and official holidays
    fetch information about "Svētku dienas pēc mēnešiem" from https://rekini123.lv/svetku-dienas-2025/ and return result in json format
 fetch infrormation about "1. Noteikt par svētku dienām:" and "2. Noteikt par atceres un atzīmējamām dienām:" from https://likumi.lv/doc.php?id=72608 and return result in such json format:
@@ -34,6 +33,4 @@ fetch infrormation about "1. Noteikt par svētku dienām:" and "2. Noteikt par a
 ]
 }
 
-Completed:
 
- - package into electron as a standalone app
