@@ -1,8 +1,8 @@
 # WorkTimeManager Refactoring Plan v2
 
 **Author:** Claude Code session 2026-06-24  
-**Status:** Active — Phase 0–3 done · Phase 4 in progress  
-**Updated:** 2026-06-24 — Phase 0–1 (calendar + tooling), Phase 2 (IPC), Phase 3 (storage) implemented
+**Status:** Active — Phase 0–5 done · Phase 6 next  
+**Updated:** 2026-06-24 — Phase 5 core business logic implemented (constants, configManager, sessionManager, statsManager)
 
 ---
 
@@ -16,14 +16,17 @@ src/
 ├── app/                          # Modular application code
 │   ├── calendarService.js        # ✅ Phase 0 — implemented, 20 tests, 98.8% coverage
 │   ├── calendarService.test.js   # ✅ Phase 0 — Vitest tests
-│   ├── state.js                  # ▶ Phase 4 — centralized reactive state
-│   ├── sessionManager.js         # Phase 5 — session CRUD + business logic
-│   ├── statsManager.js           # Phase 5 — statistics computation
-│   ├── configManager.js          # Phase 5 — user preferences
+│   ├── state.js                  # ✅ Phase 4 — centralized reactive state
+│   ├── constants.js              # ✅ Phase 5 — enums, defaults, magic numbers
+│   ├── configManager.js          # ✅ Phase 5 — config CRUD + version history
+│   ├── sessionManager.js         # ✅ Phase 5 — session CRUD + tracker + filters
+│   ├── statsManager.js           # ✅ Phase 5 — pure stats computation
+│   ├── sessionManager.test.js    # ✅ Phase 5 — 20 tests
+│   ├── configManager.test.js     # ✅ Phase 5 — 7 tests
+│   ├── statsManager.test.js      # ✅ Phase 5 — 9 tests
 │   ├── uiManager.js              # Phase 6 — UI rendering, event binding
 │   ├── accessibility.js          # Phase 6 — a11y helpers
-│   ├── app.js                    # Phase 6 — orchestration
-│   └── constants.js              # Phase 5 — constants/enums
+│   └── app.js                    # Phase 6 — orchestration
 ├── js/
 │   └── utils.js                  # Keep, extend — format/parse helpers
 ├── storage/
@@ -591,7 +594,7 @@ document.addEventListener('DOMContentLoaded', init);
 ## Implementation Order
 
 ```
-Phase 0 ✓ ─→ Phase 1 ✓ ─→ Phase 2 ✓ ─→ Phase 3 ✓ ─→ Phase 4 ─→ Phase 5 ─→ Phase 6 ─→ Phase 7 ─→ Phase 8
+Phase 0 ✓ ─→ Phase 1 ✓ ─→ Phase 2 ✓ ─→ Phase 3 ✓ ─→ Phase 4 ✓ ─→ Phase 5 ✓ ─→ Phase 6 ─→ Phase 7 ─→ Phase 8
   CalSvc       Tooling        IPC       Storage      State      Core       UI        HTML       Tests
 ```
 
@@ -600,10 +603,11 @@ Phases within a tier can be parallelized:
 ```
 Tier 1 (no deps):       ✅ Phase 0, ✅ Phase 1
 Tier 2 (needs IPC):     ✅ Phase 2, ✅ Phase 3
-Tier 3 (needs storage): ▶ Phase 4
-Tier 4 (needs state):   Phase 5, Phase 6
-Tier 5 (needs UI):      Phase 7
-Tier 6 (needs code):    Phase 8
+Tier 3 (needs storage): ✅ Phase 4
+Tier 4 (needs state):   ✅ Phase 5
+Tier 5 (needs state):   ▶ Phase 6
+Tier 6 (needs UI):      Phase 7
+Tier 7 (needs code):    Phase 8
 ```
 
 Phase 0 must start first (it defines the shared contract). Phase 1 can run in parallel. Everything else waits for Phase 0 + Phase 2.
