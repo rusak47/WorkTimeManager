@@ -4,8 +4,15 @@
   "description": "My Electron application with web project",
   "main": "main.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "package": "electron-packager . --overwrite --platform=win32,darwin,linux --arch=x64 --prune=true --out=release-builds"
   },
   "keywords": [
@@ -17,6 +24,14 @@
   "license": "MIT",
   "devDependencies": {
     "@electron/packager": "^18.3.6",
-    "electron": "^28.3.3"
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.3.1",
+    "@vitest/coverage-v8": "^4.1.9",
+    "electron": "^28.3.3",
+    "eslint": "^10.5.0",
+    "globals": "^17.7.0",
+    "tailwindcss": "^4.3.1",
+    "vite": "^8.1.0",
+    "vitest": "^4.1.9"
   }
 }
