@@ -23,6 +23,7 @@ export { INITIAL_STATE };
 export function createEventHandlers(deps) {
   const { store, storage, sessionManager, configManager, statsManager, ui, a11y } = deps;
   let timerInterval = null;
+  let calendarService = null;
 
   function loadStateFromStorage(state) {
     if (state && state.sessions) store.setState({ sessions: state.sessions });
@@ -76,6 +77,7 @@ export function createEventHandlers(deps) {
     ui.renderRecentSessions();
     ui.renderAllSessions();
     ui.updateTodayTotal();
+    ui.updateTodayStatus(store.getState(), calendarService);
     ui.populateYearSelector();
     const s = store.getState();
     if (s.currentTab === 'stats') ui.updateStatistics();
@@ -377,6 +379,12 @@ export function createEventHandlers(deps) {
     }
     store.setState({ markedDays: updated });
     ui.hideMarkDayModal();
+    if (calendarService) {
+      calendarService.clearOverride(date);
+      const dayTypeMap = { Holiday: 'holiday', Weekend: 'weekend', Workday: 'workday' };
+      if (dayTypeMap[dayType]) calendarService.setOverride(date, 'dayType', dayTypeMap[dayType]);
+      if (dayType === 'Vacation') calendarService.setOverride(date, 'isVacation', true);
+    }
     persistAndRender();
   }
 
@@ -510,9 +518,21 @@ export function createEventHandlers(deps) {
             ...PRESET_TAGS.map(t => ({ name: t, isDefault: false, isEnabled: true, isCustom: false })),
           ],
         });
+        const impState = store.getState();
+
+        if (calendarService) {
+          const dayTypeMap = { Holiday: 'holiday', Weekend: 'weekend', Workday: 'workday' };
+          for (const md of impState.markedDays) {
+            calendarService.clearOverride(md.date);
+            if (dayTypeMap[md.dayType]) calendarService.setOverride(md.date, 'dayType', dayTypeMap[md.dayType]);
+            if (md.dayType === 'Vacation') calendarService.setOverride(md.date, 'isVacation', true);
+          }
+        }
+
         ui.renderRecentSessions();
         ui.renderAllSessions();
         ui.updateTodayTotal();
+        ui.updateTodayStatus(impState, calendarService);
         ui.populateYearSelector();
         ui.applyLatestConfig();
         ui.renderTagSettings();
@@ -663,9 +683,25 @@ export function createEventHandlers(deps) {
     a11y.setupAnnouncer();
     await loadData();
     const s = store.getState();
+
+    const thisYear = new Date().getFullYear().toString();
+    try {
+      const { createCalendarService } = await import('./calendarService.js');
+      const rawData = await storage.loadCalendar(thisYear);
+      calendarService = createCalendarService(rawData);
+      for (const md of s.markedDays) {
+        const dayTypeMap = { Holiday: 'holiday', Weekend: 'weekend', Workday: 'workday' };
+        if (dayTypeMap[md.dayType]) calendarService.setOverride(md.date, 'dayType', dayTypeMap[md.dayType]);
+        if (md.dayType === 'Vacation') calendarService.setOverride(md.date, 'isVacation', true);
+      }
+    } catch (err) {
+      console.error('Failed to load calendar:', err);
+    }
+
     ui.renderRecentSessions();
     ui.renderAllSessions();
     ui.updateTodayTotal();
+    ui.updateTodayStatus(s, calendarService);
     ui.populateYearSelector();
     ui.applyLatestConfig();
     ui.renderTagSettings();

@@ -34,7 +34,7 @@ function createWindow() {
   if (devServer) {
     mainWindow.loadURL(devServer);
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+    mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
   }
 
   mainWindow.on('closed', () => {

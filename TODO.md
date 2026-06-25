@@ -1,10 +1,12 @@
 # TODO
 
 ## Bugs
+- [] [high] - when pressing stop after pause, break session is not stored as a separate session like its done when pressing resume.
 - [x] [high] — unselected tags text in session-save UI has same color as background, making it unreadable (CSS: added visible bg to `.tag`, removed `transparent`)
 - [low] — year selector dropdown in session view doesn't filter sessions when changed
 
 ## Sessions
+- [ ] [normal+ - must have] when pressing pause show tags (rest selected by default) and notes field to enter break notes - if left empty, then keep default value. show no submit buttons - this is applied when pressing resume or stop.
 - [ ] [normal+ - must have] Allow notes while session is running — inline work tagging. Add a toggleable section (collapsible divider with up/down arrow) that reveals the same edit fields used when saving a session.
 - [ ] [normal+ - must have] Filter sessions by tags and/or text — input field with tag autocomplete/suggestion in the sessions tab.
 - [ ] [normal - must have] Exclude breaks from totals chart rendering — allow tag-based filtering of which sessions count toward chart totals.
@@ -25,7 +27,7 @@
 - [ ] [low - must have] Add refresh button in statistics tab (auto-refresh on tab switch is insufficient).
 
 ## Calendar
-- [ ] [low+ - must have] Show current-session holiday info on tracker tab — highlight if today is a holiday, shifted workday, etc. (weekend/workday already covered by basic calendar). (plan: docs/calendar-plan.md)
+- [x] [done] Show current-session holiday info on tracker tab — today-status banner with holidays, memorial days, swapped days, short days from calendar JSON + user overrides.
 - [ ] [low - must have] Calendar tab view with official holidays on a calendar grid (calendarService already implemented). (only if {year}-holidays.json is present)
 - [x] [rejected — implemented as separate calendar2json module, out of scope] Fetch holidays from rekini123.lv and likumi.lv.
 

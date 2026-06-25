@@ -7,13 +7,21 @@ Electron + Vite time tracking app with session management, statistics, calendar 
 - **Runtime:** Electron (main process) / Vite dev server (browser)
 - **UI:** Vanilla JS, TailwindCSS, Chart.js
 - **Persistence:** Electron IPC → JSON file, with `localStorage` fallback in browser mode
-- **Testing:** Vitest (140+ tests, targeting 80%+ coverage)
+- **Testing:** Vitest (155+ tests, targeting 80%+ coverage)
+
+## Features
+
+- **Session tracking** — Start/stop/pause with real-time timer
+- **Holiday & calendar integration** — Loads LV holidays from `resources/YYYY-holidays.json` via Electron IPC. Today-status banner shows holidays, memorial days, swapped workdays, and short days with emoji indicators and hover tooltips.
+- **Statistics** — Daily/weekly/monthly/yearly stats with Chart.js visualizations
+- **Data management** — Import/export JSON backups, session editing, tag system
 
 ## Commands
 
 ```bash
-npm run dev        # Vite dev server on port 5173
+npm run dev        # Start Vite dev server
 npm run build      # Production build to dist/
+npm start          # Launch Electron app (requires npm run build first)
 npm test           # Vitest run with coverage
 npm run test:watch # Watch mode
 npm run lint       # ESLint
