@@ -42,3 +42,10 @@ npm test           # vitest run --coverage
 npm run dev        # vite dev server
 npm run build      # vite build
 ```
+
+## Commit conventions
+- CHANGELOG.md: add entry under `## Unreleased` with the date
+- TODO.md: mark items as [x] when done, add new discoveries
+- Commit messages: `<type>: <description>` (fix, feat, docs, refactor, test)
+- Checkpoint commits during TDD: `test:`, `fix:`, `refactor:` prefixes
+- Doc updates (CHANGELOG.md, TODO.md) staged together with code in the same commit
