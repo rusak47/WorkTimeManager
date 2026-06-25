@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from './state.js';
 import { createUIManager } from './uiManager.js';
+import { createCalendarService } from './calendarService.js';
 
 function setupDOM() {
   document.body.innerHTML = `
@@ -16,6 +17,7 @@ function setupDOM() {
       <span id="active-duration">00:00:00</span>
     </div>
     <div id="today-total">00:00:00</div>
+    <div id="today-status"></div>
     <div id="current-session-mood-input"></div>
     <div id="current-mood-value"></div>
     <select id="year-selector"></select>
@@ -149,6 +151,165 @@ describe('uiManager', () => {
       const total = document.getElementById('today-total').textContent;
       expect(total).not.toBe('00:00:00');
       expect(total).toBe('01:00:00');
+    });
+  });
+
+  describe('updateTodayStatus', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('shows nothing when today is not marked', () => {
+      store.setState({ markedDays: [] });
+      ui.updateTodayStatus(store.getState());
+      const el = document.getElementById('today-status');
+      expect(el.querySelector('span')).toBeNull();
+    });
+
+    it('shows nothing when marked day is for a different date', () => {
+      store.setState({ markedDays: [{ date: '2026-06-24', dayType: 'Holiday', description: 'Midsummer' }] });
+      ui.updateTodayStatus(store.getState());
+      const el = document.getElementById('today-status');
+      expect(el.querySelector('span')).toBeNull();
+    });
+
+    it('shows holiday with description', () => {
+      store.setState({ markedDays: [{ date: '2026-06-25', dayType: 'Holiday', description: 'Midsummer' }] });
+      ui.updateTodayStatus(store.getState());
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🌿 Midsummer');
+      expect(el.querySelector('span').title).toBe('Holiday');
+    });
+
+    it('shows holiday without description', () => {
+      store.setState({ markedDays: [{ date: '2026-06-25', dayType: 'Holiday', description: '' }] });
+      ui.updateTodayStatus(store.getState());
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🌿');
+      expect(el.querySelector('span').title).toBe('Holiday');
+    });
+
+    it('shows vacation with description', () => {
+      store.setState({ markedDays: [{ date: '2026-06-25', dayType: 'Vacation', description: 'Summer break' }] });
+      ui.updateTodayStatus(store.getState());
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🌿 Summer break');
+      expect(el.querySelector('span').title).toBe('Vacation');
+    });
+
+    it('shows vacation without description', () => {
+      store.setState({ markedDays: [{ date: '2026-06-25', dayType: 'Vacation', description: '' }] });
+      ui.updateTodayStatus(store.getState());
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🌿');
+      expect(el.querySelector('span').title).toBe('Vacation');
+    });
+
+    it('shows holiday from calendarService', () => {
+      const cal = createCalendarService({
+        '2026-06-25': { type: 'holiday', name: 'Jāņi' },
+      });
+      store.setState({ markedDays: [] });
+      ui.updateTodayStatus(store.getState(), cal);
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🌿 Jāņi');
+      expect(el.querySelector('span').title).toBe('Holiday');
+    });
+
+    it('shows holiday+memoriam from calendarService', () => {
+      const cal = createCalendarService({
+        '2026-06-25': { type: 'holiday', name: 'Darba svētki', is_memoriam: true },
+      });
+      store.setState({ markedDays: [] });
+      ui.updateTodayStatus(store.getState(), cal);
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🌿 Darba svētki');
+      expect(el.querySelector('span').title).toBe('Holiday / Memorial');
+    });
+
+    it('shows memoriam-only workday from calendarService', () => {
+      const cal = createCalendarService({
+        '2026-06-25': { type: 'workday', name: 'Komunistiskā genocīda upuru piemiņas diena', is_memoriam: true },
+      });
+      store.setState({ markedDays: [] });
+      ui.updateTodayStatus(store.getState(), cal);
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🕯️ Komunistiskā genocīda upuru piemiņas diena');
+      expect(el.querySelector('span').title).toBe('Memorial Day');
+    });
+
+    it('shows swapped workday from calendarService without text', () => {
+      const cal = createCalendarService({
+        '2026-06-25': { type: 'swapped_workday', swap_source: 'Saturday' },
+      });
+      store.setState({ markedDays: [] });
+      ui.updateTodayStatus(store.getState(), cal);
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🔁 🔧');
+      expect(el.querySelector('span').title).toBe('Shifted workday (originally Saturday)');
+    });
+
+    it('shows short day from calendarService without text', () => {
+      const cal = createCalendarService({
+        '2026-06-25': { type: 'pre_holiday_short', note: 'Pirmssvētku diena' },
+      });
+      store.setState({ markedDays: [] });
+      ui.updateTodayStatus(store.getState(), cal);
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('⚠️');
+      expect(el.querySelector('span').title).toBe('Short day — pre-holiday — Pirmssvētku diena');
+    });
+
+    it('calendarService takes priority over markedDays', () => {
+      const cal = createCalendarService({
+        '2026-06-25': { type: 'holiday', name: 'Jāņi' },
+      });
+      store.setState({ markedDays: [{ date: '2026-06-25', dayType: 'Vacation', description: 'User vacation' }] });
+      ui.updateTodayStatus(store.getState(), cal);
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🌿 Jāņi');
+      expect(el.querySelector('span').title).toBe('Holiday');
+    });
+
+    it('includes note in tooltip from calendarService', () => {
+      const cal = createCalendarService({
+        '2026-06-25': { type: 'holiday', name: 'Jāņi', note: 'Public holiday' },
+      });
+      store.setState({ markedDays: [] });
+      ui.updateTodayStatus(store.getState(), cal);
+      expect(document.getElementById('today-status').querySelector('span').title).toBe('Holiday — Public holiday');
+    });
+
+    it('shows swapped holiday with memoriam and swap icon', () => {
+      const cal = createCalendarService({
+        '2026-06-25': {
+          type: 'swapped_day_off', swap_source: '2026-06-27',
+          is_memoriam: true, name: 'Varoņu piemiņas diena',
+          note: 'Darba diena pārcelta',
+        },
+      });
+      store.setState({ markedDays: [] });
+      ui.updateTodayStatus(store.getState(), cal);
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🔁 🌿 Varoņu piemiņas diena');
+      expect(el.querySelector('span').title).toBe('Holiday / Memorial (swapped from 2026-06-27) — Darba diena pārcelta');
+    });
+
+    it('shows swapped day-off without name as just icon', () => {
+      const cal = createCalendarService({
+        '2026-01-02': { type: 'swapped_day_off', swap_source: '2026-01-17', note: 'Pārcelts' },
+      });
+      vi.setSystemTime(new Date('2026-01-02T12:00:00Z'));
+      store.setState({ markedDays: [] });
+      ui.updateTodayStatus(store.getState(), cal);
+      const el = document.getElementById('today-status');
+      expect(el.textContent).toBe('🔁 🌿');
+      expect(el.querySelector('span').title).toBe('Holiday (swapped from 2026-01-17) — Pārcelts');
     });
   });
 

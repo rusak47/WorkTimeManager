@@ -68,6 +68,77 @@ export function createUIManager(store) {
     if (el) el.textContent = utils.formatDuration(totalSec);
   }
 
+  function updateTodayStatus(state, calendarService) {
+    const today = utils.formatDate(new Date());
+    const el = document.getElementById('today-status');
+    if (!el) return;
+
+    const existing = el.querySelector('span');
+    if (existing) existing.remove();
+
+    let text = null;
+
+    let tooltip = null;
+    let display = null;
+
+    if (calendarService) {
+      const info = calendarService.getDayInfo(today);
+      if (info) {
+        let emoji = '';
+        let displayName = '';
+
+        if (info.isHoliday && info.isMemoriam) {
+          emoji = '🌿';
+          displayName = info.name || '';
+          tooltip = 'Holiday / Memorial';
+        } else if (info.isHoliday) {
+          emoji = '🌿';
+          displayName = info.name || '';
+          tooltip = 'Holiday';
+        } else if (info.isMemoriam) {
+          emoji = '🕯️';
+          displayName = info.name || '';
+          tooltip = 'Memorial Day';
+        } else if (info.isShortDay) {
+          emoji = '⚠️';
+          tooltip = 'Short day — pre-holiday';
+        }
+
+        if (info.swapSource && !emoji) {
+          display = '🔁 🔧';
+          tooltip = `Shifted workday (originally ${info.swapSource})`;
+        } else if (info.swapSource && emoji) {
+          const namePart = displayName ? ' ' + displayName : '';
+          display = `🔁 ${emoji}${namePart}`;
+          tooltip += ` (swapped from ${info.swapSource})`;
+        } else if (emoji) {
+          const namePart = displayName ? ' ' + displayName : '';
+          display = `${emoji}${namePart}`;
+        }
+
+        if (info.note) tooltip += ` — ${info.note}`;
+      }
+    }
+
+    if (!display) {
+      const marked = state.markedDays.find(d => d.date === today);
+      if (marked && marked.dayType === 'Holiday') {
+        display = marked.description ? `🌿 ${marked.description}` : '🌿';
+        tooltip = 'Holiday';
+      } else if (marked && marked.dayType === 'Vacation') {
+        display = marked.description ? `🌿 ${marked.description}` : '🌿';
+        tooltip = 'Vacation';
+      }
+    }
+
+    if (display) {
+      const span = document.createElement('span');
+      span.textContent = display;
+      if (tooltip) span.title = tooltip;
+      el.appendChild(span);
+    }
+  }
+
   function updateButtonStates(isRunning) {
     const startBtn = document.getElementById('start-btn');
     const stopBtn = document.getElementById('stop-btn');
@@ -998,6 +1069,7 @@ export function createUIManager(store) {
     updateTimerDisplay,
     updateTimerDisplayEl,
     updateTodayTotal,
+    updateTodayStatus,
     updateButtonStates,
     switchTab,
     switchSettingsTab,
