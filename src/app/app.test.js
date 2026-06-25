@@ -190,6 +190,28 @@ describe('app event handlers', () => {
     expect(store.getState().tracker.isPaused).toBe(false);
   });
 
+  it('stopSession saves break session when paused', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
+
+    app.startSession();
+    vi.advanceTimersByTime(10000);
+    app.togglePause();
+    vi.advanceTimersByTime(5000);
+
+    app.stopSession();
+
+    const s = store.getState();
+    expect(s.tracker.startTime).toBeNull();
+    expect(s.tracker.isPaused).toBe(false);
+    expect(s.sessions.length).toBe(1);
+    expect(s.sessions[0].isBreak).toBe(true);
+    expect(s.sessions[0].tags).toContain('rest');
+    expect(s.sessions[0].durationSec).toBeGreaterThanOrEqual(5);
+
+    vi.useRealTimers();
+  });
+
   it('switchTab delegates to ui and updates store', () => {
     app.switchTab('stats');
     expect(store.getState().currentTab).toBe('stats');
