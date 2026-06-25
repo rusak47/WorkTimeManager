@@ -119,7 +119,7 @@ export function createSessionManager(store) {
         notes: meta.notes || '',
         tags: meta.tags || (tracker.isBreak ? ['rest'] : ['work']),
         mood: meta.mood !== undefined ? meta.mood : 5,
-        accumulatedPauseTimeSec: tracker.accumulatedPauseTime,
+        accumulatedPauseTimeSec: Math.floor(tracker.accumulatedPauseTime / 1000),
         isBreak: tracker.isBreak,
       };
 

@@ -1,17 +1,38 @@
-function getApi() {
-  return window.api;
+const STORAGE_KEY = 'worktimemanager_state';
+
+function hasElectronApi() {
+  return typeof window !== 'undefined' && window.api && typeof window.api.saveData === 'function';
 }
 
 export const storage = {
   async loadState() {
-    return await getApi().loadData();
+    if (hasElectronApi()) {
+      return await window.api.loadData();
+    }
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
   },
 
   async saveState(state) {
-    return await getApi().saveData(state);
+    if (hasElectronApi()) {
+      return await window.api.saveData(state);
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   async loadCalendar(year) {
-    return await getApi().loadCalendar(year);
+    if (hasElectronApi()) {
+      return await window.api.loadCalendar(year);
+    }
+    return {};
   },
 };

@@ -1,36 +1,45 @@
- - store/read data on/from disk
- - exclude breaks from total <- allow to select which tags to use (filtering)
- - allow to write notes while session is running <- work tagging
- - save session instantly, yet open edit window
- - maybe allow multiple notes per session, i.e. array
- - fix settings history export <-> session linkage to changes
- - modify UI based on deepsite failed attempt
- - re-try modularity with deepsite
- - last session preview - alow to change layout to grid
- - limit recent session shows only today
- - check tab navigation while session is running 
- - generate work statistics by work subtags
- - statistic - missing refresh button
- - while session is running show when it was started
- - package into electron as a standalone app
- - early tagging - select tag pressing on start session (1 tag button dropdown)
- - allow to enter custom tag on the fly
- - filter by tags or/and text in session view
- - delete in sesion view
- - add calendar view and official holidays
-   fetch information about "Svētku dienas pēc mēnešiem" from https://rekini123.lv/svetku-dienas-2025/ and return result in json format
-fetch infrormation about "1. Noteikt par svētku dienām:" and "2. Noteikt par atceres un atzīmējamām dienām:" from https://likumi.lv/doc.php?id=72608 and return result in such json format:
+# TODO
 
-{
-"January":[
-{"date":"2025-01-01",
-"description":"New Years day",
-"type":"holiday"
-},
-{"2025-01-20",
-"description":"1991. gada barikāžu aizstāvju atceres dienu",
-"type":"memoriam"}
-]
-}
+## Bugs
+- [high] - unselected tags text in UI when saving session is not readable (color same as background)
+- [low] - year selection in session view is not applied
 
+## Sessions
+- [ ] [normal - must have] Exclude breaks from totals chart rendering → allow tag-based filtering
+- [ ] [normal+ - must have] Allow notes while session is running → inline work tagging (add toggeable hr with up/down arrow that hides/shows edit fields used when saving session)
+- [ ] [low prior - maybe] Save session instantly, then open edit window
+- [ ] [low priority - maybe] Multiple notes per session (array)
+- [ ] [normal - must have] Limit "recent sessions" to today only
+- [ ] [low priority - maybe] Show session start time while running
+- [ ] [normal - must have] add delete session btn in session view panel like in main view
+- [ ] [normal+ - must have] Filter by tags and/or text in session view - input field with tag suggestion
 
+## Tags
+- [ ] [low - maybe] Early tagging: select tag when starting session (dropdown on start button)
+- [ ] [duplicate - related to note adding while session running] Allow entering custom tags on the fly
+- [ ] [normal+ - must have] Filter statistics by subtags - specifically stored in session custom tags with #
+- [ ] [normal++ - blocking - must have ] - when saving session, new tags (eg #tag) that dont exist in custom tags (and default list) should be added to custom. when '#' is entered into note textbox a suggestion of possible values from all tag lists should appear.
+
+## Statistics
+- [ ] [low - must have] Refresh button (auto-refresh on tab switch is not enough)
+- [ ] [low+ - must have] Generate work stats by subtags <- need to review this mechanism: all tags configured, including custom should appear for filtering. maybe render it in similar way as on main page when saving session and use that for filtering.
+
+## Calendar
+- [ ] [low - must have] Calendar tab view with official holidays (calendar service already implemented)
+- [ ] [low+ - must have; review parser module] information from holidays.json should be visible for current session - i.e is today a holiday/shifted date/etc (weekend/workday already covered by basic calendar).
+- [ ] [rejected - already implemented as a separate module - out of scope] Fetch Latvian holidays from `rekini123.lv` and `likumi.lv`
+
+## UI/UX
+- [ ] [low - good to have - clarification needed: which view?] Last session preview — allow grid layout toggle - 1 session per row unnecessary consumes a lot of space
+- [ ] [important - running session shouldnt reset while navigating or checking statistics on other panes] Check tab navigation while session is running
+- [ ] [normal - WIP - code refactored/UI pending] Polish after deepsite attempt (modify UI based on earlier design work)
+
+## Settings / Config
+- [ ] [clarification/samples needed] Fix settings history export — session linkage broken on config changes (exports full session JSON backup to user selected directory)
+
+## Modularity
+- [ done or wip ] Re-try modularity approach with deepsite patterns
+- [ ] [ low - check install and write instructions] Package as standalone Electron app
+
+## Storage
+- [x] Store/read data from persistent storage (Phase 3: IPC + localStorage fallback)

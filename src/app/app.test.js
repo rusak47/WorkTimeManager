@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createStore } from './state.js';
 import { createEventHandlers } from './app.js';
 import { createUIManager } from './uiManager.js';
@@ -40,6 +40,10 @@ function setupDOM() {
     <select id="year-selector"></select>
     <select id="tag-filter"><option value="work">Work</option></select>
     <select id="mood-threshold"><option value="1">1</option></select>
+    <input id="date-filter" />
+    <select id="month-filter"><option value="">All</option><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select>
+    <select id="year-filter"><option value="">All</option><option value="2025">2025</option><option value="2026">2026</option></select>
+    <select id="day-type-filter"><option value="">All</option><option value="Workday">Workday</option><option value="Weekend">Weekend</option></select>
     <div id="delete-modal" class="hidden"></div>
     <div id="session-modal" class="hidden"></div>
     <div id="modal-title"></div>
@@ -125,7 +129,7 @@ describe('app event handlers', () => {
       sessions: [],
       configs: [],
       markedDays: [],
-      tags: [],
+      tags: [{ name: 'work', isDefault: true, isEnabled: true, isCustom: false }],
       currentTab: 'tracker',
       currentStatsPeriod: 'daily',
       darkMode: false,
@@ -283,5 +287,158 @@ describe('app event handlers', () => {
     app.persistAndRender();
     expect(storage.saveState).toHaveBeenCalled();
     expect(document.getElementById('recent-sessions').innerHTML).toContain('2026-06-24');
+  });
+
+  it('applyFilters filters sessions by date', () => {
+    store.setState({
+      sessions: [
+        { id: 1, date: '2026-06-01', startTime: '2026-06-01T08:00:00', durationSec: 3600, dayType: 'Workday' },
+        { id: 2, date: '2026-06-02', startTime: '2026-06-02T08:00:00', durationSec: 3600, dayType: 'Workday' },
+      ],
+    });
+    document.getElementById('date-filter').value = '2026-06-01';
+    app.applyFilters();
+    expect(document.querySelectorAll('.session-card').length).toBe(1);
+  });
+
+  it('applyFilters filters sessions by month', () => {
+    document.getElementById('month-filter').value = '6';
+    store.setState({
+      sessions: [
+        { id: 1, date: '2026-06-01', startTime: '2026-06-01T08:00:00Z', durationSec: 3600, dayType: 'Workday' },
+        { id: 2, date: '2026-07-01', startTime: '2026-07-01T08:00:00Z', durationSec: 3600, dayType: 'Workday' },
+      ],
+    });
+    app.applyFilters();
+    expect(document.querySelectorAll('.session-card').length).toBe(1);
+  });
+
+  it('applyFilters filters sessions by year', () => {
+    document.getElementById('year-filter').value = '2025';
+    store.setState({
+      sessions: [
+        { id: 1, date: '2026-01-01', startTime: '2026-01-01T08:00:00Z', durationSec: 3600, dayType: 'Workday' },
+        { id: 2, date: '2025-06-01', startTime: '2025-06-01T08:00:00Z', durationSec: 3600, dayType: 'Workday' },
+      ],
+    });
+    app.applyFilters();
+    expect(document.querySelectorAll('.session-card').length).toBe(1);
+  });
+
+  it('applyFilters filters sessions by day type', () => {
+    document.getElementById('day-type-filter').value = 'Weekend';
+    store.setState({
+      sessions: [
+        { id: 1, date: '2026-06-01', startTime: '2026-06-01T08:00:00', durationSec: 3600, dayType: 'Workday' },
+        { id: 2, date: '2026-06-07', startTime: '2026-06-07T08:00:00', durationSec: 3600, dayType: 'Weekend' },
+      ],
+    });
+    app.applyFilters();
+    expect(document.querySelectorAll('.session-card').length).toBe(1);
+  });
+
+  it('saveMarkedDay updates existing marked day', () => {
+    store.setState({ markedDays: [{ date: '2026-12-25', dayType: 'Holiday', description: '' }] });
+    document.getElementById('mark-date').value = '2026-12-25';
+    document.getElementById('mark-day-type').value = 'Workday';
+    app.saveMarkedDay();
+    expect(store.getState().markedDays.length).toBe(1);
+    expect(store.getState().markedDays[0].dayType).toBe('Workday');
+  });
+
+  it('toggleDarkMode toggles and saves config', () => {
+    store.setState({ configs: [{ id: 1, darkMode: false, workingHours: 8, breakDuration: 60, weekStart: 1, salaryType: 'hourly', salaryTaxType: 'net', salaryValue: 15, salaryTax: 20, untaxedMin: 500, inflationRate: 2.5 }] });
+    app.toggleDarkMode();
+    expect(store.getState().darkMode).toBe(true);
+    expect(store.getState().configs[0].darkMode).toBe(true);
+    expect(storage.saveState).toHaveBeenCalled();
+  });
+
+  it('saveConfig reads form fields and creates config', () => {
+    store.setState({ configs: [] });
+    document.getElementById('working-hours').value = '7';
+    document.getElementById('break-duration-setting').value = '45';
+    document.getElementById('week-start').value = '0';
+    document.getElementById('salary-value').value = '20';
+    document.getElementById('salary-tax').value = '25';
+    document.getElementById('untaxed-min').value = '600';
+    document.getElementById('inflation-rate').value = '3';
+    document.getElementById('dark-mode-setting').checked = true;
+    window.alert = vi.fn();
+    app.saveConfig();
+    expect(store.getState().configs.length).toBeGreaterThan(0);
+    expect(window.alert).toHaveBeenCalledWith('Configuration saved successfully!');
+  });
+
+  it('addCustomTag ignores duplicate tag name', () => {
+    document.getElementById('new-tag-input').value = 'work';
+    app.addCustomTag();
+    const workTags = store.getState().tags.filter(t => t.name === 'work');
+    expect(workTags.length).toBe(1);
+  });
+
+  it('deleteCustomTag removes tag after confirm', () => {
+    store.setState({ tags: [{ name: 'custom1', isDefault: false, isEnabled: true, isCustom: true }] });
+    window.confirm = vi.fn(() => true);
+    app.deleteCustomTag('custom1');
+    expect(store.getState().tags.some(t => t.name === 'custom1')).toBe(false);
+    expect(storage.saveState).toHaveBeenCalled();
+  });
+
+  it('exportAllData creates and triggers download', () => {
+    store.setState({
+      sessions: [{ id: 1, date: '2026-06-01', startTime: '2026-06-01T08:00:00', endTime: '2026-06-01T09:00:00', duration: '01:00:00', durationSec: 3600, dayType: 'Workday', tags: ['work'], mood: 5 }],
+    });
+    const blobSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
+    vi.spyOn(document.body, 'appendChild').mockImplementation(vi.fn());
+    vi.spyOn(document.body, 'removeChild').mockImplementation(vi.fn());
+    app.exportAllData();
+    expect(blobSpy).toHaveBeenCalled();
+  });
+
+  it('resetSessionsFn resets sessions', () => {
+    store.setState({ sessions: [{ id: 1, date: '2026-01-01', durationSec: 3600 }] });
+    window.alert = vi.fn();
+    app.resetSessionsFn();
+    expect(store.getState().sessions.length).toBe(0);
+  });
+
+  it('resetConfigFn resets config', () => {
+    store.setState({ configs: [{ id: 1, workingHours: 8, breakDuration: 60 }] });
+    window.alert = vi.fn();
+    app.resetConfigFn();
+    const configs = store.getState().configs;
+    expect(configs.length).toBe(1);
+    expect(configs[0].workingHours).toBe(8);
+    expect(configs[0].breakDuration).toBe(60);
+  });
+
+  it('resetMarkedDaysFn resets marked days', () => {
+    store.setState({ markedDays: [{ date: '2026-12-25', dayType: 'Holiday' }] });
+    window.alert = vi.fn();
+    app.resetMarkedDaysFn();
+    expect(store.getState().markedDays.length).toBe(0);
+  });
+
+  it('showAddSessionModal and hideSessionModal delegate to ui', () => {
+    const modal = document.getElementById('session-modal');
+    modal.classList.add('hidden');
+    app.showAddSessionModal();
+    expect(modal.classList.contains('hidden')).toBe(false);
+    app.hideSessionModal();
+    expect(modal.classList.contains('hidden')).toBe(true);
+  });
+
+  it('handleSessionFormSubmit validates endTime > startTime', () => {
+    const e = { preventDefault: vi.fn() };
+    const now = new Date();
+    const earlier = new Date(now.getTime() - 3600000);
+    document.getElementById('start-time').value = now.toISOString().slice(0, 16);
+    document.getElementById('end-time').value = earlier.toISOString().slice(0, 16);
+    window.alert = vi.fn();
+    app.handleSessionFormSubmit(e);
+    expect(store.getState().sessions.length).toBe(0);
+    expect(e.preventDefault).toHaveBeenCalled();
+    expect(window.alert).toHaveBeenCalled();
   });
 });
