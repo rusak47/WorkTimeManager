@@ -1,45 +1,45 @@
 # TODO
 
 ## Bugs
-- [high] - unselected tags text in UI when saving session is not readable (color same as background)
-- [low] - year selection in session view is not applied
+- [high] — unselected tags text in session-save UI has same color as background, making it unreadable
+- [low] — year selector dropdown in session view doesn't filter sessions when changed
 
 ## Sessions
-- [ ] [normal - must have] Exclude breaks from totals chart rendering → allow tag-based filtering
-- [ ] [normal+ - must have] Allow notes while session is running → inline work tagging (add toggeable hr with up/down arrow that hides/shows edit fields used when saving session)
-- [ ] [low prior - maybe] Save session instantly, then open edit window
-- [ ] [low priority - maybe] Multiple notes per session (array)
-- [ ] [normal - must have] Limit "recent sessions" to today only
-- [ ] [low priority - maybe] Show session start time while running
-- [ ] [normal - must have] add delete session btn in session view panel like in main view
-- [ ] [normal+ - must have] Filter by tags and/or text in session view - input field with tag suggestion
+- [ ] [normal+ - must have] Allow notes while session is running — inline work tagging. Add a toggleable section (collapsible divider with up/down arrow) that reveals the same edit fields used when saving a session.
+- [ ] [normal+ - must have] Filter sessions by tags and/or text — input field with tag autocomplete/suggestion in the sessions tab.
+- [ ] [normal - must have] Exclude breaks from totals chart rendering — allow tag-based filtering of which sessions count toward chart totals.
+- [ ] [normal - must have] Limit "recent sessions" section to today's sessions only.
+- [ ] [normal - must have] Add delete button in all-sessions tab (currently only present in recent sessions preview).
+- [ ] [low prior - maybe] Save session instantly, then open edit window for adjustments.
+- [ ] [low priority - maybe] Show session start time on tracker tab while timer is running.
+- [ ] [low priority - maybe] Support multiple notes per session (store as array).
 
 ## Tags
-- [ ] [low - maybe] Early tagging: select tag when starting session (dropdown on start button)
-- [ ] [duplicate - related to note adding while session running] Allow entering custom tags on the fly
-- [ ] [normal+ - must have] Filter statistics by subtags - specifically stored in session custom tags with #
-- [ ] [normal++ - blocking - must have ] - when saving session, new tags (eg #tag) that dont exist in custom tags (and default list) should be added to custom. when '#' is entered into note textbox a suggestion of possible values from all tag lists should appear.
+- [ ] [normal++ - blocking - must have] **#tag parsing in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. New tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on save.
+- [ ] [normal+ - must have] Filter statistics by subtags — tags stored with `#` prefix in sessions should be filterable. All configured tags (custom + default) should appear as filter options.
+- [ ] [low - maybe] Early tagging — tag picker on the "Start Session" button so sessions are tagged from the beginning.
+- [ ] [duplicate — covered by #tag parsing above] Allow entering custom tags on the fly.
 
 ## Statistics
-- [ ] [low - must have] Refresh button (auto-refresh on tab switch is not enough)
-- [ ] [low+ - must have] Generate work stats by subtags <- need to review this mechanism: all tags configured, including custom should appear for filtering. maybe render it in similar way as on main page when saving session and use that for filtering.
+- [ ] [low+ - must have] Generate work stats by subtags — render tag filter similarly to session-save tag picker; all tags including custom should appear for filtering.
+- [ ] [low - must have] Add refresh button in statistics tab (auto-refresh on tab switch is insufficient).
 
 ## Calendar
-- [ ] [low - must have] Calendar tab view with official holidays (calendar service already implemented)
-- [ ] [low+ - must have; review parser module] information from holidays.json should be visible for current session - i.e is today a holiday/shifted date/etc (weekend/workday already covered by basic calendar).
-- [ ] [rejected - already implemented as a separate module - out of scope] Fetch Latvian holidays from `rekini123.lv` and `likumi.lv`
+- [ ] [low+ - must have] Show current-session holiday info on tracker tab — highlight if today is a holiday, shifted workday, etc. (weekend/workday already covered by basic calendar).
+- [ ] [low - must have] Calendar tab view with official holidays on a calendar grid (calendarService already implemented).
+- [ ] [rejected — implemented as separate calendar2json module, out of scope] Fetch holidays from rekini123.lv and likumi.lv.
 
 ## UI/UX
-- [ ] [low - good to have - clarification needed: which view?] Last session preview — allow grid layout toggle - 1 session per row unnecessary consumes a lot of space
-- [ ] [important - running session shouldnt reset while navigating or checking statistics on other panes] Check tab navigation while session is running
-- [ ] [normal - WIP - code refactored/UI pending] Polish after deepsite attempt (modify UI based on earlier design work)
+- [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
+- [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. ** think about adding support for different design templates for tracker view **
+- [ ] [low - good to have] Add grid/list toggle for recent sessions on tracker tab (1 session per row is wasteful).
 
 ## Settings / Config
-- [ ] [clarification/samples needed] Fix settings history export — session linkage broken on config changes (exports full session JSON backup to user selected directory)
+- [ ] [clarification/samples needed] Fix settings history export — session linkage breaks (work time vs rest - accumulated rest time/work time relationship) on config changes. Exports full session JSON backup to user-selected directory.
 
 ## Modularity
-- [ done or wip ] Re-try modularity approach with deepsite patterns
-- [ ] [ low - check install and write instructions] Package as standalone Electron app
+- [x] Modularity phase complete — code is split into dedicated modules (state, sessionManager, configManager, uiManager, calendarService, statsManager, accessibility, constants) wired through entry.js. Deep-site visual redesign tracked separately under UI/UX.
+- [ ] [low] Package as standalone Electron app — check installation flow and write packaging instructions.
 
 ## Storage
 - [x] Store/read data from persistent storage (Phase 3: IPC + localStorage fallback)
