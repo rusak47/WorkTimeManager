@@ -1,3 +1,4 @@
+import { Chart } from 'chart.js/auto';
 import * as utils from '../js/utils.js';
 
 export function createUIManager(store) {

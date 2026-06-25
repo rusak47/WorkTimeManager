@@ -142,10 +142,13 @@ describe('uiManager', () => {
     });
 
     it('sums today session durations', () => {
-      store.setState({ sessions: mockSessions });
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      store.setState({ sessions: [{ id: 99, date: todayStr, durationSec: 3600 }] });
       ui.updateTodayTotal();
       const total = document.getElementById('today-total').textContent;
       expect(total).not.toBe('00:00:00');
+      expect(total).toBe('01:00:00');
     });
   });
 
