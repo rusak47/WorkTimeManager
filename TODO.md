@@ -31,7 +31,7 @@
 
 ## UI/UX
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
-- [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. ** think about adding support for different design templates for tracker view **
+- [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `docs/tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
 - [ ] [low - good to have] Add grid/list toggle for recent sessions on tracker tab (1 session per row is wasteful).
 
 ## Settings / Config
