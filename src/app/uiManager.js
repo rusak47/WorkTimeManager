@@ -314,6 +314,7 @@ export function createUIManager(store) {
           </div>
           <div class="text-right">
             <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium dark:bg-blue-900 dark:bg-opacity-20 dark:text-blue-300">${session.duration}</span>
+            ${session.accumulatedPauseTimeSec ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Rest ${utils.formatDuration(session.accumulatedPauseTimeSec)}</div>` : ''}
             ${session.mood ? `
             <div class="mt-1 flex items-center justify-end">
               <span class="text-xs mr-1">${session.mood.toFixed(1)}</span>
@@ -393,6 +394,12 @@ export function createUIManager(store) {
         duration.textContent = session.duration;
         sessionInfo.appendChild(timeRange);
         sessionInfo.appendChild(duration);
+        if (session.accumulatedPauseTimeSec) {
+          const restEl = document.createElement('div');
+          restEl.className = 'text-xs text-gray-400 dark:text-gray-400';
+          restEl.textContent = `Rest ${utils.formatDuration(session.accumulatedPauseTimeSec)}`;
+          sessionInfo.appendChild(restEl);
+        }
         const sessionNotes = document.createElement('div');
         sessionNotes.className = 'text-sm text-gray-600 truncate max-w-xs dark:text-gray-200';
         sessionNotes.textContent = session.notes || 'No notes';
