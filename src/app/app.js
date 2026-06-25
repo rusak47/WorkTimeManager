@@ -95,6 +95,37 @@ export function createEventHandlers(deps) {
     const tracker = s.tracker;
     if (!tracker.startTime) return;
     clearInterval(timerInterval);
+
+    if (tracker.isPaused) {
+      const breakDuration = Math.floor((Date.now() - tracker.pauseStart) / 1000);
+      if (breakDuration >= 2) {
+        const d = new Date(tracker.pauseStart);
+        const breakSession = {
+          id: Date.now(),
+          date: utils.formatDate(d),
+          startTime: d.toISOString(),
+          endTime: new Date().toISOString(),
+          duration: utils.formatDuration(breakDuration),
+          durationSec: breakDuration,
+          notes: 'Break session',
+          dayType: getDayType(utils.formatDate(d), s),
+          tags: ['rest'],
+          mood: 5,
+          isBreak: true,
+        };
+        sessionManager.addSession(breakSession);
+      }
+      const pausedDuration = tracker.pauseStart ? Date.now() - tracker.pauseStart : 0;
+      store.setState({
+        tracker: {
+          ...tracker,
+          isPaused: false,
+          pauseStart: null,
+          accumulatedPauseTime: tracker.accumulatedPauseTime + pausedDuration,
+        },
+      });
+    }
+
     const durEl = document.getElementById('active-duration');
     if (durEl) durEl.classList.remove('blink');
     const startTimeInput = document.getElementById('current-session-start-time-input');
@@ -102,7 +133,9 @@ export function createEventHandlers(deps) {
     const restDurationInput = document.getElementById('current-session-accumulated-rest-duration-input');
     if (startTimeInput) startTimeInput.value = tracker.startTime;
     if (endTimeInput) endTimeInput.value = Date.now();
-    if (restDurationInput) restDurationInput.value = tracker.accumulatedPauseTime;
+
+    const updatedTracker = store.getState().tracker;
+    if (restDurationInput) restDurationInput.value = updatedTracker.accumulatedPauseTime;
     ui.updateTimerDisplay();
     sessionManager.resetTracker();
     ui.updateButtonStates(false);
