@@ -8,6 +8,10 @@
 ## saveMarkedDay sync (app.js)
 - Must clear all overrides for a date, then re-apply all user-marked days for that date (handles edits correctly). One-override-at-a-time fails for edits.
 
+## handleSessionFormSubmit (app.js)
+- `durationSec` is calculated from `endTime - startTime - accumulatedPauseTimeMs`. When editing, `accumulatedPauseTimeSec` is read from the existing session (the edit modal has no field for it) and must be subtracted — otherwise sessions with breaks store total elapsed time instead of net work time.
+- The edit path in `sessionManager.updateSession` uses spread `{ ...existing, ...data }` so fields not in the edit form (like `accumulatedPauseTimeSec`) are preserved automatically.
+
 ## Testing
 - Date-dependent tests: `vi.useFakeTimers()` + `vi.setSystemTime()` in `beforeEach`, restore with `vi.useRealTimers()` in `afterEach`.
 - `setupDOM` must include elements under test in `innerHTML` string (e.g. `#today-status` for today-status tests).
