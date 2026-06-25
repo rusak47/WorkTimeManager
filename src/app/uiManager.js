@@ -204,17 +204,19 @@ export function createUIManager(store) {
 
   function switchTab(tab) {
     store.setState({ currentTab: tab });
-    const tabs = ['tracker', 'sessions', 'stats', 'config'];
+    const tabs = ['tracker', 'sessions', 'stats', 'calendar', 'config'];
     const tabIds = {
       tracker: 'tracker-tab',
       sessions: 'sessions-tab',
       stats: 'stats-tab',
+      calendar: 'calendar-tab',
       config: 'config-tab',
     };
     const contentIds = {
       tracker: 'tracker-content',
       sessions: 'sessions-content',
       stats: 'stats-content',
+      calendar: 'calendar-content',
       config: 'config-content',
     };
     for (const t of tabs) {

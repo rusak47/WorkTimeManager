@@ -33,6 +33,14 @@ export const storage = {
     if (hasElectronApi()) {
       return await window.api.loadCalendar(year);
     }
-    return {};
+    try {
+      const resp = await fetch(`/resources/${year}-holidays.json`);
+      if (!resp.ok) return {};
+      const raw = await resp.json();
+      const countryKey = Object.keys(raw)[0];
+      return countryKey ? raw[countryKey] : {};
+    } catch {
+      return {};
+    }
   },
 };

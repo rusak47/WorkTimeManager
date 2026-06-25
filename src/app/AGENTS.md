@@ -3,7 +3,12 @@
 ## calendarService
 - `normaliseEntry` maps JSON `type` → internal `dayType`: `swapped_day_off` → `'holiday'`, `swapped_workday` → `'workday'`. Read `type` does not directly predict classification.
 - Overrides (`setOverride`/`clearOverride`) are in-memory only — lost when a new `createCalendarService(rawData)` is created. Persist only `state.markedDays` in the store.
-- Note field is appended to tooltip with ` — ` separator; visible text shows only name, never category.
+- Tooltip segments (all optional, joined by ` — `): `name` → `note` → `(moved from date)` → `marked.description`. Note is from `dayInfo.note`, distinct from `dayInfo.name`. Visible cell text shows only name, never category.
+
+## calendarView
+- `buildCellClass` merges two independent sources: `dayInfo` (from calendarService JSON) and `markedDays` (from store). System holidays take precedence over user-marked vacations in the if/else chain. `memoriam`, `shortDay`, `information` classes stack on top regardless.
+- `collectMonthEvents` reads only from `calendarService.getDayInfo()` — user-marked days with descriptions but no name/note in calendar JSON are NOT surfaced in the Details panel.
+- All UI text must be English. Locale-specific strings require explicit isolation in a future i18n layer.
 
 ## saveMarkedDay sync (app.js)
 - Must clear all overrides for a date, then re-apply all user-marked days for that date (handles edits correctly). One-override-at-a-time fails for edits.
