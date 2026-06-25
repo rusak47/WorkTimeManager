@@ -7,6 +7,9 @@ All dependencies (Chart.js, TailwindCSS, Font Awesome) are npm imports, not CDN 
 - `main.js:37` loads from `dist/index.html` (Vite build output), not `src/index.html`. Run `npm run build` before `npm start`.
 - Dev mode: Electron picks up `VITE_DEV_SERVER_URL` env var set by `npm run dev`.
 - Calendar JSON files live in `resources/` and are loaded via IPC (`window.api.loadCalendar`).
+- `@electron/packager` v18 silently fails (exit 0, no output) on Node 24+. Use v20+.
+- Holiday files are read from `app.getPath('userData')` first (derived from `package.json` `name` → `~/.config/org.rusak.worktimemanager/` on Linux), with bundled `resources/` as fallback.
+- `resources/` directory with holiday JSONs must be tracked in git — electron-packager bundles whatever is on disk.
 
 ## State flow
 - DOM events call handlers in `app.js` (inside `createEventHandlers`)
