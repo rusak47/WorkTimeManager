@@ -26,3 +26,6 @@ npm-debug.log*
 
 # Session artifacts (AI assistant conversation summaries)
 session_*.md
+
+# custom backups
+*.bk.tar.gz

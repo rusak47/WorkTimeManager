@@ -27,6 +27,30 @@ npm run test:watch # Watch mode
 npm run lint       # ESLint
 ```
 
+## Release Builds
+
+```bash
+npm run build       # Build Vite frontend to dist/
+npm run package     # Package into release-builds/
+```
+
+Output per platform:
+- Linux: `release-builds/org.rusak.worktimemanager-linux-x64/org.rusak.worktimemanager`
+- macOS: `release-builds/org.rusak.worktimemanager-darwin-x64/org.rusak.worktimemanager.app`
+- Windows: `release-builds/org.rusak.worktimemanager-win32-x64/org.rusak.worktimemanager.exe`
+
+### Adding holiday files after packaging
+
+Each new year, add `<year>-holidays.json` to the app's user data directory, no repackaging needed:
+
+| Platform | Path |
+|----------|------|
+| Linux | `~/.config/WorkTimeManager/<year>-holidays.json` |
+| macOS | `~/Library/Application Support/WorkTimeManager/<year>-holidays.json` |
+| Windows | `%APPDATA%/WorkTimeManager/<year>-holidays.json` |
+
+The app checks this directory first, then falls back to the bundled `resources/` shipped with the release.
+
 ## Entry Points
 
 - **Browser:** `src/index.html` → `src/app/entry.js`

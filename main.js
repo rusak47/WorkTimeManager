@@ -5,7 +5,8 @@ const fs = require('fs');
 let mainWindow;
 
 const DATA_FILE = path.join(app.getPath('userData'), 'work-time-data.json');
-const RESOURCES_DIR = path.join(__dirname, 'resources');
+const USER_HOLIDAYS_DIR = app.getPath('userData');
+const BUNDLED_HOLIDAYS_DIR = path.join(__dirname, 'resources');
 
 function tryRead(filePath) {
   try {
@@ -56,8 +57,12 @@ ipcMain.handle('data:save', async (_, data) => {
 });
 
 ipcMain.handle('calendar:load', async (_, year) => {
-  const calendarPath = path.join(RESOURCES_DIR, `${year}-holidays.json`);
-  const raw = tryRead(calendarPath);
+  const userPath = path.join(USER_HOLIDAYS_DIR, `${year}-holidays.json`);
+  let raw = tryRead(userPath);
+  if (!raw) {
+    const bundledPath = path.join(BUNDLED_HOLIDAYS_DIR, `${year}-holidays.json`);
+    raw = tryRead(bundledPath);
+  }
   if (!raw) return {};
   const countryKey = Object.keys(raw)[0];
   return countryKey ? raw[countryKey] : {};
