@@ -37,7 +37,7 @@
 - [ ] [low - good to have] Add grid/list toggle for recent sessions on tracker tab (1 session per row is wasteful).
 
 ## Settings / Config
-- [ ] [clarification/samples needed] Fix settings history export — session linkage breaks (work time vs rest - accumulated rest time/work time relationship) on config changes. Exports full session JSON backup to user-selected directory.
+- [x] [clarification/samples needed] Fix settings history export — session linkage breaks (work time vs rest - accumulated rest time/work time relationship) on config changes. Exports full session JSON backup to user-selected directory.
 
 ## Modularity
 - [x] Modularity phase complete — code is split into dedicated modules (state, sessionManager, configManager, uiManager, calendarService, statsManager, accessibility, constants) wired through entry.js. Deep-site visual redesign tracked separately under UI/UX.
