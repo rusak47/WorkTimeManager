@@ -39,12 +39,44 @@ Show a small banner on the tracker tab indicating today's date type:
 - Otherwise render text matching the day type
 ```
 
-**src/index.html** — add a small banner element in the tracker tab:
+### Placement
+
+Insert between the stats row and session-notes area, inside the main session card:
+
 ```html
-<div id="today-status" class="mb-4">
-  <!-- populated by JS -->
+<!-- line 75: end of stats grid -->
 </div>
+
+<!-- NEW — today status line -->
+<div id="today-status" class="mt-4 text-sm">
+  <!-- hidden by default; shown by JS when today is notable -->
+</div>
+
+<!-- line 77: session notes -->
+<div id="session-notes" class="mt-6 hidden">
 ```
+
+Rationale:
+- Near "Today's Total" — same context (today's data)
+- Above session notes — visible during and between sessions
+- Doesn't touch the timer display area (top of card) — no risk of layout shift
+
+### Size & Style
+
+Compact single-line text, not a visual banner:
+- Height: ~1 line of text (~24px)
+- No background color, no border, no padding
+- Text only: icon + message, e.g. `🌿 Midsummer — Holiday`
+- Uses a small `<span>` inside `#today-status` so content can be swapped without affecting layout
+- Margin: `mt-4` to space from stats row above
+
+### Template compatibility
+
+This is read-only display data — same class of UI as `#today-total`. When the template system (`docs/tracker-template-plan.md`) is implemented:
+- Both `#today-status` and `#today-total` move into the template function
+- The template decides where to place this element in its layout
+- The data logic in `updateTodayStatus()` stays in uiManager (or migrates to the template module)
+- No structural conflict — it's one text node, trivially portable
 
 ### Graceful degradation
 - If `holidays.json` missing → calendarService returns base dayInfo (weekend/workday) → banner stays hidden (no notable day)
@@ -52,12 +84,17 @@ Show a small banner on the tracker tab indicating today's date type:
 - No crash, no error state to handle
 
 ### Render logic
-| Condition | Banner text |
-|-----------|------------|
-| `isHoliday` | "{name} — Holiday" |
-| `isShortDay` | "Short day (pre-holiday)" |
-| `swapSource` | "Today is a shifted workday from {swapSource}" |
-| otherwise | hidden |
+
+`#today-status` is always present in DOM but empty by default. `updateTodayStatus()` creates/replaces a single `<span>` child:
+
+| Condition | Content |
+|-----------|---------|
+| `isHoliday` | `<span>🌿 {name} — Holiday</span>` |
+| `isShortDay` | `<span>⚠️ Short day — pre-holiday</span>` |
+| `swapSource` | `<span>🔁 Shifted workday (originally {swapSource})</span>` |
+| otherwise | Remove child span → empty, hidden |
+
+Icons are inline emoji — no extra dependency.
 
 ### Test
 - `calendarService.getDayInfo` returns correct info for holiday dates
