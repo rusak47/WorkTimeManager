@@ -41,7 +41,7 @@
 
 ## Modularity
 - [x] Modularity phase complete — code is split into dedicated modules (state, sessionManager, configManager, uiManager, calendarService, statsManager, accessibility, constants) wired through entry.js. Deep-site visual redesign tracked separately under UI/UX.
-- [ ] [low] Package as standalone Electron app — check installation flow and write packaging instructions.
+- [x] [low] Package as standalone Electron app — check installation flow and write packaging instructions.
 
 ## Storage
 - [x] Store/read data from persistent storage (Phase 3: IPC + localStorage fallback)
