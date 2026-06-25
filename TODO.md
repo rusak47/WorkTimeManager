@@ -3,6 +3,9 @@
 ## Bugs
 - [x] [high] — stopSession now saves break session when paused (added break-session creation + accumulatedPauseTime update before reset)
 - [x] [high] — unselected tags text in session-save UI has same color as background, making it unreadable (CSS: added visible bg to `.tag`, removed `transparent`)
+- [ ] [high] — June 22 swapped_day_off shows as holiday: `swapped_day_off` has `dayType: 'holiday'` so `isHoliday` is true. Need `isSwappedDayOff` flag + override `isHoliday` to false. Also: pre-holiday −1h rule not reflected in total hours (separate).
+April correctly identifies preholiday short dates, so the issue is with normalization. June 22 by its own is a preholiday day - thus short, then government decides it to swap with weekend day, so it's now a swapped holiday, however the day that was swapped to becomes short preholiday workday because source day was.
+swapped_day_off keeps holiday as it is, but swapped_workday becomes a short workday, because source workday was preholiday - short day
 - [low] — year selector dropdown in session view doesn't filter sessions when changed
 
 ## Sessions
@@ -28,8 +31,17 @@
 
 ## Calendar
 - [x] [done] Show current-session holiday info on tracker tab — today-status banner with holidays, memorial days, swapped days, short days from calendar JSON + user overrides.
-- [ ] [low - must have] Calendar tab view with official holidays on a calendar grid (calendarService already implemented). (only if {year}-holidays.json is present)
+- [x] [done] Calendar tab view with official holidays on a calendar grid (calendarService already implemented). (only if {year}-holidays.json is present)
 - [x] [rejected — implemented as separate calendar2json module, out of scope] Fetch holidays from rekini123.lv and likumi.lv.
+- [x] [high] Calendar visual polish:
+  - [x] Remove holiday name text from cells (tooltip only) — keeps grid clean
+  - [x] Make cells smaller (shrink aspect-ratio/padding)
+  - [ ] Blue session dots need a legend (unclear what they mean)
+  - [x] Pre-holiday (short day) needs lighter color
+  - [x] Swapped day info not showing in tooltip
+  - [x] Light theme: weekend numbers illegible (text contrast)
+  - [x] Light theme: dark background bleed from dark mode classes
+  - [x] Event colors (holiday/vacation/memoriam/short) barely distinguishable from each other
 
 ## UI/UX
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.

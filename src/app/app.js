@@ -1,4 +1,5 @@
 import * as utils from '../js/utils.js';
+import { createCalendarView } from './calendarView.js';
 
 const INITIAL_STATE = Object.freeze({
   sessions: [],
@@ -24,6 +25,7 @@ export function createEventHandlers(deps) {
   const { store, storage, sessionManager, configManager, statsManager, ui, a11y } = deps;
   let timerInterval = null;
   let calendarService = null;
+  let calendarView = null;
 
   function loadStateFromStorage(state) {
     if (state && state.sessions) store.setState({ sessions: state.sessions });
@@ -425,6 +427,9 @@ export function createEventHandlers(deps) {
 
   function switchTab(tab) {
     ui.switchTab(tab);
+    if (tab === 'calendar' && calendarView) {
+      calendarView.renderCalendar(calendarService);
+    }
   }
 
   function switchSettingsTab(tab) {
@@ -636,10 +641,20 @@ export function createEventHandlers(deps) {
   }
 
   function setupEventListeners() {
+        document.getElementById('cal-prev')?.addEventListener('click', () => { calendarView?.prevMonth(); calendarView?.renderCalendar(calendarService); });
+        document.getElementById('cal-next')?.addEventListener('click', () => { calendarView?.nextMonth(); calendarView?.renderCalendar(calendarService); });
+        document.getElementById('cal-more-btn')?.addEventListener('click', () => {
+          const details = document.getElementById('cal-details');
+          const btn = document.getElementById('cal-more-btn');
+          if (!details || !btn) return;
+          const isHidden = details.classList.toggle('hidden');
+          btn.innerHTML = isHidden ? '<i class="fas fa-chevron-down mr-1"></i>Details' : '<i class="fas fa-chevron-up mr-1"></i>Details';
+        });
     document.getElementById('add-tag-btn')?.addEventListener('click', addCustomTag);
     document.getElementById('tracker-tab')?.addEventListener('click', () => switchTab('tracker'));
     document.getElementById('sessions-tab')?.addEventListener('click', () => switchTab('sessions'));
     document.getElementById('stats-tab')?.addEventListener('click', () => switchTab('stats'));
+    document.getElementById('calendar-tab')?.addEventListener('click', () => switchTab('calendar'));
     document.getElementById('config-tab')?.addEventListener('click', () => switchTab('config'));
     document.getElementById('start-btn')?.addEventListener('click', startSession);
     document.getElementById('stop-btn')?.addEventListener('click', stopSession);
@@ -733,6 +748,7 @@ export function createEventHandlers(deps) {
       console.error('Failed to load calendar:', err);
     }
 
+    calendarView = createCalendarView(store);
     ui.renderRecentSessions();
     ui.renderAllSessions();
     ui.updateTodayTotal();

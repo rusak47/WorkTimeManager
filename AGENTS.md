@@ -31,6 +31,8 @@ All dependencies (Chart.js, TailwindCSS, Font Awesome) are npm imports, not CDN 
 - Run: `npm test`
 - `accumulatedPauseTime` in tracker is in **milliseconds**. Convert to seconds with `/ 1000`.
 - jsdom quirk: `<select>` options must exist in DOM before setting `.value`.
+- **setupDOM must mirror production DOM** — any `document.getElementById()` in production code with a guard (`if (!el) return`) will silently skip that path in tests if the element is missing from setupDOM. No test failure, just lost coverage. Every DOM id referenced in production belongs in setupDOM.
+- **Multi-file DOM coupling**: adding a new interactive element requires coordinated changes in: HTML template, handler module, `app.js` event wiring, test `setupDOM()`, and CSS. Missing any one causes runtime errors or silent coverage gaps.
 
 ## File layout
 - Business logic managers in `src/app/` (pure functions, no DOM)
@@ -45,6 +47,9 @@ npm test           # vitest run --coverage
 npm run dev        # vite dev server
 npm run build      # vite build
 ```
+
+## Instruction interpretation
+- "Don't use language X" means localize the labels, not remove the feature. Locale is presentation; business logic and feature scope are separate concerns. Overcorrecting (removing functionality instead of translating) destroys work.
 
 ## Commit conventions
 - CHANGELOG.md: add entry under `## Unreleased` with the date
