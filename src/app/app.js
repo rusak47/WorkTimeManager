@@ -259,7 +259,9 @@ export function createEventHandlers(deps) {
       alert('End time must be after start time');
       return;
     }
-    const duration = Math.floor((endTime - startTime) / 1000);
+    const existingSession = sessionId ? s.sessions.find(sess => sess.id === parseInt(sessionId, 10)) : null;
+    const accumulatedPauseMs = existingSession ? (existingSession.accumulatedPauseTimeSec || 0) * 1000 : 0;
+    const duration = Math.max(0, Math.floor((endTime - startTime - accumulatedPauseMs) / 1000));
     const dayType = dayTypeInput ? dayTypeInput.value : 'Workday';
     const notes = modalNotes ? modalNotes.value.trim() : '';
     const selectedTags = [];

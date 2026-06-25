@@ -284,6 +284,34 @@ describe('app event handlers', () => {
     expect(document.getElementById('session-id').value).toBe('42');
   });
 
+  it('handleSessionFormSubmit updates session duration with accumulatedPauseTimeSec', () => {
+    const e = { preventDefault: vi.fn() };
+    store.setState({
+      sessions: [{
+        id: 99, date: '2026-06-19',
+        startTime: '2026-06-19T10:00:00.000Z',
+        endTime: '2026-06-19T15:00:00.000Z',
+        duration: '03:00:00', durationSec: 10800,
+        accumulatedPauseTimeSec: 7200,
+        dayType: 'Workday', notes: 'Test', tags: ['work'], mood: 5,
+      }],
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+    });
+    document.getElementById('session-id').value = '99';
+    document.getElementById('start-time').value = '2026-06-19T09:00';
+    document.getElementById('end-time').value = '2026-06-19T16:00';
+    document.getElementById('modal-notes').value = 'Test';
+    document.getElementById('session-mood').value = '5';
+    const tagEl = document.createElement('div');
+    tagEl.className = 'tag selected';
+    tagEl.dataset.tag = 'work';
+    document.getElementById('tags-container').appendChild(tagEl);
+    app.handleSessionFormSubmit(e);
+    const updated = store.getState().sessions[0];
+    expect(updated.durationSec).toBe(18000);
+    expect(updated.duration).toBe('05:00:00');
+  });
+
   it('handleSessionFormSubmit creates new session', () => {
     const e = { preventDefault: vi.fn() };
     const now = new Date();
