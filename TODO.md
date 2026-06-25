@@ -25,9 +25,9 @@
 - [ ] [low - must have] Add refresh button in statistics tab (auto-refresh on tab switch is insufficient).
 
 ## Calendar
-- [ ] [low+ - must have] Show current-session holiday info on tracker tab — highlight if today is a holiday, shifted workday, etc. (weekend/workday already covered by basic calendar).
-- [ ] [low - must have] Calendar tab view with official holidays on a calendar grid (calendarService already implemented).
-- [ ] [rejected — implemented as separate calendar2json module, out of scope] Fetch holidays from rekini123.lv and likumi.lv.
+- [ ] [low+ - must have] Show current-session holiday info on tracker tab — highlight if today is a holiday, shifted workday, etc. (weekend/workday already covered by basic calendar). (plan: docs/calendar-plan.md)
+- [ ] [low - must have] Calendar tab view with official holidays on a calendar grid (calendarService already implemented). (only if {year}-holidays.json is present)
+- [x] [rejected — implemented as separate calendar2json module, out of scope] Fetch holidays from rekini123.lv and likumi.lv.
 
 ## UI/UX
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
