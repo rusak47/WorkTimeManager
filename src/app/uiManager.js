@@ -27,12 +27,14 @@ export function createUIManager(store) {
     const s = store.getState();
     const tracker = s.tracker;
     if (!(tracker.startTime || tracker.pauseStart)) return;
-    const now = new Date();
+    const now = Date.now();
     let elapsedSeconds;
     if (tracker.isPaused) {
-      elapsedSeconds = Math.floor((now - tracker.pauseStart) / 1000) + tracker.accumulatedPauseTime;
+      const rawMs = now - tracker.pauseStart;
+      elapsedSeconds = Math.floor(rawMs / 1000) + Math.floor(tracker.accumulatedPauseTime / 1000);
     } else {
-      elapsedSeconds = Math.floor((now - tracker.startTime) / 1000) - tracker.accumulatedPauseTime;
+      const rawMs = now - tracker.startTime;
+      elapsedSeconds = Math.max(0, Math.floor((rawMs - tracker.accumulatedPauseTime) / 1000));
     }
     updateTimerDisplayEl(elapsedSeconds, tracker.isBreak);
   }
@@ -42,8 +44,13 @@ export function createUIManager(store) {
     const container = document.querySelector('.duration-display');
     const label = document.getElementById('duration-label');
     if (!display || !label) return;
-    display.textContent = utils.formatDuration(seconds);
-    if (isBreak) {
+    display.textContent = utils.formatDuration(Math.max(0, seconds));
+    const s = store.getState();
+    const isPaused = s.tracker && s.tracker.isPaused;
+    if (isPaused) {
+      if (container) container.classList.add('break-mode');
+      label.textContent = 'Paused';
+    } else if (isBreak) {
       if (container) container.classList.add('break-mode');
       label.textContent = 'Break Duration';
     } else {
@@ -788,9 +795,7 @@ export function createUIManager(store) {
     const timeCtx = document.getElementById('timeChart');
     if (timeChart) { timeChart.destroy(); timeChart = null; }
     if (timeCtx) {
-      const { Chart } = window;
-      if (Chart) {
-        timeChart = new Chart(timeCtx.getContext('2d'), {
+      timeChart = new Chart(timeCtx.getContext('2d'), {
           type: 'bar',
           data: {
             labels,
@@ -821,19 +826,16 @@ export function createUIManager(store) {
             }
           }
         });
-      }
     }
     const distributionCtx = document.getElementById('distributionChart');
     if (distributionChart) { distributionChart.destroy(); distributionChart = null; }
     if (distributionCtx) {
-      const { Chart } = window;
-      if (Chart) {
-        const dayTypes = ['Workday', 'Weekend', 'Holiday', 'Vacation'];
-        const dayTypeData = dayTypes.map(type => {
-          const typeSessions = filteredSessions.filter(sess => sess.dayType === type);
-          return typeSessions.reduce((sum, sess) => sum + sess.durationSec, 0) / 3600;
-        });
-        distributionChart = new Chart(distributionCtx.getContext('2d'), {
+      const dayTypes = ['Workday', 'Weekend', 'Holiday', 'Vacation'];
+      const dayTypeData = dayTypes.map(type => {
+        const typeSessions = filteredSessions.filter(sess => sess.dayType === type);
+        return typeSessions.reduce((sum, sess) => sum + sess.durationSec, 0) / 3600;
+      });
+      distributionChart = new Chart(distributionCtx.getContext('2d'), {
           type: 'doughnut',
           data: {
             labels: dayTypes,
@@ -859,7 +861,6 @@ export function createUIManager(store) {
             }
           }
         });
-      }
     }
   }
 
@@ -916,8 +917,6 @@ export function createUIManager(store) {
     if (s.configs.length === 0 || !s.configs[0].salaryValue) return;
     const incomeCtx = document.getElementById('incomeChart');
     if (!incomeCtx) return;
-    const { Chart } = window;
-    if (!Chart) return;
     const config = s.configs[0];
     const isHourly = config.salaryType === 'hourly';
     const isNet = config.salaryTaxType === 'net';

@@ -18,6 +18,8 @@ function getDayType(dateStr, state) {
   return (date.getDay() === 0 || date.getDay() === 6) ? 'Weekend' : 'Workday';
 }
 
+export { INITIAL_STATE };
+
 export function createEventHandlers(deps) {
   const { store, storage, sessionManager, configManager, statsManager, ui, a11y } = deps;
   let timerInterval = null;
@@ -149,10 +151,11 @@ export function createEventHandlers(deps) {
     const notesInput = document.getElementById('notes');
     const startTimeMs = parseInt(trackerStartInput ? trackerStartInput.value : '0', 10);
     const endTimeMs = parseInt(trackerEndInput ? trackerEndInput.value : '0', 10);
-    const accumulatedPauseTimeSec = parseInt(restInput ? restInput.value : '0', 10);
+    const accumulatedPauseTimeMs = parseInt(restInput ? restInput.value : '0', 10);
     const startDate = new Date(startTimeMs);
     const endDate = new Date(endTimeMs);
-    const duration = Math.max(0, Math.floor((endTimeMs - startTimeMs) / 1000) - accumulatedPauseTimeSec);
+    const duration = Math.max(0, Math.floor((endTimeMs - startTimeMs - accumulatedPauseTimeMs) / 1000));
+    const accumulatedPauseTimeSec = Math.floor(accumulatedPauseTimeMs / 1000);
     const date = utils.formatDate(startDate);
     const dayType = getDayType(date, s);
     const selectedTags = [];
@@ -631,6 +634,23 @@ export function createEventHandlers(deps) {
     if (tagSettingsTab) {
       tagSettingsTab.addEventListener('click', () => switchSettingsTab('tags'));
     }
+    document.addEventListener('click', (e) => {
+      const editBtn = e.target.closest('.edit-session');
+      if (editBtn && editBtn.dataset.id) {
+        editSession(parseInt(editBtn.dataset.id, 10));
+        return;
+      }
+      const deleteBtn = e.target.closest('.delete-session');
+      if (deleteBtn && deleteBtn.dataset.id) {
+        showDeleteModal(parseInt(deleteBtn.dataset.id, 10));
+        return;
+      }
+      const sessionCard = e.target.closest('.session-card');
+      if (sessionCard && !e.target.closest('button')) {
+        const sid = sessionCard.dataset.sessionId || sessionCard.querySelector('[data-id]')?.dataset.id;
+        if (sid) editSession(parseInt(sid, 10));
+      }
+    });
     const moodRating = document.getElementById('mood-rating');
     if (moodRating) {
       moodRating.addEventListener('click', ui.handleStarClick);
