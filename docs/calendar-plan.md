@@ -87,12 +87,32 @@ This is read-only display data — same class of UI as `#today-total`. When the 
 
 `#today-status` is always present in DOM but empty by default. `updateTodayStatus()` creates/replaces a single `<span>` child:
 
-| Condition | Content |
-|-----------|---------|
-| `isHoliday` | `<span>🌿 {name} — Holiday</span>` |
-| `isShortDay` | `<span>⚠️ Short day — pre-holiday</span>` |
-| `swapSource` | `<span>🔁 Shifted workday (originally {swapSource})</span>` |
-| otherwise | Remove child span → empty, hidden |
+Priority order (first match wins, shows only the highest-priority case):
+
+| Priority | Condition | Content |
+|----------|-----------|---------|
+| 1 | `isHoliday && isMemoriam` | `<span>🌿 {name} — Holiday / Memorial</span>` |
+| 2 | `isHoliday` | `<span>🌿 {name} — Holiday</span>` |
+| 3 | `swapSource` | `<span>🔁 Shifted workday (originally {swapSource})</span>` |
+| 4 | `isShortDay` | `<span>⚠️ Short day — pre-holiday</span>` |
+| 5 | `isMemoriam && dayType === 'workday'` | `<span>🕯️ {name} — Memorial Day</span>` |
+| — | none of the above | Remove child span → empty, hidden |
+
+Rationale for priority:
+- **Holiday** is the most impactful for work tracking (day off by default)
+- **Swapped workday** affects scheduling but isn't a holiday
+- **Short day** affects work hours
+- **Memoriam-only** (workday memorial) is informative but doesn't change work status
+
+Edge case combinations:
+- `isHoliday + isMemoriam` → shows "Holiday / Memorial" (both noted, holiday takes priority slot)
+- `isHoliday + swapSource` → shouldn't occur in practice (holidays aren't swapped)
+- `isHoliday + isShortDay` → unlikely (holidays aren't shortened), treated as holiday
+- `isMemoriam + isShortDay` → unlikely combo, short day takes precedence over memoriam-only
+- `isMemoriam + swapSource` → swap takes precedence; memoriam info would be lost unless we add a note. Evaluate if real data has this combo.
+- `!name && isHoliday` → fallback text: "Holiday" (no name available)
+- `name && !isHoliday && !isMemoriam` → shouldn't occur with current normaliseEntry
+- `swapSource && isShortDay` → unlikely combo
 
 Icons are inline emoji — no extra dependency.
 
