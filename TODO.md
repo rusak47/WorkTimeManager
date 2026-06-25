@@ -1,7 +1,7 @@
 # TODO
 
 ## Bugs
-- [high] — unselected tags text in session-save UI has same color as background, making it unreadable
+- [x] [high] — unselected tags text in session-save UI has same color as background, making it unreadable (CSS: added visible bg to `.tag`, removed `transparent`)
 - [low] — year selector dropdown in session view doesn't filter sessions when changed
 
 ## Sessions
