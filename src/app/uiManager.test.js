@@ -298,6 +298,41 @@ describe('uiManager', () => {
     });
   });
 
+  describe('initializeCurrentSessionTags', () => {
+    it('renders tags with visible styling for unselected state', () => {
+      store.setState({ tags: mockTags });
+      ui.initializeCurrentSessionTags();
+      const container = document.getElementById('current-session-tags');
+      const tagEls = container.querySelectorAll('.tag');
+      expect(tagEls.length).toBe(mockTags.filter(t => t.isEnabled).length);
+      const unselected = container.querySelectorAll('.tag:not(.selected)');
+      expect(unselected.length).toBeGreaterThan(0);
+      const selected = container.querySelectorAll('.tag.selected');
+      expect(selected.length).toBe(1);
+      expect(selected[0].dataset.tag).toBe('work');
+      for (const el of unselected) {
+        expect(el.classList.contains('selected')).toBe(false);
+        expect(el.textContent).toBeTruthy();
+      }
+    });
+  });
+
+  describe('initializeSessionModalTags', () => {
+    it('renders tags with visible styling for unselected state', () => {
+      store.setState({ tags: mockTags });
+      ui.initializeSessionModalTags();
+      const container = document.getElementById('tags-container');
+      const tagEls = container.querySelectorAll('.tag');
+      expect(tagEls.length).toBe(mockTags.filter(t => t.isEnabled).length);
+      const unselected = container.querySelectorAll('.tag:not(.selected)');
+      expect(unselected.length).toBeGreaterThan(0);
+      for (const el of unselected) {
+        expect(el.classList.contains('selected')).toBe(false);
+        expect(el.textContent).toBeTruthy();
+      }
+    });
+  });
+
   describe('getWorkDaysInMonth', () => {
     it('returns correct work days for June 2026', () => {
       const days = ui.getWorkDaysInMonth(2026, 5);
