@@ -3,7 +3,16 @@
 ## 2026-06-25 — Bug fixes & modularization
 
 ### Fixed
+- **Stop after pause loses break session** — `stopSession()` now creates a break session (tags: rest) and updates accumulatedPauseTime before populating form fields.
+- **Pause timer shows total rest instead of current piece** — Now defaults to current rest piece (starts at 0), clickable to toggle between "Current Rest" and "Total Rest".
 - **Timer negative after pause/resume** — `accumulatedPauseTime` (ms) was subtracted from seconds in `updateTimerDisplay` and `saveSession`. Fixed both.
+
+### Added
+- **Today's total clickable toggle** — Click to switch between "Today's Work" (excluding breaks) and "Today's Total" (all sessions).
+- **Rest time in session list** — `accumulatedPauseTimeSec` now visible in recent sessions and all sessions views.
+
+### Changed
+- **Commit workflow documented** — Global and project AGENTS.md now define when auto-commits are allowed (multi-step TDD tasks with user approval) and require changelog/TODO updates before any commit.
 - **Charts not rendering in Vite** — Removed all `window.Chart` lookups (time, distribution, income charts). Chart.js is imported as ES module.
 - **Edit/delete buttons unresponsive** — Added event delegation for `.edit-session` / `.delete-session` clicks.
 - **Pause missing timer background** — `updateTimerDisplayEl` now sets `break-mode` class and "Paused" label when paused.
