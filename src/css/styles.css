@@ -103,11 +103,9 @@
             font-size: 0.875rem;
             cursor: pointer;
             transition: all 0.2s;
-            /* Remove the default background color */
-            background-color: transparent;
-            /* Set default text color */
+            background-color: #f3f4f6;
             color: #374151;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #d1d5db;
         }
 
         .tag.selected {
@@ -117,8 +115,9 @@
         }
 
         .dark-mode .tag {
+            background-color: #4b5563;
             color: #f3f4f6;
-            border-color: #4b5563;
+            border-color: #6b7280;
         }
 
         .dark-mode .tag.selected {
