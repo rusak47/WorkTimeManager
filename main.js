@@ -58,13 +58,22 @@ ipcMain.handle('data:save', async (_, data) => {
 
 ipcMain.handle('calendar:load', async (_, year) => {
   const userPath = path.join(USER_HOLIDAYS_DIR, `${year}-holidays.json`);
+  console.log(`[calendar] Trying user path: ${userPath}`);
   let raw = tryRead(userPath);
-  if (!raw) {
+  if (raw) {
+    console.log(`[calendar] Loaded from user path`);
+  } else {
     const bundledPath = path.join(BUNDLED_HOLIDAYS_DIR, `${year}-holidays.json`);
+    console.log(`[calendar] Trying bundled path: ${bundledPath}`);
     raw = tryRead(bundledPath);
+    if (raw) console.log(`[calendar] Loaded from bundled path`);
   }
-  if (!raw) return {};
+  if (!raw) {
+    console.log(`[calendar] No holiday file found for year ${year}`);
+    return {};
+  }
   const countryKey = Object.keys(raw)[0];
+  console.log(`[calendar] Using country key: ${countryKey}`);
   return countryKey ? raw[countryKey] : {};
 });
 
