@@ -3,6 +3,7 @@ import * as utils from '../js/utils.js';
 
 export function createUIManager(store) {
   let _showCurrentRest = true;
+  let _showTodayWorkOnly = true;
   let timeChart = null;
   let distributionChart = null;
   let incomeChart = null;
@@ -16,6 +17,15 @@ export function createUIManager(store) {
         _showCurrentRest = !_showCurrentRest;
         updateTimerDisplay();
       }
+    });
+  }
+
+  const todayTotal = document.getElementById('today-total');
+  if (todayTotal) {
+    todayTotal.style.cursor = 'pointer';
+    todayTotal.addEventListener('click', () => {
+      _showTodayWorkOnly = !_showTodayWorkOnly;
+      updateTodayTotal();
     });
   }
 
@@ -79,9 +89,20 @@ export function createUIManager(store) {
     const s = store.getState();
     const today = utils.formatDate(new Date());
     const todaySessions = s.sessions.filter(session => session.date === today);
+    const workSec = todaySessions
+      .filter(session => !session.isBreak)
+      .reduce((sum, session) => sum + session.durationSec, 0);
     const totalSec = todaySessions.reduce((sum, session) => sum + session.durationSec, 0);
     const el = document.getElementById('today-total');
-    if (el) el.textContent = utils.formatDuration(totalSec);
+    const label = document.getElementById('today-total-label');
+    if (!el) return;
+    if (_showTodayWorkOnly) {
+      el.textContent = utils.formatDuration(workSec);
+      if (label) label.textContent = "Today's Work";
+    } else {
+      el.textContent = utils.formatDuration(totalSec);
+      if (label) label.textContent = "Today's Total";
+    }
   }
 
   function updateTodayStatus(state, calendarService) {
