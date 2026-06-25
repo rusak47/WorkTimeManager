@@ -2,9 +2,22 @@ import { Chart } from 'chart.js/auto';
 import * as utils from '../js/utils.js';
 
 export function createUIManager(store) {
+  let _showCurrentRest = true;
   let timeChart = null;
   let distributionChart = null;
   let incomeChart = null;
+
+  const display = document.getElementById('active-duration');
+  if (display) {
+    display.style.cursor = 'pointer';
+    display.addEventListener('click', () => {
+      const s = store.getState();
+      if (s.tracker && s.tracker.isPaused) {
+        _showCurrentRest = !_showCurrentRest;
+        updateTimerDisplay();
+      }
+    });
+  }
 
   function getTagBadgeClass(tag, selected = false) {
     if (!selected) return 'text-gray-800 dark:bg-gray-700 dark:text-gray-300';
@@ -31,15 +44,18 @@ export function createUIManager(store) {
     let elapsedSeconds;
     if (tracker.isPaused) {
       const rawMs = now - tracker.pauseStart;
-      elapsedSeconds = Math.floor(rawMs / 1000) + Math.floor(tracker.accumulatedPauseTime / 1000);
+      const currentRestSec = Math.floor(rawMs / 1000);
+      const totalRestSec = currentRestSec + Math.floor(tracker.accumulatedPauseTime / 1000);
+      elapsedSeconds = _showCurrentRest ? currentRestSec : totalRestSec;
+      updateTimerDisplayEl(elapsedSeconds, tracker.isBreak, _showCurrentRest);
     } else {
       const rawMs = now - tracker.startTime;
       elapsedSeconds = Math.max(0, Math.floor((rawMs - tracker.accumulatedPauseTime) / 1000));
+      updateTimerDisplayEl(elapsedSeconds, tracker.isBreak);
     }
-    updateTimerDisplayEl(elapsedSeconds, tracker.isBreak);
   }
 
-  function updateTimerDisplayEl(seconds, isBreak) {
+  function updateTimerDisplayEl(seconds, isBreak, showCurrentRest) {
     const display = document.getElementById('active-duration');
     const container = document.querySelector('.duration-display');
     const label = document.getElementById('duration-label');
@@ -49,7 +65,7 @@ export function createUIManager(store) {
     const isPaused = s.tracker && s.tracker.isPaused;
     if (isPaused) {
       if (container) container.classList.add('break-mode');
-      label.textContent = 'Paused';
+      label.textContent = showCurrentRest ? 'Current Rest' : 'Total Rest';
     } else if (isBreak) {
       if (container) container.classList.add('break-mode');
       label.textContent = 'Break Duration';
