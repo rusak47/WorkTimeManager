@@ -45,9 +45,9 @@ Each new year, add `<year>-holidays.json` to the app's user data directory, no r
 
 | Platform | Path |
 |----------|------|
-| Linux | `~/.config/WorkTimeManager/<year>-holidays.json` |
-| macOS | `~/Library/Application Support/WorkTimeManager/<year>-holidays.json` |
-| Windows | `%APPDATA%/WorkTimeManager/<year>-holidays.json` |
+| Linux | `~/.config/org.rusak.worktimemanager/<year>-holidays.json` |
+| macOS | `~/Library/Application Support/org.rusak.worktimemanager/<year>-holidays.json` |
+| Windows | `%APPDATA%/org.rusak.worktimemanager/<year>-holidays.json` |
 
 The app checks this directory first, then falls back to the bundled `resources/` shipped with the release.
 
