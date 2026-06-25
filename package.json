@@ -13,7 +13,8 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "start": "electron .",
-    "package": "electron-packager . --overwrite --platform=win32,darwin,linux --arch=x64 --prune=true --out=release-builds"
+    "package": "electron-packager . --overwrite --platform=win32,darwin,linux --arch=x64 --prune=true --out=release-builds",
+    "package:linux": "electron-packager . --overwrite --platform=linux --arch=x64 --prune=true --out=release-builds"
   },
   "keywords": [
     "electron",
@@ -23,7 +24,7 @@
   "author": "Vitaly.X",
   "license": "MIT",
   "devDependencies": {
-    "@electron/packager": "^18.3.6",
+    "@electron/packager": "^20.0.1",
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.1",
     "@vitest/coverage-v8": "^4.1.9",

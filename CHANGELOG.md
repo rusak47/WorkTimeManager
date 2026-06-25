@@ -7,6 +7,8 @@
 - **Pause timer shows total rest instead of current piece** — Now defaults to current rest piece (starts at 0), clickable to toggle between "Current Rest" and "Total Rest".
 - **Timer negative after pause/resume** — `accumulatedPauseTime` (ms) was subtracted from seconds in `updateTimerDisplay` and `saveSession`. Fixed both.
 - **Edit session with breaks stores wrong duration** — `handleSessionFormSubmit` calculated duration as `endTime - startTime` without subtracting `accumulatedPauseTimeSec`, causing sessions with breaks to store total elapsed time instead of net work time.
+- **README release build docs** — Added Linux standalone build instructions.
+- **Release builds broken on Node v24** — `@electron/packager` 18.3.6 incompatible with Node 24; updated to 20.0.1. Holiday files now load from user data dir first with bundled fallback.
 
 ### Added
 - **Today's total clickable toggle** — Click to switch between "Today's Work" (excluding breaks) and "Today's Total" (all sessions).
