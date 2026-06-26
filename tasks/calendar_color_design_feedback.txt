@@ -1,0 +1,137 @@
+The current color system has several usability and accessibility issues. The biggest problem is that color is being used without a clear semantic hierarchy, causing multiple statuses to compete for attention. This makes the calendar difficult to scan quickly.
+
+Since you asked to first apply a better color palette on the mockup for approval before providing feedback, I'd recommend generating a revised version of the UI with the following visual changes:
+
+Neutral days: white or very light gray ( #FFFFFF / #F8FAFC)
+Today (if applicable): blue outline only ( #2563EB), no background fill
+Tracked day: blue status dot ( #2563EB) only (keep background neutral)
+Holiday: soft green background ( #DCFCE7) with dark green text ( #166534)
+Memorial day: soft rose background ( #FCE7F3) with dark rose text ( #9D174D)
+Short day: soft amber background ( #FEF3C7) with dark amber text ( #92400E)
+Selected day: blue outline + subtle blue tint ( #DBEAFE)
+Disabled / other month: light gray background ( #E5E7EB) with muted text
+
+This produces a clear visual hierarchy:
+
+Selection (highest priority)
+Today
+Special day type (holiday, memorial, short day)
+Tracked status (small blue dot)
+Normal day
+Feedback for Visual Agent
+Calendar Color System
+
+The current calendar coloring violates several UI and accessibility best practices.
+
+1. Too many background colors compete for attention
+
+Currently almost every special state changes the entire cell background (pink, yellow, green, blue, gray).
+
+As a result:
+
+users cannot immediately identify what is important
+selection competes with holidays
+tracked days compete with calendar events
+the calendar appears visually noisy
+
+Use colored backgrounds only for actual day categories (Holiday, Memorial, Short Day).
+
+2. Tracked sessions should NOT color the cell
+
+A tracked session is not a day category.
+
+It is additional information.
+
+The current blue dot already communicates this very well.
+
+Recommendation:
+
+Keep only the blue dot.
+Keep the day background neutral.
+3. Selected day should always have the highest visual priority
+
+The selected day currently uses:
+
+blue border
+blue fill
+
+However, when selection lands on another colored day (holiday, memorial, etc.), the visual meaning becomes ambiguous.
+
+Recommendation:
+
+Use:
+
+2px blue outline (#2563EB)
+subtle blue tint (#DBEAFE)
+preserve any status indicator (dot/icon)
+
+Selection should always override every other background.
+
+4. Current colors are too saturated
+
+The existing green, yellow and pink are stronger than necessary.
+
+Calendar backgrounds should remain calm.
+
+Use pastel colors instead:
+
+State	Background	Text
+Holiday	#DCFCE7	#166534
+Memorial	#FCE7F3	#9D174D
+Short day	#FEF3C7	#92400E
+
+This keeps the calendar readable while preserving meaning.
+
+5. Gray days have inconsistent meaning
+
+Gray is currently used for:
+
+weekends
+disabled days
+next/previous month
+
+These are different concepts.
+
+Recommendation:
+
+Other month → light gray background (#E5E7EB)
+Disabled → reduced opacity
+Weekend → same background as weekdays unless weekends require special treatment
+6. Color should never be the only indicator
+
+Users with color vision deficiencies should still understand the calendar.
+
+Recommendations:
+
+Holiday → small 🌴/holiday icon or label in tooltip
+Memorial → flag/icon
+Short day → half-filled marker or small clock icon
+
+Keep the colors as secondary reinforcement.
+
+7. Legend should match visual importance
+
+Current legend colors have almost identical visual weight.
+
+Instead:
+
+🔵 Tracked session → blue dot
+🟩 Holiday → pastel green square
+🩷 Memorial → pastel rose square
+🟨 Short day → pastel amber square
+
+The legend should exactly mirror the calendar appearance.
+
+8. Establish a clear visual hierarchy
+
+Recommended priority:
+
+Selected day
+Today
+Holiday / Memorial / Short day
+Tracked session (blue dot)
+Normal day
+
+Each state should have a unique visual role and should not compete with others.
+
+Overall, the goal is to make the calendar feel quieter and easier to scan. A mostly neutral calendar with a few carefully chosen pastel backgrounds and a single accent color (blue) for interaction aligns much better with modern design systems such as Material Design 3, Fluent, Carbon, and Apple's Human Interface Guidelines.

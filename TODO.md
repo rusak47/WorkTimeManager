@@ -31,18 +31,7 @@
 - [x] [done] Show current-session holiday info on tracker tab — today-status banner with holidays, memorial days, swapped days, short days from calendar JSON + user overrides.
 - [x] [done] Calendar tab view with official holidays on a calendar grid (calendarService already implemented). (only if {year}-holidays.json is present)
 - [x] [rejected — implemented as separate calendar2json module, out of scope] Fetch holidays from rekini123.lv and likumi.lv.
-- [ ] [high] Calendar visual polish (full audit in `tasks/calendar_design_feedback.md`):
-  - [x] Remove holiday name text from cells (tooltip only) — keeps grid clean
-  - [x] Make cells smaller (shrink aspect-ratio/padding)
-  - [ ] Blue session dots need a legend (unclear what they mean)
-  - [x] Pre-holiday (short day) needs lighter color
-  - [x] Swapped day info not showing in tooltip
-  - [ ] Light theme: `.cal-day` has no background — regular workday cells are transparent/white, grid looks flat
-  - [ ] Light theme: `.cal-day-other` text (`#d4d4d4`) fails WCAG contrast on white background
-  - [ ] Light theme: `.cal-weekend` background (`#f7f7f7`) barely distinguishable from page white
-  - [ ] Light theme: `.cal-day-header` gray (`#8c8c8c`) low contrast for column headers
-  - [ ] Light theme: `.cal-today` background (`#eff6ff`) too subtle — nearly invisible without blue border
-  - [ ] Light+dark: `.cal-swapped` and `.cal-short` nearly identical in light theme; **exact same colors** in dark mode (`#451a03`/`#fde68a`) making them indistinguishable
+- [x] [high] Calendar visual polish — all items done per `tasks/calendar_color_design_feedback.txt`
 
 ## UI/UX
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.

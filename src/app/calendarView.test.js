@@ -14,12 +14,13 @@ function setupDOM() {
           <button id="cal-next"></button>
         </div>
         <div id="cal-grid"></div>
+        <div id="cal-legend" class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400"></div>
         <div id="cal-footer" class="mt-4">
-          <div id="cal-total-hours" class="text-sm"></div>
-          <div id="cal-details-wrap" class="mt-2">
+          <div class="flex justify-between items-center">
+            <div id="cal-total-hours" class="text-sm"></div>
             <button id="cal-more-btn" class="text-xs"><i class="fas fa-chevron-down mr-1"></i>Details</button>
-            <div id="cal-details" class="hidden mt-2"></div>
           </div>
+          <div id="cal-details" class="hidden mt-2"></div>
         </div>
       </div>
     </div>
@@ -237,7 +238,7 @@ describe('createCalendarView', () => {
     });
     calView.renderCalendar(cal);
     const footer = document.getElementById('cal-total-hours');
-    expect(footer.textContent).toContain('(1 short day −1h)');
+    expect(footer.textContent).toMatch(/Work days: 22 × 8h = 175\.0h/);
   });
 
 

@@ -153,6 +153,24 @@ export function createCalendarView(store) {
 
     grid.innerHTML = html;
 
+    const legendEl = document.getElementById('cal-legend');
+    if (legendEl) {
+      const hasDot = Array.from(grid.children).some(c => c.classList.contains('cal-has-sessions'));
+      const hasHoliday = Array.from(grid.children).some(c => c.classList.contains('cal-holiday'));
+      const hasMemoriam = Array.from(grid.children).some(c => c.classList.contains('cal-memoriam'));
+      const hasSwapped = Array.from(grid.children).some(c => c.classList.contains('cal-swapped'));
+      const hasShort = Array.from(grid.children).some(c => c.classList.contains('cal-short'));
+      const hasVacation = Array.from(grid.children).some(c => c.classList.contains('cal-vacation'));
+      const items = [];
+      if (hasDot) items.push('<span class="cal-legend-dot">●</span> Tracked sessions');
+      if (hasHoliday) items.push('<span class="cal-legend-swatch cal-legend-holiday"></span> Holiday');
+      if (hasMemoriam) items.push('<span class="cal-legend-swatch cal-legend-memoriam"></span> Memorial');
+      if (hasSwapped) items.push('<span class="cal-legend-swatch cal-legend-swapped"></span> Swapped');
+      if (hasShort) items.push('<span class="cal-legend-swatch cal-legend-short"></span> Short day');
+      if (hasVacation) items.push('<span class="cal-legend-swatch cal-legend-vacation"></span> Vacation');
+      legendEl.innerHTML = items.join('');
+    }
+
     const footer = document.getElementById('cal-footer');
     if (!footer) return;
 
@@ -168,7 +186,6 @@ export function createCalendarView(store) {
       const trackedDays = new Set(monthSessions.map(s => s.date)).size;
       const trackedHours = monthSessions.reduce((sum, s) => sum + (s.durationSec || 0), 0) / 3600;
       let text = `Work days: ${workDays} × ${workHoursPerDay}h = ${totalHours}h`;
-      if (shortDays > 0) text += ` (${shortDays} short day${shortDays > 1 ? 's' : ''} −${shortDays}h)`;
       if (trackedDays > 0) {
         text += ` | Tracked: ${trackedDays}d ${trackedHours.toFixed(1)}h`;
       }

@@ -188,9 +188,9 @@
             font-weight: 600;
             font-size: 0.75rem;
             padding: 0.35rem 0;
-            color: var(--lt-500);
+            color: var(--lt-600);
         }
-        .cal-day, .cal-day-other {
+        .cal-day {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -204,14 +204,16 @@
             cursor: default;
         }
         .cal-day-other {
-            color: var(--lt-300);
+            background-color: #e5e7eb;
+            color: #6b7280;
+            opacity: 0.5;
         }
-        .cal-weekend {
-            background-color: var(--lt-100);
+        .cal-day-other .cal-day-num {
+            font-weight: 400;
         }
         .cal-holiday {
-            background-color: #d1fae5;
-            color: #065f46;
+            background-color: #dcfce7;
+            color: #166534;
         }
         .cal-vacation {
             background-color: #ede9fe;
@@ -226,22 +228,22 @@
             color: #92400e;
         }
         .cal-short {
-            background-color: #fef9c3;
-            color: #854d0e;
+            background-color: #fef3c7;
+            color: #92400e;
         }
         .cal-information {
-            background-color: #f0f9ff;
-        }
-        .cal-today {
-            background-color: #eff6ff;
+            background-color: #f8fafc;
         }
         .cal-today::after {
             content: '';
             position: absolute;
             inset: 0;
-            border: 2px solid #3b82f6;
+            border: 2px solid #2563eb;
             border-radius: 0.25rem;
             pointer-events: none;
+        }
+        .cal-today .cal-day-num {
+            color: #2563eb;
         }
         .cal-has-sessions::before {
             content: '';
@@ -249,28 +251,59 @@
             bottom: 2px;
             width: 5px;
             height: 5px;
-            background-color: #3b82f6;
+            background-color: #2563eb;
             border-radius: 50%;
         }
         .cal-day-num {
             font-weight: 600;
         }
 
+        #cal-legend {
+            user-select: none;
+        }
+        .cal-legend-dot {
+            color: #3b82f6;
+            font-size: 0.6rem;
+            margin-right: 1px;
+        }
+        .cal-legend-swatch {
+            display: inline-block;
+            width: 0.6rem;
+            height: 0.6rem;
+            border-radius: 2px;
+            margin-right: 2px;
+            vertical-align: middle;
+        }
+        .cal-legend-holiday { background-color: #dcfce7; }
+        .cal-legend-memoriam { background-color: #fce7f3; }
+        .cal-legend-swapped { background-color: #fef3c7; }
+        .cal-legend-short { background-color: #fef3c7; }
+        .cal-legend-vacation { background-color: #ede9fe; }
+        .dark-mode .cal-legend-holiday { background-color: #064e3b; }
+        .dark-mode .cal-legend-memoriam { background-color: #4c0519; }
+        .dark-mode .cal-legend-swapped { background-color: #451a03; }
+        .dark-mode .cal-legend-short { background-color: #1a2e05; }
+        .dark-mode .cal-legend-vacation { background-color: #3b0764; }
+
         .dark-mode .cal-day {
             border-color: var(--lt-700);
         }
         .dark-mode .cal-day-other {
-            color: var(--lt-500);
+            color: #6b7280;
+            background-color: #374151;
         }
-        .dark-mode .cal-weekend {
-            background-color: #1f2937;
+        .dark-mode .cal-day-other .cal-day-num {
+            font-weight: 400;
         }
-        .dark-mode .cal-today {
-            background-color: #1e3a5f;
+        .dark-mode .cal-today .cal-day-num {
+            color: #60a5fa;
+        }
+        .dark-mode .cal-today::after {
+            border-color: #3b82f6;
         }
         .dark-mode .cal-holiday {
             background-color: #064e3b;
-            color: #a7f3d0;
+            color: #6ee7b7;
         }
         .dark-mode .cal-vacation {
             background-color: #3b0764;
@@ -280,13 +313,10 @@
             background-color: #4c0519;
             color: #f9a8d4;
         }
-        .dark-mode .cal-swapped {
-            background-color: #451a03;
-            color: #fde68a;
-        }
+        .dark-mode .cal-swapped,
         .dark-mode .cal-short {
             background-color: #451a03;
-            color: #fde68a;
+            color: #fbbf24;
         }
         .dark-mode .cal-information {
             background-color: #1e3a5f;

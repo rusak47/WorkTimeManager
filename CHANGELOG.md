@@ -8,6 +8,19 @@
 ### Removed
 - **`pre_holiday_short` type** — Replaced by `is_short_day: true` field on `workday` / `swapped_day_off` entries in holidays JSON. `normaliseEntry` `case 'pre_holiday_short'` removed; generic `if (entry.is_short_day)` handles all types.
 
+### Changed
+- **Calendar color system redesigned per feedback** (`tasks/calendar_color_design_feedback.txt`):
+  - Neutral days: WHITE background (no bg color) — only actual day categories get colored backgrounds
+  - Today: `#2563eb` blue outline only, no fill. Day number turns blue.
+  - Tracked: `#2563eb` blue dot only, no cell coloring. Dot ring removed (white bg no longer needs it).
+  - Other-month: `#e5e7eb` bg + `#6b7280` text (~4:1 contrast) — visible and readable
+  - Holiday: `#dcfce7`/`#166534`, memorial: `#fce7f3`/`#9d174d`, short: `#fef3c7`/`#92400e`
+  - Weekends: same as weekdays (no special background)
+  - Legend swatches and `cal-information` updated to match new palette
+- **Calendar legend** — Dynamic legend below the grid shows colored swatches for Holiday, Memorial, Swapped, Short day, Vacation states and a dot for tracked sessions. Only states present in the current month are shown.
+- **Other-month cells opacity** — Added `opacity: 0.5` to `.cal-day-other` for clearer disabled/faded visual.
+- **Calendar footer layout** — Short day count text removed (total hours still accounts for short days internally). Details button moved to the right side on the same line as the workday summary.
+
 ## 2026-06-25 — Visual polish, tracked hours, holiday data loading
 
 ### Added
