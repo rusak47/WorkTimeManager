@@ -3,6 +3,11 @@
 ## Vite, not CDN
 All dependencies (Chart.js, TailwindCSS, Font Awesome) are npm imports, not CDN scripts. Never use `window.Chart`, `window.tailwind`, or similar. `storage.js` falls back to `localStorage` when `window.api` is unavailable.
 
+## Dev mode: Vite middleware + storage fallback
+- `storage.js:36-45`: `loadCalendar()` falls back to `fetch('/resources/YYYY-holidays.json')` when `window.api` is absent (no Electron IPC).
+- `vite.config.js:12-24`: custom `configureServer` middleware serves `/resources/*.json` files — otherwise Vite 404s on those fetch calls.
+- Holiday JSON fetch returns raw file contents under the country key (`Object.keys(raw)[0]`) — storage.js unwraps it, not the consumer.
+
 ## Electron production mode
 - `main.js:37` loads from `dist/index.html` (Vite build output), not `src/index.html`. Run `npm run build` before `npm start`.
 - Dev mode: Electron picks up `VITE_DEV_SERVER_URL` env var set by `npm run dev`.

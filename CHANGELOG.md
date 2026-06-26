@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased (2026-06-26)
+
+### Fixed
+- **June 22 swapped_day_off short-day propagation** — swapped_workday (June 27) now inherits `isShortDay` from the `swap_source` entry's `is_short_day` field. The holidays JSON was updated from `type: "pre_holiday_short"` to `type: "workday"` + `"is_short_day": true`; `normaliseEntry` now detects `is_short_day` generically on any entry type instead of relying on a dedicated `pre_holiday_short` type.
+
+### Removed
+- **`pre_holiday_short` type** — Replaced by `is_short_day: true` field on `workday` / `swapped_day_off` entries in holidays JSON. `normaliseEntry` `case 'pre_holiday_short'` removed; generic `if (entry.is_short_day)` handles all types.
+
 ## 2026-06-25 — Visual polish, tracked hours, holiday data loading
 
 ### Added
@@ -13,9 +21,6 @@
 ### Fixed
 - **Tracked hours included break sessions** — Calendar footer now filters `isBreak` sessions when summing tracked work hours.
 - **Vite dev server serves resources** — Added middleware to serve `/resources/*.json` during development.
-
-### Known Issues
-- **June 22 swapped_day_off shows as holiday** — `swapped_day_off` entry has `dayType: 'holiday'` so `isHoliday` is true. `isSwappedDayOff` flag and `isHoliday` override not yet implemented. Pre-holiday short day auto-detection also pending.
 
 ## 2026-06-25 — Calendar visual polish
 

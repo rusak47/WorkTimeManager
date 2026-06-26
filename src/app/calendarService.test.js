@@ -7,8 +7,10 @@ const mockCalendarData = {
   '2026-01-17': { type: 'swapped_workday', swap_source: '2026-01-02', note: 'Pārcelta' },
   '2026-01-20': { type: 'workday', is_memoriam: true, name: 'Barikāžu atceres diena' },
   '2026-03-08': { type: 'weekend', is_memoriam: true, name: 'Sieviešu diena' },
-  '2026-04-02': { type: 'pre_holiday_short', note: 'Pirmssvētku diena' },
+  '2026-04-02': { type: 'workday', is_short_day: true, note: 'Pirmssvētku diena' },
   '2026-05-01': { type: 'holiday', name: 'Darba svētki', local_name: 'Darba svētki', observed_date: '2026-05-01', is_memoriam: true },
+  '2026-06-22': { type: 'swapped_day_off', swap_source: '2026-06-27', is_short_day: true, note: 'Pirmssvētku diena' },
+  '2026-06-27': { type: 'swapped_workday', swap_source: '2026-06-22', note: 'Pārceltā darba diena' },
 };
 
 describe('createCalendarService', () => {
@@ -163,6 +165,22 @@ describe('createCalendarService', () => {
     const raw = svc.getRawCalendar();
     expect(raw['2026-01-01']).toBeDefined();
     expect(raw['2026-01-01'].dayType).toBe('holiday');
+  });
+
+  it('marks swapped_day_off with is_short_day as short day', () => {
+    const svc = createCalendarService(mockCalendarData);
+    const info = svc.classifyDate('2026-06-22');
+    expect(info.dayType).toBe('holiday');
+    expect(info.isShortDay).toBe(true);
+    expect(info.swapSource).toBe('2026-06-27');
+  });
+
+  it('propagates isShortDay from swap_source to swapped_workday', () => {
+    const svc = createCalendarService(mockCalendarData);
+    const info = svc.classifyDate('2026-06-27');
+    expect(info.dayType).toBe('workday');
+    expect(info.isShortDay).toBe(true);
+    expect(info.swapSource).toBe('2026-06-22');
   });
 
   it('getYearCalendar returns DayInfo objects', () => {

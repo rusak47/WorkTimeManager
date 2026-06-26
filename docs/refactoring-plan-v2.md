@@ -182,7 +182,8 @@ const normalized = {
 | `weekend` | `true` | `weekend` | `true` |
 | `swapped_day_off` | absent | `holiday` | `false` |
 | `swapped_workday` | absent | `workday` | `false` |
-| `pre_holiday_short` | absent | *(base day)* + `isShortDay: true` | `false` |
+| `workday` + `is_short_day: true` | absent | `workday` + `isShortDay: true` | `false` |
+| `swapped_day_off` + `is_short_day: true` | absent | `holiday` + `isShortDay: true` | `false` |
 
 ### Tests
 

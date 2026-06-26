@@ -39,10 +39,6 @@ function normaliseEntry(entry) {
     case 'swapped_workday':
       dayType = 'workday';
       break;
-    case 'pre_holiday_short':
-      dayType = null;
-      isShortDay = true;
-      break;
     case 'workday':
       dayType = 'workday';
       break;
@@ -51,6 +47,10 @@ function normaliseEntry(entry) {
       break;
     default:
       dayType = null;
+  }
+
+  if (entry.is_short_day) {
+    isShortDay = true;
   }
 
   return {
@@ -111,6 +111,13 @@ export function createCalendarService(rawCalendarData = {}) {
       if (norm.note) base.note = norm.note;
       if (norm.swapSource) base.swapSource = norm.swapSource;
       if (norm.observedDate) base.observedDate = norm.observedDate;
+
+      if (entry.type === 'swapped_workday' && norm.swapSource) {
+        const sourceEntry = rawCalendarData[norm.swapSource];
+        if (sourceEntry && sourceEntry.is_short_day) {
+          base.isShortDay = true;
+        }
+      }
     }
 
     base.isHoliday = base.dayType === 'holiday';
