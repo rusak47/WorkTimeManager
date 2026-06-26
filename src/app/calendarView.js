@@ -41,14 +41,24 @@ function buildCellClass(dayInfo, dateStr, todayStr, hasSessions, markedDays) {
   const isHoliday = dayInfo.isHoliday || markedDays.some(d => d.date === dateStr && d.dayType === 'Holiday');
   const isVacation = dayInfo.isVacation || markedDays.some(d => d.date === dateStr && d.dayType === 'Vacation');
 
-  if (isHoliday) parts.push('cal-holiday');
-  else if (isVacation) parts.push('cal-vacation');
-  else if (dayInfo.isWeekend) parts.push('cal-weekend');
+  if (dayInfo.swapSource) {
+    if (dayInfo.dayType === 'holiday') {
+      parts.push('cal-swapped-day-off');
+    } else {
+      parts.push('cal-swapped-workday');
+    }
+  } else if (isHoliday) {
+    parts.push('cal-holiday');
+  } else if (isVacation) {
+    parts.push('cal-vacation');
+  } else if (dayInfo.isWeekend) {
+    parts.push('cal-weekend');
+  }
 
   if (dayInfo.isMemoriam) parts.push('cal-memoriam');
-  if (dayInfo.isShortDay) parts.push('cal-short');
+  if (dayInfo.isShortDay && !dayInfo.swapSource) parts.push('cal-short');
 
-  if (dayInfo.note && !dayInfo.isHoliday && !dayInfo.isMemoriam && !dayInfo.isShortDay && !isVacation) {
+  if (dayInfo.note && !dayInfo.isHoliday && !dayInfo.isMemoriam && !dayInfo.isShortDay && !isVacation && !dayInfo.swapSource) {
     parts.push('cal-information');
   }
 
@@ -158,7 +168,7 @@ export function createCalendarView(store) {
       const hasDot = Array.from(grid.children).some(c => c.classList.contains('cal-has-sessions'));
       const hasHoliday = Array.from(grid.children).some(c => c.classList.contains('cal-holiday'));
       const hasMemoriam = Array.from(grid.children).some(c => c.classList.contains('cal-memoriam'));
-      const hasSwapped = Array.from(grid.children).some(c => c.classList.contains('cal-swapped'));
+      const hasSwapped = Array.from(grid.children).some(c => c.classList.contains('cal-swapped-day-off') || c.classList.contains('cal-swapped-workday'));
       const hasShort = Array.from(grid.children).some(c => c.classList.contains('cal-short'));
       const hasVacation = Array.from(grid.children).some(c => c.classList.contains('cal-vacation'));
       const items = [];

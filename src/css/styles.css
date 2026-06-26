@@ -220,12 +220,17 @@
             color: #5b21b6;
         }
         .cal-memoriam {
-            background-color: #fce7f3;
+            border-color: #f9a8d4;
+            border-width: 1.5px;
             color: #9d174d;
         }
-        .cal-swapped {
-            background-color: #fef3c7;
-            color: #92400e;
+        .cal-swapped-day-off {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .cal-swapped-workday {
+            border-color: #fef3c7;
+            border-width: 1.5px;
         }
         .cal-short {
             background-color: #fef3c7;
@@ -279,44 +284,90 @@
         .cal-legend-swapped { background-color: #fef3c7; }
         .cal-legend-short { background-color: #fef3c7; }
         .cal-legend-vacation { background-color: #ede9fe; }
-        .dark-mode .cal-legend-holiday { background-color: #064e3b; }
-        .dark-mode .cal-legend-memoriam { background-color: #4c0519; }
-        .dark-mode .cal-legend-swapped { background-color: #451a03; }
-        .dark-mode .cal-legend-short { background-color: #1a2e05; }
-        .dark-mode .cal-legend-vacation { background-color: #3b0764; }
+        .dark-mode .cal-legend-holiday { background-color: #680a0a; border: 1px solid #845959; }
+        .dark-mode .cal-legend-memoriam { background-color: #2a2050; border: 1px solid #5046a0; }
+        .dark-mode .cal-legend-swapped { background-color: #3a2d10; border: 1px solid #7a5a1a; }
+        .dark-mode .cal-legend-short { background-color: #3a2d10; border: 1px solid #7a5a1a; }
+        .dark-mode .cal-legend-vacation { background-color: #3b0764; border: 1px solid #7c3aed; }
+        .dark-mode #cal-legend {
+            color: #8898bb;
+        }
+        .dark-mode .cal-legend-dot {
+            color: #5b8df5;
+        }
 
+        .dark-mode #calendar-content > div {
+            background-color: #1e2535 !important;
+        }
         .dark-mode .cal-day {
-            border-color: var(--lt-700);
+            background-color: #252e45;
+            border-color: transparent;
+        }
+        .dark-mode .cal-day-num {
+            color: #c8d0e8;
+        }
+        .dark-mode .cal-weekend {
+            background-color: #1d2438;
+        }
+        .dark-mode .cal-weekend .cal-day-num {
+            color: #8090b0;
         }
         .dark-mode .cal-day-other {
-            color: #6b7280;
-            background-color: #374151;
-        }
-        .dark-mode .cal-day-other .cal-day-num {
-            font-weight: 400;
-        }
-        .dark-mode .cal-today .cal-day-num {
-            color: #60a5fa;
-        }
-        .dark-mode .cal-today::after {
-            border-color: #3b82f6;
+            opacity: 0.35;
         }
         .dark-mode .cal-holiday {
-            background-color: #064e3b;
-            color: #6ee7b7;
+            background-color: #680a0a;
+            border-color: #845959;
+            border-width: 1.5px;
         }
-        .dark-mode .cal-vacation {
-            background-color: #3b0764;
-            color: #c4b5fd;
+        .dark-mode .cal-holiday .cal-day-num {
+            color: #fca5a5;
         }
         .dark-mode .cal-memoriam {
-            background-color: #4c0519;
-            color: #f9a8d4;
+            border-color: #5046a0;
+            border-width: 1.5px;
         }
-        .dark-mode .cal-swapped,
+        .dark-mode .cal-memoriam .cal-day-num {
+            color: #a899f5;
+        }
         .dark-mode .cal-short {
-            background-color: #451a03;
-            color: #fbbf24;
+            background-color: #3a2d10;
+            border-color: #7a5a1a;
+            border-width: 1.5px;
+        }
+        .dark-mode .cal-short .cal-day-num {
+            color: #f0b840;
+        }
+        .dark-mode .cal-swapped-day-off {
+            background-color: #680a0a;
+            border-color: #845959;
+            border-width: 1.5px;
+        }
+        .dark-mode .cal-swapped-day-off .cal-day-num {
+            color: #fca5a5;
+        }
+        .dark-mode .cal-swapped-workday {
+            background-color: #252e45;
+            border-color: #7a5a1a;
+            border-width: 1.5px;
+            color: #c8d0e8;
+        }
+        .dark-mode .cal-today::after {
+            border-color: #5b8df5;
+        }
+        .dark-mode .cal-today .cal-day-num {
+            color: #5b8df5;
+        }
+        .dark-mode .cal-has-sessions::before {
+            background-color: #5b8df5;
+        }
+        .dark-mode .cal-vacation {
+            background-color: #2a2050;
+            border-color: #7c3aed;
+            border-width: 1.5px;
+        }
+        .dark-mode .cal-vacation .cal-day-num {
+            color: #c4b5fd;
         }
         .dark-mode .cal-information {
             background-color: #1e3a5f;
