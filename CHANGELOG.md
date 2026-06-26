@@ -2,6 +2,9 @@
 
 ## Unreleased (2026-06-26)
 
+### Added
+- **Crash auto-backup** — running session state is periodically persisted (default 5 min, configurable in Settings → Backup) to the existing storage file. On startup, a running session is restored if less than 24h old; stale backups are silently discarded. A recovery banner is shown on restored sessions. (branch `crash-auto-backup`)
+
 ### Fixed
 - **June 22 swapped_day_off short-day propagation** — swapped_workday (June 27) now inherits `isShortDay` from the `swap_source` entry's `is_short_day` field. The holidays JSON was updated from `type: "pre_holiday_short"` to `type: "workday"` + `"is_short_day": true`; `normaliseEntry` now detects `is_short_day` generically on any entry type instead of relying on a dedicated `pre_holiday_short` type.
 

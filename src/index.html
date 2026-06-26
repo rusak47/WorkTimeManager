@@ -46,6 +46,12 @@
                 <div class="bg-white rounded-xl shadow-md p-6 mb-8 dark:bg-gray-700 dark:text-white">
                     <div id="today-status" class="mb-4 text-sm"></div>
 
+                    <!-- Crash Recovery Banner -->
+                    <div id="crash-recovery-banner" class="hidden mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg text-yellow-800 text-sm flex justify-between items-center dark:bg-yellow-900 dark:bg-opacity-20 dark:border-yellow-600 dark:text-yellow-200">
+                        <span><i class="fas fa-exclamation-triangle mr-2"></i> A running session was recovered from the last backup.</span>
+                        <button id="dismiss-recovery-banner" class="text-yellow-600 hover:text-yellow-800 font-medium dark:text-yellow-400 dark:hover:text-yellow-300">Dismiss</button>
+                    </div>
+
                     <div class="flex flex-col md:flex-row justify-between items-center mb-6">
                         <div class="mb-4 md:mb-0">
                             <h2 class="text-xl font-semibold">Current Session</h2>
@@ -430,6 +436,11 @@
                     </div>
                     
                     <div id="backup-settings" class="space-y-4 hidden">
+                        <div>
+                            <label for="backup-interval" class="block text-sm font-medium mb-1">Auto-backup interval (seconds)</label>
+                            <input type="number" id="backup-interval" min="30" value="300" class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500">
+                            <p class="text-xs text-gray-500 mt-1 dark:text-gray-400">How often to save the running session state for crash recovery. Minimum 30 seconds. Default 300 (5 minutes).</p>
+                        </div>
                         <div>
                             <label class="block text-sm font-medium mb-2">Backup & Restore</label>
                             <div class="grid grid-cols-2 gap-4">

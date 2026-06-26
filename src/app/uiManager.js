@@ -762,6 +762,16 @@ export function createUIManager(store) {
     }
   }
 
+  function showCrashRecoveryBanner() {
+    const banner = document.getElementById('crash-recovery-banner');
+    if (banner) banner.classList.remove('hidden');
+  }
+
+  function hideCrashRecoveryBanner() {
+    const banner = document.getElementById('crash-recovery-banner');
+    if (banner) banner.classList.add('hidden');
+  }
+
   function applyLatestConfig() {
     const s = store.getState();
     if (s.configs.length === 0) return;
@@ -794,6 +804,11 @@ export function createUIManager(store) {
       enableDarkMode();
     } else {
       disableDarkMode();
+    }
+    const backupIntervalInput = document.getElementById('backup-interval');
+    if (backupIntervalInput) {
+      const backupMs = s.backupIntervalMs || 300000;
+      backupIntervalInput.value = Math.floor(backupMs / 1000);
     }
   }
 
@@ -1145,6 +1160,8 @@ export function createUIManager(store) {
     enableDarkMode,
     disableDarkMode,
     toggleDarkMode,
+    showCrashRecoveryBanner,
+    hideCrashRecoveryBanner,
     applyLatestConfig,
     updateStatistics,
     updateYearlyStatsTable,

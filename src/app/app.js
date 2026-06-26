@@ -1,5 +1,6 @@
 import * as utils from '../js/utils.js';
 import { createCalendarView } from './calendarView.js';
+import { DEFAULT_BACKUP_INTERVAL_MS, CURRENT_SESSION_INIT } from './constants.js';
 
 const INITIAL_STATE = Object.freeze({
   sessions: [],
@@ -9,6 +10,7 @@ const INITIAL_STATE = Object.freeze({
   currentTab: 'tracker',
   currentStatsPeriod: 'daily',
   darkMode: false,
+  backupIntervalMs: 300000,
   tracker: { startTime: null, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
 });
 
@@ -24,6 +26,7 @@ export { INITIAL_STATE };
 export function createEventHandlers(deps) {
   const { store, storage, sessionManager, configManager, statsManager, ui, a11y } = deps;
   let timerInterval = null;
+  let backupInterval = null;
   let calendarService = null;
   let calendarView = null;
 
@@ -33,6 +36,13 @@ export function createEventHandlers(deps) {
     if (state && state.markedDays) store.setState({ markedDays: state.markedDays });
     if (state && state.tags) store.setState({ tags: state.tags });
     if (state && state.darkMode !== undefined) store.setState({ darkMode: state.darkMode });
+    if (state && state.backupIntervalMs) store.setState({ backupIntervalMs: state.backupIntervalMs });
+    if (state && state.tracker && state.tracker.startTime) {
+      const age = Date.now() - state.tracker.startTime;
+      if (age < 24 * 3600 * 1000) {
+        store.setState({ tracker: state.tracker });
+      }
+    }
   }
 
   async function loadData() {
@@ -68,6 +78,8 @@ export function createEventHandlers(deps) {
         markedDays: s.markedDays,
         tags: s.tags,
         darkMode: s.darkMode,
+        tracker: s.tracker,
+        backupIntervalMs: s.backupIntervalMs,
       });
     } catch (err) {
       console.error('Failed to save data:', err);
@@ -87,9 +99,13 @@ export function createEventHandlers(deps) {
 
   function startSession() {
     clearInterval(timerInterval);
+    clearInterval(backupInterval);
     sessionManager.startTracking();
     ui.updateButtonStates(true);
     timerInterval = setInterval(ui.updateTimerDisplay, 1000);
+    const s = store.getState();
+    const intervalMs = s.backupIntervalMs || DEFAULT_BACKUP_INTERVAL_MS;
+    backupInterval = setInterval(saveState, intervalMs);
   }
 
   function stopSession() {
@@ -97,6 +113,8 @@ export function createEventHandlers(deps) {
     const tracker = s.tracker;
     if (!tracker.startTime) return;
     clearInterval(timerInterval);
+    clearInterval(backupInterval);
+    backupInterval = null;
 
     if (tracker.isPaused) {
       const breakDuration = Math.floor((Date.now() - tracker.pauseStart) / 1000);
@@ -141,6 +159,7 @@ export function createEventHandlers(deps) {
     ui.updateTimerDisplay();
     sessionManager.resetTracker();
     ui.updateButtonStates(false);
+    saveState();
     const notes = document.getElementById('session-notes');
     if (notes) notes.classList.remove('hidden');
   }
@@ -469,6 +488,9 @@ export function createEventHandlers(deps) {
     const untaxedMinInput = document.getElementById('untaxed-min');
     const inflationRateInput = document.getElementById('inflation-rate');
     const darkModeSetting = document.getElementById('dark-mode-setting');
+    const backupIntervalInput = document.getElementById('backup-interval');
+    const backupIntervalSec = parseInt(backupIntervalInput ? backupIntervalInput.value : '300', 10);
+    store.setState({ backupIntervalMs: Math.max(30000, backupIntervalSec * 1000) });
     configManager.addConfig({
       workingHours: parseInt(workingHoursInput ? workingHoursInput.value : '8', 10) || 8,
       breakDuration: parseInt(breakDurationSetting ? breakDurationSetting.value : '60', 10) || 60,
@@ -650,6 +672,7 @@ export function createEventHandlers(deps) {
           const isHidden = details.classList.toggle('hidden');
           btn.innerHTML = isHidden ? '<i class="fas fa-chevron-down mr-1"></i>Details' : '<i class="fas fa-chevron-up mr-1"></i>Details';
         });
+    document.getElementById('dismiss-recovery-banner')?.addEventListener('click', () => ui.hideCrashRecoveryBanner());
     document.getElementById('add-tag-btn')?.addEventListener('click', addCustomTag);
     document.getElementById('tracker-tab')?.addEventListener('click', () => switchTab('tracker'));
     document.getElementById('sessions-tab')?.addEventListener('click', () => switchTab('sessions'));
@@ -746,6 +769,17 @@ export function createEventHandlers(deps) {
       }
     } catch (err) {
       console.error('Failed to load calendar:', err);
+    }
+
+    const recoveredTracker = store.getState().tracker;
+    if (recoveredTracker && recoveredTracker.startTime) {
+      clearInterval(timerInterval);
+      clearInterval(backupInterval);
+      ui.updateButtonStates(true);
+      timerInterval = setInterval(ui.updateTimerDisplay, 1000);
+      const intervalMs = s.backupIntervalMs || DEFAULT_BACKUP_INTERVAL_MS;
+      backupInterval = setInterval(saveState, intervalMs);
+      ui.showCrashRecoveryBanner();
     }
 
     calendarView = createCalendarView(store);

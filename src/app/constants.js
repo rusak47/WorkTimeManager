@@ -53,4 +53,6 @@ export const CURRENT_SESSION_INIT = {
   isBreak: false,
 };
 
+export const DEFAULT_BACKUP_INTERVAL_MS = 300000; // 5 minutes
+
 export const STATS_PERIODS = ['daily', 'weekly', 'monthly', 'yearly'];

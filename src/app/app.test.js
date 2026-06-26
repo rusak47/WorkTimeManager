@@ -113,6 +113,9 @@ function setupDOM() {
     <div id="stats-tab"></div>
     <div id="config-tab"></div>
     <button id="add-tag-btn"></button>
+    <div id="crash-recovery-banner" class="hidden"></div>
+    <button id="dismiss-recovery-banner"></button>
+    <input id="backup-interval" value="300" />
   `;
 }
 
@@ -133,6 +136,7 @@ describe('app event handlers', () => {
       currentTab: 'tracker',
       currentStatsPeriod: 'daily',
       darkMode: false,
+      backupIntervalMs: 300000,
       tracker: { startTime: null, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
     });
     ui = createUIManager(store);
@@ -490,5 +494,92 @@ describe('app event handlers', () => {
     expect(store.getState().sessions.length).toBe(0);
     expect(e.preventDefault).toHaveBeenCalled();
     expect(window.alert).toHaveBeenCalled();
+  });
+
+  it('persistAndRender saves tracker and backupIntervalMs', () => {
+    const now = Date.now();
+    store.setState({
+      sessions: [],
+      tracker: { startTime: now, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
+      backupIntervalMs: 600000,
+    });
+    storage.saveState.mockClear();
+    app.persistAndRender();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tracker.startTime).toBe(now);
+    expect(saved.backupIntervalMs).toBe(600000);
+  });
+
+  it('loadData restores fresh tracker from backup', async () => {
+    const now = Date.now();
+    storage.loadState.mockResolvedValue({
+      sessions: [],
+      configs: [],
+      markedDays: [],
+      tags: [],
+      darkMode: false,
+      tracker: { startTime: now, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
+      backupIntervalMs: 600000,
+    });
+    await app.loadData();
+    const s = store.getState();
+    expect(s.tracker.startTime).toBe(now);
+    expect(s.backupIntervalMs).toBe(600000);
+  });
+
+  it('loadData discards stale tracker older than 24h', async () => {
+    const staleTime = Date.now() - 25 * 3600 * 1000;
+    storage.loadState.mockResolvedValue({
+      sessions: [],
+      configs: [],
+      markedDays: [],
+      tags: [],
+      darkMode: false,
+      tracker: { startTime: staleTime, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
+      backupIntervalMs: 300000,
+    });
+    await app.loadData();
+    const s = store.getState();
+    expect(s.tracker.startTime).toBeNull();
+  });
+
+  it('loadData does not override tracker when no tracker in saved state', async () => {
+    storage.loadState.mockResolvedValue({
+      sessions: [],
+      configs: [],
+      markedDays: [],
+      tags: [],
+      darkMode: false,
+    });
+    await app.loadData();
+    const s = store.getState();
+    expect(s.tracker.startTime).toBeNull();
+  });
+
+  it('saveConfig reads backup interval from input', () => {
+    store.setState({ configs: [] });
+    document.getElementById('backup-interval').value = '120';
+    window.alert = vi.fn();
+    app.saveConfig();
+    expect(store.getState().backupIntervalMs).toBe(120000);
+  });
+
+  it('applyLatestConfig sets backup-interval input from store', () => {
+    store.setState({
+      backupIntervalMs: 120000,
+      configs: [{ id: 1, workingHours: 8, breakDuration: 60, weekStart: 1, salaryType: 'hourly', salaryTaxType: 'net', salaryValue: 15, salaryTax: 20, untaxedMin: 500, inflationRate: 2.5, darkMode: false }],
+    });
+    ui.applyLatestConfig();
+    expect(document.getElementById('backup-interval').value).toBe('120');
+  });
+
+  it('stopSession saves clean state with reset tracker', () => {
+    app.startSession();
+    storage.saveState.mockClear();
+    app.stopSession();
+    expect(storage.saveState).toHaveBeenCalled();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tracker.startTime).toBeNull();
+    expect(saved.backupIntervalMs).toBe(300000);
   });
 });

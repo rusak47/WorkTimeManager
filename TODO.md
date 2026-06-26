@@ -7,7 +7,7 @@
 - [low] — year selector dropdown in session view doesn't filter sessions when changed
 
 ## Sessions
-- [ ] [high - critical] when electron app crashes running session (paused or working) is lost. need to plan a backup scheme that will periodically save a current status and restore it on start
+- [x] [high - critical] crash auto-backup — persistent periodic backup saves running session state; restored on startup if <24h old. Configurable interval in Settings → Backup. (branch `crash-auto-backup`)
 - [ ] [normal+ - must have] when pressing pause show tags (rest selected by default) and notes field to enter break notes - if left empty, then keep default value. show no submit buttons - this is applied when pressing resume or stop.
 - [ ] [normal+ - must have] Allow notes while session is running — inline work tagging. Add a toggleable section (collapsible divider with up/down arrow) that reveals the same edit fields used when saving a session.
 - [ ] [normal+ - must have] Filter sessions by tags and/or text — input field with tag autocomplete/suggestion in the sessions tab.
