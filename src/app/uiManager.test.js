@@ -256,7 +256,7 @@ describe('uiManager', () => {
 
     it('shows short day from calendarService without text', () => {
       const cal = createCalendarService({
-        '2026-06-25': { type: 'pre_holiday_short', note: 'Pirmssvētku diena' },
+        '2026-06-25': { type: 'workday', is_short_day: true, note: 'Pirmssvētku diena' },
       });
       store.setState({ markedDays: [] });
       ui.updateTodayStatus(store.getState(), cal);

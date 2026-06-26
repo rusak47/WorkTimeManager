@@ -52,7 +52,8 @@
       "name": "Komunistiskā genocīda upuru piemiņas diena"
     },
     "2026-04-02": {
-      "type": "pre_holiday_short",
+      "type": "workday",
+      "is_short_day": true,
       "note": "Pirmssvētku diena"
     },
     "2026-04-03": {
@@ -79,7 +80,8 @@
       "name": "Latgales kongresa diena"
     },
     "2026-04-30": {
-      "type": "pre_holiday_short",
+      "type": "workday",
+      "is_short_day": true,
       "note": "Pirmssvētku diena"
     },
     "2026-05-01": {
@@ -151,6 +153,7 @@
       "type": "swapped_day_off",
       "swap_source": "2026-06-27",
       "note": "Darba diena pārcelta uz 27.06.2026",
+      "is_short_day": true,
       "is_memoriam": true,
       "name": "Varoņu piemiņas diena (Cēsu kaujas atceres diena)"
     },
@@ -237,7 +240,8 @@
       "name": "Lāčplēša diena"
     },
     "2026-11-17": {
-      "type": "pre_holiday_short",
+      "type": "workday",
+      "is_short_day": true,
       "note": "Pirmssvētku diena"
     },
     "2026-11-18": {
@@ -262,7 +266,8 @@
       "name": "Pret latviešu tautu vērstā totalitārā komunistiskā režīma genocīda upuru piemiņas diena"
     },
     "2026-12-23": {
-      "type": "pre_holiday_short",
+      "type": "workday",
+      "is_short_day": true,
       "note": "Pirmssvētku diena"
     },
     "2026-12-24": {
@@ -284,7 +289,8 @@
       "observed_date": "2026-12-26"
     },
     "2026-12-30": {
-      "type": "pre_holiday_short",
+      "type": "workday",
+      "is_short_day": true,
       "note": "Pirmssvētku diena"
     },
     "2026-12-31": {

@@ -2,6 +2,7 @@
 
 ## calendarService
 - `normaliseEntry` maps JSON `type` → internal `dayType`: `swapped_day_off` → `'holiday'`, `swapped_workday` → `'workday'`. Read `type` does not directly predict classification.
+- **Swapped_workday short status from swap_source**: `buildDayInfo:114-119` propagates `isShortDay` from the `swap_source` entry's `is_short_day` field to the `swapped_workday`. Requires the JSON entry pointed to by `swap_source` to have `"is_short_day": true`. The `calendar2json` module must set this field when the source date was pre-holiday short.
 - Overrides (`setOverride`/`clearOverride`) are in-memory only — lost when a new `createCalendarService(rawData)` is created. Persist only `state.markedDays` in the store.
 - Tooltip segments (all optional, joined by ` — `): `name` → `note` → `(moved from date)` → `marked.description`. Note is from `dayInfo.note`, distinct from `dayInfo.name`. Visible cell text shows only name, never category.
 
@@ -16,6 +17,9 @@
 ## handleSessionFormSubmit (app.js)
 - `durationSec` is calculated from `endTime - startTime - accumulatedPauseTimeMs`. When editing, `accumulatedPauseTimeSec` is read from the existing session (the edit modal has no field for it) and must be subtracted — otherwise sessions with breaks store total elapsed time instead of net work time.
 - The edit path in `sessionManager.updateSession` uses spread `{ ...existing, ...data }` so fields not in the edit form (like `accumulatedPauseTimeSec`) are preserved automatically.
+
+## State aggregates
+- Break sessions (`isBreak: true`) are stored in `state.sessions` alongside work sessions. Any `durationSec` aggregate (tracked hours, calendar totals, chart data) must filter `!s.isBreak`. `uiManager.js:93` follows this pattern.
 
 ## Testing
 - Date-dependent tests: `vi.useFakeTimers()` + `vi.setSystemTime()` in `beforeEach`, restore with `vi.useRealTimers()` in `afterEach`.

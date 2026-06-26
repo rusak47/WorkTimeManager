@@ -233,7 +233,7 @@ describe('createCalendarView', () => {
 
   it('renderCalendar deducts short day hours in footer total', () => {
     const cal = createCalendarService({
-      '2026-06-23': { type: 'pre_holiday_short', note: 'Pirmssvētku diena' },
+      '2026-06-23': { type: 'workday', is_short_day: true, note: 'Pirmssvētku diena' },
     });
     calView.renderCalendar(cal);
     const footer = document.getElementById('cal-total-hours');
@@ -244,7 +244,7 @@ describe('createCalendarView', () => {
 
   it('renderCalendar includes short day indicator', () => {
     const cal = createCalendarService({
-      '2026-06-23': { type: 'pre_holiday_short', note: 'Pirmssvētku diena' },
+      '2026-06-23': { type: 'workday', is_short_day: true, note: 'Pirmssvētku diena' },
     });
     calView.renderCalendar(cal);
     const day = document.querySelector('[data-date="2026-06-23"]');

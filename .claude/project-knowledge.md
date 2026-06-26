@@ -100,7 +100,7 @@ Source of truth for day classification. Loads from `resources/{year}-holidays.js
 - `getRawCalendar()` → unwrapped calendar data
 - `classifyWithOverride(dateStr)` → classify + check override
 
-Types: `workday` | `weekend` | `holiday` | `swapped_day_off` | `swapped_workday` | `pre_holiday_short`
+Types: `workday` | `weekend` | `holiday` | `swapped_day_off` | `swapped_workday`
 Booleans: `isHoliday`, `isWeekend`, `isVacation`, `isMemoriam`, `isShortDay`
 
 `is_memoriam` is additive boolean, NEVER a separate type. Only present when `true` in JSON (absent = false, normalised at load).
