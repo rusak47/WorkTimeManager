@@ -1,0 +1,120 @@
+# Calendar accessibility description — May 2026
+
+## Overall layout
+
+A dark-themed monthly calendar widget. The outer container is a rounded rectangle with background color `#1e2535` (dark navy blue). Navigation arrows sit left and right of the month title. The title reads **May 2026** in light text `#e2e6f0` at approximately 20px.
+
+> **Note on title visibility:** The heading is rendered in `#e2e6f0` against `#1e2535` — contrast ratio is approximately 8.5:1, which passes WCAG AA/AAA. However the title blends visually with the dark chrome and is not reinforced by any border, background highlight, or size contrast beyond 20px. A sighted user might scan past it. For a blind agent, the text content itself is unambiguous; the visual problem is purely aesthetic (low perceived hierarchy on screen).
+
+---
+
+## Column headers (row 1)
+
+Seven columns, Monday through Sunday, left to right.
+
+Labels: **Mon, Tue, Wed, Thu, Fri, Sat, Sun**
+
+Text color `#7a8299` (muted blue-gray), 12px, all-caps weight.
+
+---
+
+## Day cell types — color reference
+
+Each cell is a small rounded rectangle (8px radius). Five visual states:
+
+| Type | Background | Border | Number color | Meaning |
+|---|---|---|---|---|
+| Workday | `#252e45` dark blue-gray | transparent | `#c8d0e8` light lavender | Normal working day |
+| Weekend | `#1d2438` darker navy | transparent | `#8090b0` muted slate | Sat / Sun |
+| Holiday | `#0d3d35` deep teal-black | `#1a6b5e` teal, 1.5px | `#4ecfb5` bright mint | Full holiday |
+| Memorial | `#2a2050` deep violet-black | `#5046a0` violet, 1.5px | `#a899f5` soft lavender-purple | Memorial day type |
+| Short day | `#3a2d10` dark amber-brown | `#7a5a1a` warm gold, 1.5px | `#f0b840` bright amber | Reduced hours day |
+| Out-of-month | Same cell structure, `opacity: 0.35` | — | `#7a8299` | Days from April / June |
+
+### Tracked session dot
+
+A small filled circle `5×5px`, color `#5b8df5` (medium cornflower blue), centered horizontally, pinned to the bottom of the cell. Present on most workdays and some special days to indicate a session was logged.
+
+---
+
+## Grid — row by row, left to right
+
+### Row 1 — week of Apr 27
+
+| Position | Date | Type | Dot |
+|---|---|---|---|
+| Mon | Apr 27 | Out-of-month, faded | ● tracked |
+| Tue | Apr 28 | Out-of-month, faded | ● tracked |
+| Wed | Apr 29 | Out-of-month, faded | ● tracked |
+| Thu | Apr 30 | **Memorial** (violet) | ● tracked |
+| Fri | May 1 | Workday | ● tracked |
+| Sat | May 2 | Weekend | — |
+| Sun | May 3 | Weekend | — |
+
+### Row 2 — week of May 4
+
+| Position | Date | Type | Dot |
+|---|---|---|---|
+| Mon | May 4 | **Holiday** (teal) | ● tracked |
+| Tue | May 5 | Workday | ● tracked |
+| Wed | May 6 | Workday | ● tracked |
+| Thu | May 7 | Workday | ● tracked |
+| Fri | May 8 | **Memorial** (violet) | ● tracked |
+| Sat | May 9 | **Memorial** (violet) | — |
+| Sun | May 10 | **Holiday** (teal) | ● tracked |
+
+### Row 3 — week of May 11
+
+| Position | Date | Type | Dot |
+|---|---|---|---|
+| Mon | May 11 | Workday | ● tracked |
+| Tue | May 12 | Workday | ● tracked |
+| Wed | May 13 | Workday | ● tracked |
+| Thu | May 14 | Workday | ● tracked |
+| Fri | May 15 | Workday | ● tracked |
+| Sat | May 16 | Weekend | — |
+| Sun | May 17 | **Memorial** (violet) | — |
+
+### Row 4 — week of May 18
+
+| Position | Date | Type | Dot |
+|---|---|---|---|
+| Mon | May 18 | Workday | ● tracked |
+| Tue | May 19 | Workday | ● tracked |
+| Wed | May 20 | Workday | ● tracked |
+| Thu | May 21 | Workday | ● tracked |
+| Fri | May 22 | Workday | ● tracked |
+| Sat | May 23 | Weekend | — |
+| Sun | May 24 | **Short day** (amber) | ● tracked |
+
+### Row 5 — week of May 25
+
+| Position | Date | Type | Dot |
+|---|---|---|---|
+| Mon | May 25 | Workday | ● tracked |
+| Tue | May 26 | Workday | ● tracked |
+| Wed | May 27 | Workday | ● tracked |
+| Thu | May 28 | Workday | ● tracked |
+| Fri | May 29 | Workday | ● tracked |
+| Sat | May 30 | Weekend | — |
+| Sun | May 31 | Workday styling | — |
+
+---
+
+## Legend (below grid)
+
+Four items in a horizontal row, 12px text, color `#8898bb`:
+
+1. **●** Blue circle `#5b8df5` — Tracked sessions
+2. **■** Small square, fill `#0d3d35` / border `#1a6b5e` — Holiday
+3. **■** Small square, fill `#2a2050` / border `#5046a0` — Memorial
+4. **■** Small square, fill `#3a2d10` / border `#7a5a1a` — Short day
+
+---
+
+## Footer bar
+
+Separated by a hairline `0.5px rgba(255,255,255,0.08)`.
+
+- **Left:** muted text with two bold highlights in `#c8d0e8`: `Work days: 19 × 6h = 114.0h | Tracked: 18d 104.6h`
+- **Right:** `∨ Details` link in `#5b8df5` (accent blue)
