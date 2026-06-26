@@ -34,6 +34,7 @@
 - **Dark theme holiday colors** — Holiday/swap-day-off background changed from teal `#0d3d35` to dark red `#680a0a` with `#845959` border and `#fca5a5` number.
 - **`.cal-swapped` split into `.cal-swapped-day-off` and `.cal-swapped-workday`** — Swapped day-offs get `cal-swapped-day-off` (holiday styling). Swapped workdays get `cal-swapped-workday` (normal workday bg with short-day-style amber border). `isShortDay` CSS class no longer applied to swapped workdays.
 - **`.cal-memoriam` background removed** — Light mode: `#f9a8d4` border + `#9d174d` text. Dark mode: `#5046a0` border + `#a899f5` text. No fill.
+- **Tailwind dark variant scoped to `.dark-mode` class** — Added `@variant dark (&:where(.dark-mode, .dark-mode *))` so Tailwind's `dark:` classes respond to the app's toggle (not `prefers-color-scheme`). Fixes Electron having no way to switch theme when the OS is in dark mode.
 
 ## 2026-06-25 — Visual polish, tracked hours, holiday data loading
 
