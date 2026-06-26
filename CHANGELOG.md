@@ -20,6 +20,20 @@
 - **Calendar legend** — Dynamic legend below the grid shows colored swatches for Holiday, Memorial, Swapped, Short day, Vacation states and a dot for tracked sessions. Only states present in the current month are shown.
 - **Other-month cells opacity** — Added `opacity: 0.5` to `.cal-day-other` for clearer disabled/faded visual.
 - **Calendar footer layout** — Short day count text removed (total hours still accounts for short days internally). Details button moved to the right side on the same line as the workday summary.
+- **Dark theme calendar colors** per `tasks/calendar_color_design_dark_theme_feedback.txt`:
+  - Card background: `#1e2535`
+  - Workday: `#252e45` bg, `#c8d0e8` number, transparent border
+  - Weekend: `#1d2438` bg, `#8090b0` number
+  - Holiday: `#0d3d35` bg + `#1a6b5e` 1.5px border, `#4ecfb5` number
+  - Memorial: `#2a2050` bg + `#5046a0` 1.5px border, `#a899f5` number
+  - Short/swapped: `#3a2d10` bg + `#7a5a1a` 1.5px border, `#f0b840` number
+  - Other-month: `opacity: 0.35`
+  - Today: `#5b8df5` outline + number
+  - Tracked dot: `#5b8df5`
+  - Legend: `#8898bb` text, swatches with matching borders
+- **Dark theme holiday colors** — Holiday/swap-day-off background changed from teal `#0d3d35` to dark red `#680a0a` with `#845959` border and `#fca5a5` number.
+- **`.cal-swapped` split into `.cal-swapped-day-off` and `.cal-swapped-workday`** — Swapped day-offs get `cal-swapped-day-off` (holiday styling). Swapped workdays get `cal-swapped-workday` (normal workday bg with short-day-style amber border). `isShortDay` CSS class no longer applied to swapped workdays.
+- **`.cal-memoriam` background removed** — Light mode: `#f9a8d4` border + `#9d174d` text. Dark mode: `#5046a0` border + `#a899f5` text. No fill.
 
 ## 2026-06-25 — Visual polish, tracked hours, holiday data loading
 

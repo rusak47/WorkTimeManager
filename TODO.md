@@ -31,7 +31,7 @@
 - [x] [done] Show current-session holiday info on tracker tab — today-status banner with holidays, memorial days, swapped days, short days from calendar JSON + user overrides.
 - [x] [done] Calendar tab view with official holidays on a calendar grid (calendarService already implemented). (only if {year}-holidays.json is present)
 - [x] [rejected — implemented as separate calendar2json module, out of scope] Fetch holidays from rekini123.lv and likumi.lv.
-- [x] [high] Calendar visual polish — all items done per `tasks/calendar_color_design_feedback.txt`
+- [x] [high] Calendar visual polish — all items done per `tasks/calendar_color_design_feedback.txt` and dark theme per `tasks/calendar_color_design_dark_theme_feedback.txt`
 
 ## UI/UX
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
