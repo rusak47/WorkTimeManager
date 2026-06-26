@@ -8,6 +8,8 @@
 
 ## calendarView
 - `buildCellClass` merges two independent sources: `dayInfo` (from calendarService JSON) and `markedDays` (from store). System holidays take precedence over user-marked vacations in the if/else chain. `memoriam`, `shortDay`, `information` classes stack on top regardless.
+- Swap-source check must come before normal category checks: `swapSource` replaces `.cal-holiday`/`.cal-short` with `.cal-swapped-day-off`/`.cal-swapped-workday`. A CSS class in `styles.css` that `buildCellClass` never pushes (like the old bare `.cal-swapped`) is dead code — the legend check for it returns false too.
+- Memoriam cells use border-only styling (no background fill) in both light and dark themes — unlike holiday/short/vacation which use background colors. This is enforced in CSS, not in JS class logic.
 - `collectMonthEvents` reads only from `calendarService.getDayInfo()` — user-marked days with descriptions but no name/note in calendar JSON are NOT surfaced in the Details panel.
 - All UI text must be English. Locale-specific strings require explicit isolation in a future i18n layer.
 

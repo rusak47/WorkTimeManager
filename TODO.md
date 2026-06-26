@@ -35,6 +35,7 @@
 - [x] [high] Calendar visual polish — all items done per `tasks/calendar_color_design_feedback.txt` and dark theme per `tasks/calendar_color_design_dark_theme_feedback.txt`
 
 ## UI/UX
+- [x] [fixed] Tailwind dark variant scoped to `.dark-mode` class — fixes Electron having no way to switch theme when OS is in dark mode (`@variant dark` in styles.css)
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
 - [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `docs/tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
 - [ ] [low - good to have] Add grid/list toggle for recent sessions on tracker tab (1 session per row is wasteful).

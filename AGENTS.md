@@ -46,6 +46,10 @@ All dependencies (Chart.js, TailwindCSS, Font Awesome) are npm imports, not CDN 
 - Persistence in `src/storage/storage.js`
 - Entry point: `src/app/entry.js` (not `main.js`)
 
+## Tailwind v4 dark variant
+- Tailwind v4 has no config file or `darkMode` option. To scope `dark:` classes to a custom class (like `.dark-mode`) instead of `prefers-color-scheme`, add `@variant dark (&:where(.your-class, .your-class *));` to the CSS entry point after `@import "tailwindcss"`.
+- Without this, `dark:` classes follow OS theme preference and cannot be overridden by the app's toggle — a problem in Electron where there's no DevTools `prefers-color-scheme` override.
+
 ## Commands
 ```bash
 npm test           # vitest run --coverage
