@@ -52,36 +52,30 @@
                         <button id="dismiss-recovery-banner" class="text-yellow-600 hover:text-yellow-800 font-medium dark:text-yellow-400 dark:hover:text-yellow-300">Dismiss</button>
                     </div>
 
-                    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-                        <div class="mb-4 md:mb-0">
-                            <h2 class="text-xl font-semibold">Current Session</h2>
-                            <p class="text-gray-600 dark:text-gray-300">Track your work session in real-time</p>
-                        </div>
-                        <div class="flex space-x-4">
-                            <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium flex items-center">
-                                <i class="fas fa-play mr-2"></i> Start Session
-                            </button>
-                            <button id="stop-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-medium flex items-center dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white" disabled>
-                                <i class="fas fa-stop mr-2"></i> Stop Session
-                            </button>
-                            <button id="pause-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-medium flex items-center" disabled>
-                                <i class="fas fa-pause mr-2"></i> Pause
-                            </button>
-                        </div>
+                    <div class="grid grid-cols-1 min-[500px]:grid-cols-3 gap-6 mb-6 max-[500px]:w-fit max-[500px]:mx-auto">
+                        <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium flex items-center justify-center w-full disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-play sm:mr-2"></i> <span class="hidden sm:inline">Start Session</span>
+                        </button>
+                        <button id="stop-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium flex items-center justify-center w-full disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white" disabled>
+                            <i class="fas fa-stop sm:mr-2"></i> <span class="hidden sm:inline">Stop Session</span>
+                        </button>
+                        <button id="pause-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium flex items-center justify-center w-full disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fas fa-pause sm:mr-2"></i> <span class="hidden sm:inline">Pause</span>
+                        </button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-blue-50 p-4 rounded-lg dark:bg-blue-900 dark:bg-opacity-20">
-                            <p class="text-sm text-blue-600 font-medium mb-1 dark:text-blue-400">Current Time</p>
-                            <p id="current-time" class="text-2xl font-bold text-blue-800 dark:text-blue-300">--:--:--</p>
+                    <div class="grid grid-cols-1 min-[500px]:grid-cols-3 gap-6 max-[500px]:w-fit max-[500px]:mx-auto">
+                        <div class="bg-blue-50 p-3 sm:p-4 rounded-lg dark:bg-blue-900 dark:bg-opacity-20">
+                            <p class="text-sm text-blue-600 font-medium mb-0.5 min-[500px]:mb-1 dark:text-blue-400">Current Time</p>
+                            <p id="current-time" class="text-[clamp(1rem,4vw,1.5rem)] font-bold text-blue-800 dark:text-blue-300">--:--:--</p>
                         </div>
-                        <div class="bg-green-50 p-4 rounded-lg dark:bg-green-900 dark:bg-opacity-20 duration-display">
-                            <p class="text-sm text-green-600 font-medium mb-1 dark:text-green-400" id="duration-label">Session Duration</p>
-                            <p id="active-duration" class="text-2xl font-bold text-green-800 dark:text-green-300">00:00:00</p>
+                        <div class="bg-green-50 p-3 sm:p-4 rounded-lg dark:bg-green-900 dark:bg-opacity-20 duration-display">
+                            <p class="text-sm text-green-600 font-medium mb-0.5 min-[500px]:mb-1 dark:text-green-400" id="duration-label">Session Duration</p>
+                            <p id="active-duration" class="text-[clamp(1rem,4vw,1.5rem)] font-bold text-green-800 dark:text-green-300">00:00:00</p>
                         </div>
-                        <div class="bg-purple-50 p-4 rounded-lg dark:bg-purple-900 dark:bg-opacity-20">
-                            <p id="today-total-label" class="text-sm text-purple-600 font-medium mb-1 dark:text-purple-400">Today's Total</p>
-                            <p id="today-total" class="text-2xl font-bold text-purple-800 dark:text-purple-300">00:00:00</p>
+                        <div class="bg-purple-50 p-3 sm:p-4 rounded-lg dark:bg-purple-900 dark:bg-opacity-20">
+                            <p id="today-total-label" class="text-sm text-purple-600 font-medium mb-0.5 min-[500px]:mb-1 dark:text-purple-400">Today's Total</p>
+                            <p id="today-total" class="text-[clamp(1rem,4vw,1.5rem)] font-bold text-purple-800 dark:text-purple-300">00:00:00</p>
                         </div>
                     </div>
 

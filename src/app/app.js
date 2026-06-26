@@ -189,11 +189,11 @@ export function createEventHandlers(deps) {
       }
       sessionManager.resumeTracking();
       const pauseBtn = document.getElementById('pause-btn');
-      if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-pause mr-2"></i> Pause';
+      if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-pause sm:mr-2"></i> <span class="hidden sm:inline">Pause</span>';
     } else {
       sessionManager.pauseTracking();
       const pauseBtn = document.getElementById('pause-btn');
-      if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Resume';
+      if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-play sm:mr-2"></i> <span class="hidden sm:inline">Resume</span>';
     }
     ui.updateTimerDisplay();
     persistAndRender();

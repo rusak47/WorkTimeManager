@@ -198,7 +198,7 @@ export function createUIManager(store) {
       stopBtn.classList.remove('bg-red-500', 'hover:bg-red-600', 'text-white');
       pauseBtn.classList.add('bg-gray-200');
       pauseBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'text-white');
-      pauseBtn.innerHTML = '<i class="fas fa-pause mr-2"></i> Pause';
+      pauseBtn.innerHTML = '<i class="fas fa-pause sm:mr-2"></i> <span class="hidden sm:inline">Pause</span>';
     }
   }
 

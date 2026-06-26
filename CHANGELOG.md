@@ -2,6 +2,12 @@
 
 ## Unreleased (2026-06-26)
 
+### Changed
+- **Tracker UI fluid layout** — action buttons and timer cards now scale responsively. Buttons collapse to icon-only below 640px. Timer value text uses `clamp()` for smooth sizing across viewport widths. Cards stay in 3-column row down to 500px before stacking vertically. When stacked, cards shrink to fit content with uniform width. Removed redundant subtitle and "Current Session" heading. (branch `tracker-ui-timer-control-display-size-fluid-fix`)
+
+### Fixed
+- **Pause/Resume button text visible on narrow screens** — JS-set innerHTML now wraps label in responsive `hidden sm:inline` span, matching the template buttons. (branch `tracker-ui-timer-control-display-size-fluid-fix`)
+
 ### Added
 - **Crash auto-backup** — running session state is periodically persisted (default 5 min, configurable in Settings → Backup) to the existing storage file. On startup, a running session is restored if less than 24h old; stale backups are silently discarded. A recovery banner is shown on restored sessions. (branch `crash-auto-backup`)
 
