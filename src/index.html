@@ -112,7 +112,12 @@
                 </div>
 
                 <div class="bg-white rounded-xl shadow-md p-6 dark:bg-gray-700 dark:text-white">
-                    <h2 class="text-xl font-semibold mb-4">Recent Sessions</h2>
+                    <div class="flex items-center justify-between mb-4">
+                      <h2 class="text-xl font-semibold">Recent Sessions</h2>
+                      <button id="recent-sessions-grid-toggle" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600" title="Switch to grid view">
+                        <i class="fas fa-th"></i>
+                      </button>
+                    </div>
                     <div id="recent-sessions" class="space-y-3">
                         <!-- Recent sessions will be loaded here -->
                         <p class="text-gray-500 dark:text-gray-400 text-center py-8">No recent sessions found. Start tracking to see your sessions here.</p>

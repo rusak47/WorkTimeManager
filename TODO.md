@@ -38,7 +38,7 @@
 - [x] [fixed] Tailwind dark variant scoped to `.dark-mode` class — fixes Electron having no way to switch theme when OS is in dark mode (`@variant dark` in styles.css)
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
 - [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `docs/tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
-- [ ] [low - good to have] Add grid/list toggle for recent sessions on tracker tab (1 session per row is wasteful).
+- [x] [low - WIP] Add grid/list toggle for recent sessions on tracker tab (1 session per row is wasteful). (branch `tracker-ui-recent-sessions-grid-list-layout`)
 - [x] [low] - when display size is shrinked horizontally, tracker counters stack in a column and fit full window width, namely they become larger. while control buttons start/stop/pause doesnt change in size and stay in one line. at this point counters should repeat button behavior. only when buttons doesnt fit together in one line their text labels should be hidden and kept visual symbols. (branch `tracker-ui-timer-control-display-size-fluid-fix`)
 
 ## Settings / Config

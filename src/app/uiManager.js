@@ -4,6 +4,7 @@ import * as utils from '../js/utils.js';
 export function createUIManager(store) {
   let _showCurrentRest = true;
   let _showTodayWorkOnly = true;
+  let _isGridMode = false;
   let timeChart = null;
   let distributionChart = null;
   let incomeChart = null;
@@ -295,6 +296,19 @@ export function createUIManager(store) {
     updateStatistics();
   }
 
+  function toggleRecentSessionsGrid() {
+    _isGridMode = !_isGridMode;
+    const toggleBtn = document.getElementById('recent-sessions-grid-toggle');
+    if (toggleBtn) {
+      toggleBtn.innerHTML = _isGridMode
+        ? '<i class="fas fa-list"></i>'
+        : '<i class="fas fa-th"></i>';
+      toggleBtn.title = _isGridMode ? 'Switch to list view' : 'Switch to grid view';
+    }
+    renderRecentSessions();
+    return _isGridMode;
+  }
+
   function renderRecentSessions() {
     const container = document.getElementById('recent-sessions');
     const s = store.getState();
@@ -304,7 +318,45 @@ export function createUIManager(store) {
       return;
     }
     const recent = s.sessions.slice(0, 5);
-    container.innerHTML = recent.map(session => `
+    container.className = _isGridMode
+      ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3'
+      : 'space-y-3';
+    container.innerHTML = recent.map(session => _isGridMode
+      ? `
+      <div class="session-card-grid bg-white border border-gray-200 rounded-lg p-3 transition-all duration-200 dark:bg-gray-600 dark:border-gray-500">
+        <div class="mb-2">
+          <h3 class="font-medium text-gray-800 text-sm dark:text-white">${session.date}</h3>
+          <p class="text-xs text-gray-600 dark:text-gray-300">${utils.formatTime(new Date(session.startTime))} - ${utils.formatTime(new Date(session.endTime))}</p>
+          <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${utils.getDayTypeBadgeClass(session.dayType)}">
+            ${session.dayType}
+          </span>
+        </div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium dark:bg-blue-900 dark:bg-opacity-20 dark:text-blue-300">${session.duration}</span>
+          ${session.mood ? `
+          <div class="flex items-center">
+            <div class="flex">
+              ${Array.from({length: 5}).map((_, i) => `
+                <span class="text-xs ${i < Math.floor(session.mood) ? 'text-yellow-500' : 'text-gray-400'}">${i < Math.floor(session.mood) ? '\u2605' : '\u2606'}</span>
+              `).join('')}
+            </div>
+          </div>
+          ` : ''}
+        </div>
+        ${session.accumulatedPauseTimeSec ? `<div class="text-xs text-gray-500 dark:text-gray-400 mb-2">Rest ${utils.formatDuration(session.accumulatedPauseTimeSec)}</div>` : ''}
+        <div class="flex justify-between items-center">
+          <div class="flex flex-wrap gap-1">
+            ${session.tags ? session.tags.map(tag => `
+              <span class="text-xs px-1.5 py-0.5 rounded-full ${getTagBadgeClass(tag)}">${tag}</span>
+            `).join('') : ''}
+          </div>
+          <div class="flex space-x-2">
+            <button class="edit-session text-blue-600 hover:text-blue-800 text-xs dark:text-blue-400 dark:hover:text-blue-300" data-id="${session.id}"><i class="fas fa-edit"></i></button>
+            <button class="delete-session text-red-600 hover:text-red-800 text-xs dark:text-red-400 dark:hover:text-red-300" data-id="${session.id}"><i class="fas fa-trash-alt"></i></button>
+          </div>
+        </div>
+      </div>`
+      : `
       <div class="session-card bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 dark:bg-gray-600 dark:border-gray-500">
         <div class="flex justify-between items-start">
           <div>
@@ -349,8 +401,8 @@ export function createUIManager(store) {
             </button>
           </div>
         </div>
-      </div>
-    `).join('');
+      </div>`
+    ).join('');
   }
 
   function renderAllSessions(filteredSessions) {
@@ -1136,6 +1188,7 @@ export function createUIManager(store) {
     switchSettingsTab,
     switchStatsPeriod,
     renderRecentSessions,
+    toggleRecentSessionsGrid,
     renderAllSessions,
     populateYearSelector,
     showAddSessionModal,

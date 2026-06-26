@@ -85,6 +85,7 @@ function setupDOM() {
     <div id="current-session-start-time-input"></div>
     <div id="current-session-end-time-input"></div>
     <div id="current-session-accumulated-rest-duration-input"></div>
+    <button id="recent-sessions-grid-toggle"></button>
   `;
 }
 
@@ -341,6 +342,41 @@ describe('uiManager', () => {
       ui.renderRecentSessions();
       const cards = document.querySelectorAll('.session-card');
       expect(cards.length).toBe(3);
+    });
+
+    it('renders grid-mode cards when _isGridMode is true', () => {
+      store.setState({ sessions: mockSessions });
+      ui.toggleRecentSessionsGrid();
+      ui.renderRecentSessions();
+      const cards = document.querySelectorAll('.session-card-grid');
+      expect(cards.length).toBe(3);
+      const container = document.getElementById('recent-sessions');
+      expect(container.className).toContain('gap-3');
+    });
+
+    it('toggleRecentSessionsGrid flips _isGridMode', () => {
+      expect(ui.toggleRecentSessionsGrid()).toBe(true);
+      expect(ui.toggleRecentSessionsGrid()).toBe(false);
+      expect(ui.toggleRecentSessionsGrid()).toBe(true);
+    });
+
+    it('returns to list mode after toggle back', () => {
+      store.setState({ sessions: mockSessions });
+      ui.toggleRecentSessionsGrid();
+      ui.toggleRecentSessionsGrid();
+      ui.renderRecentSessions();
+      const cards = document.querySelectorAll('.session-card');
+      expect(cards.length).toBeGreaterThan(0);
+      const gridCards = document.querySelectorAll('.session-card-grid');
+      expect(gridCards.length).toBe(0);
+    });
+
+    it('hides notes in grid mode', () => {
+      store.setState({ sessions: mockSessions });
+      ui.toggleRecentSessionsGrid();
+      ui.renderRecentSessions();
+      const container = document.getElementById('recent-sessions');
+      expect(container.innerHTML).not.toContain('Weekend work');
     });
   });
 

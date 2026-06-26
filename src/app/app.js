@@ -682,6 +682,7 @@ export function createEventHandlers(deps) {
     document.getElementById('start-btn')?.addEventListener('click', startSession);
     document.getElementById('stop-btn')?.addEventListener('click', stopSession);
     document.getElementById('pause-btn')?.addEventListener('click', togglePause);
+    document.getElementById('recent-sessions-grid-toggle')?.addEventListener('click', () => ui.toggleRecentSessionsGrid());
     document.getElementById('save-session')?.addEventListener('click', saveSession);
     document.getElementById('add-session-btn')?.addEventListener('click', showAddSessionModal);
     document.getElementById('close-modal')?.addEventListener('click', hideSessionModal);

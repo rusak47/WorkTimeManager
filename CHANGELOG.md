@@ -9,6 +9,7 @@
 - **Pause/Resume button text visible on narrow screens** — JS-set innerHTML now wraps label in responsive `hidden sm:inline` span, matching the template buttons. (branch `tracker-ui-timer-control-display-size-fluid-fix`)
 
 ### Added
+- **WIP: Grid/list toggle for Recent Sessions** — toggle button in the header switches between full-width list cards and a compact multi-column grid (2-3 columns depending on viewport). Grid mode hides notes, uses smaller padding, and stacks info vertically. (branch `tracker-ui-recent-sessions-grid-list-layout`)
 - **Crash auto-backup** — running session state is periodically persisted (default 5 min, configurable in Settings → Backup) to the existing storage file. On startup, a running session is restored if less than 24h old; stale backups are silently discarded. A recovery banner is shown on restored sessions. (branch `crash-auto-backup`)
 
 ### Fixed
