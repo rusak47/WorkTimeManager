@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased (2026-06-27)
+
+### Fixed
+- **Calendar legend swatches synced to cell styling** — holiday/swapped legend swatches updated to `#fce5dc` (were `#dcfce7`). Memoriam legend swatches changed to border-only with transparent background to match cell style (were solid `#fce7f3`). Dark theme memoriam legend also fixed to border-only. All other legend colors audited and consistent.
+
 ## Unreleased (2026-06-26)
 
 ### Changed

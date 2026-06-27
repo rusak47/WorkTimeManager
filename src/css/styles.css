@@ -213,7 +213,7 @@
             font-weight: 400;
         }
         .cal-holiday {
-            background-color: #dcfce7;
+            background-color: #fce5dc;
             color: #166534;
         }
         .cal-vacation {
@@ -226,7 +226,7 @@
             color: #9d174d;
         }
         .cal-swapped-day-off {
-            background-color: #dcfce7;
+            background-color: #fce5dc;
             color: #166534;
         }
         .cal-swapped-workday {
@@ -280,13 +280,13 @@
             margin-right: 2px;
             vertical-align: middle;
         }
-        .cal-legend-holiday { background-color: #dcfce7; }
-        .cal-legend-memoriam { background-color: #fce7f3; }
-        .cal-legend-swapped { background-color: #fef3c7; }
+        .cal-legend-holiday { background-color: #fce5dc; }
+        .cal-legend-memoriam { border: 1px solid #f9a8d4; background: transparent; }
+        .cal-legend-swapped { background-color: #fce5dc; }
         .cal-legend-short { background-color: #fef3c7; }
         .cal-legend-vacation { background-color: #ede9fe; }
         .dark-mode .cal-legend-holiday { background-color: #680a0a; border: 1px solid #845959; }
-        .dark-mode .cal-legend-memoriam { background-color: #2a2050; border: 1px solid #5046a0; }
+        .dark-mode .cal-legend-memoriam { border: 1px solid #5046a0; background: transparent; }
         .dark-mode .cal-legend-swapped { background-color: #3a2d10; border: 1px solid #7a5a1a; }
         .dark-mode .cal-legend-short { background-color: #3a2d10; border: 1px solid #7a5a1a; }
         .dark-mode .cal-legend-vacation { background-color: #3b0764; border: 1px solid #7c3aed; }

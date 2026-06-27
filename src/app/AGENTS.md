@@ -10,6 +10,7 @@
 - `buildCellClass` merges two independent sources: `dayInfo` (from calendarService JSON) and `markedDays` (from store). System holidays take precedence over user-marked vacations in the if/else chain. `memoriam`, `shortDay`, `information` classes stack on top regardless.
 - Swap-source check must come before normal category checks: `swapSource` replaces `.cal-holiday`/`.cal-short` with `.cal-swapped-day-off`/`.cal-swapped-workday`. A CSS class in `styles.css` that `buildCellClass` never pushes (like the old bare `.cal-swapped`) is dead code — the legend check for it returns false too.
 - Memoriam cells use border-only styling (no background fill) in both light and dark themes — unlike holiday/short/vacation which use background colors. This is enforced in CSS, not in JS class logic.
+- **Legend swatches (`cal-legend-*`) are independent CSS classes, not auto-derived from cell classes.** Changing `.cal-holiday` background does not update `.cal-legend-holiday` — both must be edited independently. Border-only cells (memoriam, swapped-workday) need corresponding legend swatches with `border: 1px solid ...; background: transparent;` rather than `background-color`.
 - `collectMonthEvents` reads only from `calendarService.getDayInfo()` — user-marked days with descriptions but no name/note in calendar JSON are NOT surfaced in the Details panel.
 - All UI text must be English. Locale-specific strings require explicit isolation in a future i18n layer.
 
@@ -21,7 +22,8 @@
 - The edit path in `sessionManager.updateSession` uses spread `{ ...existing, ...data }` so fields not in the edit form (like `accumulatedPauseTimeSec`) are preserved automatically.
 
 ## State aggregates
-- Break sessions (`isBreak: true`) are stored in `state.sessions` alongside work sessions. Any `durationSec` aggregate (tracked hours, calendar totals, chart data) must filter `!s.isBreak`. `uiManager.js:93` follows this pattern.
+- Break sessions (`isBreak: true`) are stored in `state.sessions` alongside work sessions. Any `durationSec` aggregate (tracked hours, calendar totals, chart data) must filter `!s.isBreak`.
+- **Today's Work on tracker tab** filters by `tags.includes('work')`, not by `!isBreak`, so only sessions explicitly tagged "work" count toward the work total. `uiManager.js:94` follows this pattern.
 
 ## Testing
 - Date-dependent tests: `vi.useFakeTimers()` + `vi.setSystemTime()` in `beforeEach`, restore with `vi.useRealTimers()` in `afterEach`.

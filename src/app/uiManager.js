@@ -91,7 +91,7 @@ export function createUIManager(store) {
     const today = utils.formatDate(new Date());
     const todaySessions = s.sessions.filter(session => session.date === today);
     const workSec = todaySessions
-      .filter(session => !session.isBreak)
+      .filter(session => session.tags && session.tags.includes('work'))
       .reduce((sum, session) => sum + session.durationSec, 0);
     const totalSec = todaySessions.reduce((sum, session) => sum + session.durationSec, 0);
     const el = document.getElementById('today-total');
@@ -139,6 +139,7 @@ export function createUIManager(store) {
           tooltip = 'Memorial Day';
         } else if (info.isShortDay) {
           emoji = '⚠️';
+          displayName = info.note || '';
           tooltip = 'Short day — pre-holiday';
         }
 
@@ -154,7 +155,7 @@ export function createUIManager(store) {
           display = `${emoji}${namePart}`;
         }
 
-        if (info.note) tooltip += ` — ${info.note}`;
+        if (info.note && !info.isShortDay) tooltip += ` — ${info.note}`;
       }
     }
 

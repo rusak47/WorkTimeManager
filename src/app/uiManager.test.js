@@ -144,14 +144,25 @@ describe('uiManager', () => {
       expect(document.getElementById('today-total').textContent).toBe('00:00:00');
     });
 
-    it('sums today session durations', () => {
+    it('sums today session durations for work-tagged sessions', () => {
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-      store.setState({ sessions: [{ id: 99, date: todayStr, durationSec: 3600 }] });
+      store.setState({ sessions: [{ id: 99, date: todayStr, durationSec: 3600, tags: ['work'] }] });
       ui.updateTodayTotal();
       const total = document.getElementById('today-total').textContent;
       expect(total).not.toBe('00:00:00');
       expect(total).toBe('01:00:00');
+    });
+
+    it('excludes sessions without work tag', () => {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      store.setState({ sessions: [
+        { id: 1, date: todayStr, durationSec: 3600, tags: ['rest'] },
+        { id: 2, date: todayStr, durationSec: 1800, tags: ['work'] },
+      ]});
+      ui.updateTodayTotal();
+      expect(document.getElementById('today-total').textContent).toBe('00:30:00');
     });
   });
 
@@ -255,15 +266,15 @@ describe('uiManager', () => {
       expect(el.querySelector('span').title).toBe('Shifted workday (originally Saturday)');
     });
 
-    it('shows short day from calendarService without text', () => {
+    it('shows short day from calendarService with text', () => {
       const cal = createCalendarService({
         '2026-06-25': { type: 'workday', is_short_day: true, note: 'Pirmssvētku diena' },
       });
       store.setState({ markedDays: [] });
       ui.updateTodayStatus(store.getState(), cal);
       const el = document.getElementById('today-status');
-      expect(el.textContent).toBe('⚠️');
-      expect(el.querySelector('span').title).toBe('Short day — pre-holiday — Pirmssvētku diena');
+      expect(el.textContent).toBe('⚠️ Pirmssvētku diena');
+      expect(el.querySelector('span').title).toBe('Short day — pre-holiday');
     });
 
     it('calendarService takes priority over markedDays', () => {
