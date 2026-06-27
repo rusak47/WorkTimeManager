@@ -212,6 +212,9 @@
         .cal-day-other .cal-day-num {
             font-weight: 400;
         }
+        .cal-weekend {
+            background-color: #fff3ef;
+        }
         .cal-holiday {
             background-color: #fce5dc;
             color: #166534;
