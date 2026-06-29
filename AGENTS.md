@@ -40,7 +40,7 @@ All dependencies (Chart.js, TailwindCSS, Font Awesome) are npm imports, not CDN 
 - **Multi-file DOM coupling**: adding a new interactive element requires coordinated changes in: HTML template, handler module, `app.js` event wiring, test `setupDOM()`, and CSS. Missing any one causes runtime errors or silent coverage gaps.
 
 ## File layout
-- Business logic managers in `src/app/` (pure functions, no DOM)
+- Feature specs and design docs for unimplemented functionality go in `tasks/{new,pending,rejected,done}/`. `docs/` is reserved for finished app documentation only — never write spec docs there.
 - UI rendering in `src/app/uiManager.js` (DOM reads/writes, Chart.js)
 - State in `src/app/state.js` (flat store, no deep merge)
 - Persistence in `src/storage/storage.js`
@@ -59,6 +59,9 @@ npm run build      # vite build
 
 ## Instruction interpretation
 - "Don't use language X" means localize the labels, not remove the feature. Locale is presentation; business logic and feature scope are separate concerns. Overcorrecting (removing functionality instead of translating) destroys work.
+
+## Task lifecycle
+- Doc/TODO review requires loading the `task-doc-lifecycle` skill first. Its trigger conditions include "reviews docs" and "reviews the TODO" despite its name suggesting only task tracking.
 
 ## Commit conventions
 - CHANGELOG.md: add entry under `## Unreleased` with the date

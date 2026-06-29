@@ -8,6 +8,7 @@
 
 ## Sessions
 - [x] [high - critical] crash auto-backup — persistent periodic backup saves running session state; restored on startup if <24h old. Configurable interval in Settings → Backup. (branch `crash-auto-backup`)
+- [ ] [normal++ - benefits?] - currently work session is not saved on pause, but accumulates brake time and is calculated afterwards. isnt it better to save work each time pause is pressed? what are the benefits - easier to calculate work time, no dependency on internal brake time accumulation, no sessions possible spanning over multiple days; possible cons - no behindhand work sessions possible (manual edit only or add shortcuts like move back -24h), one task sessions shattered in more pieces, e.g. 15min breaks. other ideas? (design spec: `tasks/new/20260629-save-on-pause-spec.md`)
 - [ ] [normal+ - must have] when pressing pause show tags (rest selected by default) and notes field to enter break notes - if left empty, then keep default value. show no submit buttons - this is applied when pressing resume or stop.
 - [ ] [normal+ - must have] Allow notes while session is running — inline work tagging. Add a toggleable section (collapsible divider with up/down arrow) that reveals the same edit fields used when saving a session.
 - [ ] [normal+ - must have] Filter sessions by tags and/or text — input field with tag autocomplete/suggestion in the sessions tab.
@@ -19,7 +20,7 @@
 - [ ] [low priority - maybe] Support multiple notes per session (store as array).
 
 ## Tags
-- [ ] [normal++ - blocking - must have] **#tag parsing in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. New tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on save.
+- [ ] [normal++ - blocking - must have] **#tag parsing in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. New tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save.
 - [ ] [normal+ - must have] Filter statistics by subtags — tags stored with `#` prefix in sessions should be filterable. All configured tags (custom + default) should appear as filter options.
 - [ ] [low - maybe] Early tagging — tag picker on the "Start Session" button so sessions are tagged from the beginning.
 - [ ] [duplicate — covered by #tag parsing above] Allow entering custom tags on the fly.
@@ -32,13 +33,16 @@
 - [x] [done] Show current-session holiday info on tracker tab — today-status banner with holidays, memorial days, swapped days, short days from calendar JSON + user overrides.
 - [x] [done] Calendar tab view with official holidays on a calendar grid (calendarService already implemented). (only if {year}-holidays.json is present)
 - [x] [rejected — implemented as separate calendar2json module, out of scope] Fetch holidays from rekini123.lv and likumi.lv.
-- [x] [high] Calendar visual polish — all items done per `tasks/calendar_color_design_feedback.txt` and dark theme per `tasks/calendar_color_design_dark_theme_feedback.txt`
+- [x] [high] Calendar visual polish — all items done per `tasks/done/2026-06-26-calendar-color-design-feedback.txt` and dark theme per `tasks/done/2026-06-26-calendar-color-design-dark-theme-feedback.txt`
 
 ## UI/UX
 - [x] [fixed] Tailwind dark variant scoped to `.dark-mode` class — fixes Electron having no way to switch theme when OS is in dark mode (`@variant dark` in styles.css)
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
-- [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `docs/tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
+- [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `tasks/new/tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
 - [x] [low - WIP] Add grid/list toggle for recent sessions on tracker tab (1 session per row is wasteful). (branch `tracker-ui-recent-sessions-grid-list-layout`)
+- [ ] [low - tech debt] Replace Font Awesome CDN with npm import (`@fortawesome/fontawesome-free`) — still loaded from `cdnjs.cloudflare.com` in `index.html:7`. Impact: removes external dependency, enables offline use, aligns with Phase 7 CDN-removal goal.
+- [ ] [low - tech debt] Add `src/js/utils.js` unit tests — utility functions (date/number formatting) lack coverage. Medium priority in refactoring plan Phase 8, never written.
+- [ ] [low - future] Set up E2E test infrastructure (Playwright) for full Electron app flows — listed as "future" in refactoring plan. Impact: UI regressions can slip past unit tests.
 - [x] [low] - when display size is shrinked horizontally, tracker counters stack in a column and fit full window width, namely they become larger. while control buttons start/stop/pause doesnt change in size and stay in one line. at this point counters should repeat button behavior. only when buttons doesnt fit together in one line their text labels should be hidden and kept visual symbols. (branch `tracker-ui-timer-control-display-size-fluid-fix`)
 
 ## Settings / Config
