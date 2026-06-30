@@ -1,3 +1,5 @@
+Child of: `tasks/done/2026-06-26-calendar-color-design-dark-theme-feedback.txt` (dark theme counterpart)
+
 The current color system has several usability and accessibility issues. The biggest problem is that color is being used without a clear semantic hierarchy, causing multiple statuses to compete for attention. This makes the calendar difficult to scan quickly.
 
 Since you asked to first apply a better color palette on the mockup for approval before providing feedback, I'd recommend generating a revised version of the UI with the following visual changes:

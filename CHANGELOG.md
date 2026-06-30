@@ -8,7 +8,7 @@
 ## Unreleased (2026-06-26)
 
 ### Changed
-- **Tracker UI fluid layout** — action buttons and timer cards now scale responsively. Buttons collapse to icon-only below 640px. Timer value text uses `clamp()` for smooth sizing across viewport widths. Cards stay in 3-column row down to 500px before stacking vertically. When stacked, cards shrink to fit content with uniform width. Removed redundant subtitle and "Current Session" heading. (branch `tracker-ui-timer-control-display-size-fluid-fix`)
+- **Tracker UI fluid layout** — action buttons and timer cards now scale responsively. Buttons collapse to icon-only below 640px. Timer value text uses `clamp()` for smooth sizing across viewport widths. Cards stay in 3-column row down to 500px before stacking vertically. When stacked, cards shrink to fit content with uniform width. Removed redundant subtitle and "Current Session" heading. (branch `tracker-ui-timer-control-display-size-fluid-fix`, per `tasks/done/2026-06-26-fluid-timer-controls.md`)
 
 ### Fixed
 - **Pause/Resume button text visible on narrow screens** — JS-set innerHTML now wraps label in responsive `hidden sm:inline` span, matching the template buttons. (branch `tracker-ui-timer-control-display-size-fluid-fix`)
@@ -49,7 +49,7 @@
 - **Dark theme holiday colors** — Holiday/swap-day-off background changed from teal `#0d3d35` to dark red `#680a0a` with `#845959` border and `#fca5a5` number.
 - **`.cal-swapped` split into `.cal-swapped-day-off` and `.cal-swapped-workday`** — Swapped day-offs get `cal-swapped-day-off` (holiday styling). Swapped workdays get `cal-swapped-workday` (normal workday bg with short-day-style amber border). `isShortDay` CSS class no longer applied to swapped workdays.
 - **`.cal-memoriam` background removed** — Light mode: `#f9a8d4` border + `#9d174d` text. Dark mode: `#5046a0` border + `#a899f5` text. No fill.
-- **Tailwind dark variant scoped to `.dark-mode` class** — Added `@variant dark (&:where(.dark-mode, .dark-mode *))` so Tailwind's `dark:` classes respond to the app's toggle (not `prefers-color-scheme`). Fixes Electron having no way to switch theme when the OS is in dark mode.
+- **Tailwind dark variant scoped to `.dark-mode` class** — Added `@variant dark (&:where(.dark-mode, .dark-mode *))` so Tailwind's `dark:` classes respond to the app's toggle (not `prefers-color-scheme`). Fixes Electron having no way to switch theme when the OS is in dark mode. (per `tasks/done/2026-06-25-tailwind-dark-variant-scope.md`)
 
 ## 2026-06-25 — Visual polish, tracked hours, holiday data loading
 
@@ -82,7 +82,7 @@
 ## 2026-06-25 — Calendar tab view + bug fixes & modularization
 
 ### Fixed
-- **Stop after pause loses break session** — `stopSession()` now creates a break session (tags: rest) and updates accumulatedPauseTime before populating form fields.
+- **Stop after pause loses break session** — `stopSession()` now creates a break session (tags: rest) and updates accumulatedPauseTime before populating form fields. (per `tasks/done/2026-06-25-stop-after-pause-break-session.md`)
 - **Pause timer shows total rest instead of current piece** — Now defaults to current rest piece (starts at 0), clickable to toggle between "Current Rest" and "Total Rest".
 - **Timer negative after pause/resume** — `accumulatedPauseTime` (ms) was subtracted from seconds in `updateTimerDisplay` and `saveSession`. Fixed both.
 - **Edit session with breaks stores wrong duration** — `handleSessionFormSubmit` calculated duration as `endTime - startTime` without subtracting `accumulatedPauseTimeSec`, causing sessions with breaks to store total elapsed time instead of net work time.
@@ -90,7 +90,7 @@
 - **Release builds broken on Node v24** — `@electron/packager` 18.3.6 incompatible with Node 24; updated to 20.0.1. Holiday files now load from user data dir first with bundled fallback.
 
 ### Added
-- **Calendar tab view** — Month grid with prev/next navigation, holiday (green), memoriam (pink), weekend (gray), vacation (purple), short-day (yellow) coloring, today ring, session-dot indicator, and graceful null-calendarService degradation. (TDD: 22 tests, 99% coverage)
+- **Calendar tab view** — Month grid with prev/next navigation, holiday (green), memoriam (pink), weekend (gray), vacation (purple), short-day (yellow) coloring, today ring, session-dot indicator, and graceful null-calendarService degradation. (TDD: 22 tests, 99% coverage) (per `tasks/done/2026-06-25-calendar-tab-view.md`)
 - **Today's total clickable toggle** — Click to switch between "Today's Work" (excluding breaks) and "Today's Total" (all sessions).
 - **Rest time in session list** — `accumulatedPauseTimeSec` now visible in recent sessions and all sessions views.
 

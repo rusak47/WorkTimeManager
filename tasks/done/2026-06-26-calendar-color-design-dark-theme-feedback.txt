@@ -1,3 +1,5 @@
+Child of: `tasks/done/2026-06-26-calendar-color-design-feedback.txt` (light theme counterpart)
+
 # Calendar accessibility description — May 2026
 
 ## Overall layout
