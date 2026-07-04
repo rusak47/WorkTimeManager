@@ -78,4 +78,76 @@ describe('tagManager', () => {
       expect(tagManager.getUnassignedTags(['work', 'rest'], DEFAULT_BUCKET_MAP)).toEqual([]);
     });
   });
+
+  describe('moveSubtagBetweenBuckets', () => {
+    it('moves subtag from source to target bucket', () => {
+      const map = { work: ['focus'], rest: ['read'], study: ['read'] };
+      const result = tagManager.moveSubtagBetweenBuckets('focus', 'work', 'study', map);
+      expect(result.work).toEqual([]);
+      expect(result.study).toEqual(['read', 'focus']);
+    });
+
+    it('is a no-op when tag not in source bucket', () => {
+      const map = { work: [], rest: ['read'] };
+      const result = tagManager.moveSubtagBetweenBuckets('read', 'work', 'rest', map);
+      expect(result).toEqual(map);
+    });
+
+    it('is a no-op when source and target are the same', () => {
+      const map = { work: ['focus'] };
+      const result = tagManager.moveSubtagBetweenBuckets('focus', 'work', 'work', map);
+      expect(result).toEqual(map);
+    });
+
+    it('returns a new object, does not mutate input', () => {
+      const map = { work: ['focus'], rest: [] };
+      const result = tagManager.moveSubtagBetweenBuckets('focus', 'work', 'rest', map);
+      expect(result).not.toBe(map);
+      expect(result.work).not.toBe(map.work);
+      expect(result.rest).not.toBe(map.rest);
+      expect(map.work).toEqual(['focus']);
+    });
+
+    it('handles target bucket that does not exist', () => {
+      const map = { work: ['focus'] };
+      const result = tagManager.moveSubtagBetweenBuckets('focus', 'work', 'unknown', map);
+      expect(result.work).toEqual([]);
+      expect(result.unknown).toEqual(['focus']);
+    });
+
+    it('handles source bucket that does not exist', () => {
+      const map = { work: ['focus'] };
+      const result = tagManager.moveSubtagBetweenBuckets('focus', 'unknown', 'work', map);
+      expect(result).toEqual(map);
+    });
+  });
+
+  describe('removeTagFromBucket', () => {
+    it('removes subtag from a bucket', () => {
+      const map = { work: ['focus', 'deep'], rest: ['read'] };
+      const result = tagManager.removeTagFromBucket('focus', 'work', map);
+      expect(result.work).toEqual(['deep']);
+      expect(result.rest).toEqual(['read']);
+    });
+
+    it('is a no-op when tag not in bucket', () => {
+      const map = { work: ['focus'] };
+      const result = tagManager.removeTagFromBucket('read', 'work', map);
+      expect(result).toEqual(map);
+    });
+
+    it('is a no-op when bucket does not exist', () => {
+      const map = { work: ['focus'] };
+      const result = tagManager.removeTagFromBucket('focus', 'unknown', map);
+      expect(result).toEqual(map);
+    });
+
+    it('returns a new object, does not mutate input', () => {
+      const map = { work: ['focus', 'deep'] };
+      const result = tagManager.removeTagFromBucket('focus', 'work', map);
+      expect(result).not.toBe(map);
+      expect(result.work).not.toBe(map.work);
+      expect(map.work).toEqual(['focus', 'deep']);
+    });
+  });
 });
