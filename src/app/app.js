@@ -105,6 +105,8 @@ export function createEventHandlers(deps) {
     if (s.currentTab === 'stats') ui.updateStatistics();
   }
 
+  ui.setOnTagBucketsChange(saveState);
+
   function startSession() {
     clearInterval(timerInterval);
     clearInterval(backupInterval);

@@ -1,8 +1,10 @@
 import { Chart } from 'chart.js/auto';
 import * as utils from '../js/utils.js';
+import { moveSubtagBetweenBuckets } from './tagManager.js';
 
 export function createUIManager(store) {
   let _showCurrentRest = true;
+  let _onTagBucketsChange = null;
   let _showTodayWorkOnly = true;
   let _isGridMode = false;
   let timeChart = null;
@@ -665,6 +667,34 @@ export function createUIManager(store) {
     }
   }
 
+  function setOnTagBucketsChange(cb) {
+    _onTagBucketsChange = cb;
+  }
+
+  function setupDropZone(container, bucketName) {
+    container.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      container.classList.add('drag-over');
+    });
+
+    container.addEventListener('dragleave', () => {
+      container.classList.remove('drag-over');
+    });
+
+    container.addEventListener('drop', (e) => {
+      e.preventDefault();
+      container.classList.remove('drag-over');
+      const tagName = e.dataTransfer.getData('text/plain');
+      const sourceBucket = e.dataTransfer.getData('application/x-source-bucket');
+      if (!tagName || !sourceBucket || sourceBucket === bucketName) return;
+      const s = store.getState();
+      const newBuckets = moveSubtagBetweenBuckets(tagName, sourceBucket, bucketName, s.tagBuckets);
+      store.setState({ tagBuckets: newBuckets });
+      renderTagSettings();
+      if (_onTagBucketsChange) _onTagBucketsChange();
+    });
+  }
+
   function renderTagSettings() {
     const container = document.getElementById('tag-bucket-settings');
     const s = store.getState();
@@ -705,13 +735,17 @@ export function createUIManager(store) {
       }
 
       for (const tag of bucketSubtags) {
-        subtagsContainer.appendChild(createTagChip(tag, false));
+        const chip = createTagChip(tag, false);
+        chip.dataset.sourceBucket = bucketName;
+        subtagsContainer.appendChild(chip);
       }
 
       header.addEventListener('click', () => {
         subtagsContainer.classList.toggle('collapsed');
         arrow.textContent = subtagsContainer.classList.contains('collapsed') ? '▶' : '▼';
       });
+
+      setupDropZone(subtagsContainer, bucketName);
 
       group.appendChild(header);
       group.appendChild(subtagsContainer);
@@ -741,6 +775,7 @@ export function createUIManager(store) {
 
       for (const tag of unassignedTags) {
         const chip = createTagChip(tag, false);
+        chip.dataset.sourceBucket = 'unassigned';
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'ml-2 text-gray-500 hover:text-red-500';
         deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
@@ -753,6 +788,8 @@ export function createUIManager(store) {
         arrow.textContent = subtagsContainer.classList.contains('collapsed') ? '▶' : '▼';
       });
 
+      setupDropZone(subtagsContainer, 'unassigned');
+
       group.appendChild(header);
       group.appendChild(subtagsContainer);
       container.appendChild(group);
@@ -763,6 +800,11 @@ export function createUIManager(store) {
     const chip = document.createElement('div');
     chip.className = `tag-item flex items-center px-3 py-1 rounded-full text-sm ${getTagBadgeClass(tag.name, tag.isEnabled)}`;
     if (isDefault) chip.dataset.default = 'true';
+    chip.draggable = !isDefault;
+    chip.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', tag.name);
+      e.dataTransfer.setData('application/x-source-bucket', chip.dataset.sourceBucket || '');
+    });
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = tag.isEnabled;
@@ -1286,6 +1328,7 @@ export function createUIManager(store) {
     initializeCurrentSessionMood,
     createStarsForCurrentSession,
     renderTagSettings,
+    setOnTagBucketsChange,
     getTagBadgeClass,
     enableDarkMode,
     disableDarkMode,

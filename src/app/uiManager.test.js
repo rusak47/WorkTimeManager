@@ -4,6 +4,20 @@ import { createStore } from './state.js';
 import { createUIManager } from './uiManager.js';
 import { createCalendarService } from './calendarService.js';
 
+class MockDataTransfer {
+  constructor() {
+    this._data = {};
+  }
+  setData(type, value) { this._data[type] = value; }
+  getData(type) { return this._data[type] || ''; }
+}
+
+function createDragEvent(type, dt) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  event.dataTransfer = dt || new MockDataTransfer();
+  return event;
+}
+
 function setupDOM() {
   document.body.innerHTML = `
     <div id="current-time"></div>
@@ -674,6 +688,93 @@ describe('uiManager', () => {
       const unassignedTags = unassignedGroup.querySelectorAll('.tag-item');
       expect(unassignedTags.length).toBe(1);
       expect(unassignedTags[0].textContent).toContain('custom2');
+    });
+
+    it('sets draggable on subtag chips but not default tags', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const defaultChips = document.querySelectorAll('.tag-item[data-default="true"]');
+      defaultChips.forEach(chip => expect(chip.draggable).toBe(false));
+      const subtagChips = document.querySelectorAll('.tag-item:not([data-default="true"])');
+      subtagChips.forEach(chip => expect(chip.draggable).toBe(true));
+    });
+
+    it('dragstart sets tag name and source bucket in drag data', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const readChip = Array.from(document.querySelectorAll('.tag-item:not([data-default="true"])'))
+        .find(c => c.textContent.includes('read'));
+      expect(readChip).toBeTruthy();
+      const dt = new MockDataTransfer();
+      readChip.dispatchEvent(createDragEvent('dragstart', dt));
+      expect(dt.getData('text/plain')).toBe('read');
+      expect(dt.getData('application/x-source-bucket')).toBe('rest');
+    });
+
+    it('dragover adds drag-over class to subtags container', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const studySubtags = document.querySelector('[data-bucket="study"] .tag-bucket-subtags');
+      expect(studySubtags.classList.contains('drag-over')).toBe(false);
+      studySubtags.dispatchEvent(createDragEvent('dragover'));
+      expect(studySubtags.classList.contains('drag-over')).toBe(true);
+    });
+
+    it('dragleave removes drag-over class', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const studySubtags = document.querySelector('[data-bucket="study"] .tag-bucket-subtags');
+      studySubtags.dispatchEvent(createDragEvent('dragover'));
+      expect(studySubtags.classList.contains('drag-over')).toBe(true);
+      studySubtags.dispatchEvent(createDragEvent('dragleave'));
+      expect(studySubtags.classList.contains('drag-over')).toBe(false);
+    });
+
+    it('drop moves subtag between buckets', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const s = store.getState();
+      expect(s.tagBuckets.rest).toContain('read');
+      expect(s.tagBuckets.study).toContain('read');
+      const readChip = Array.from(document.querySelectorAll('.tag-item:not([data-default="true"])'))
+        .find(c => c.textContent.includes('read') && c.closest('[data-bucket="rest"]'));
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'read');
+      dt.setData('application/x-source-bucket', 'rest');
+      readChip.dispatchEvent(createDragEvent('dragstart', dt));
+      const studySubtags = document.querySelector('[data-bucket="study"] .tag-bucket-subtags');
+      studySubtags.dispatchEvent(createDragEvent('drop', dt));
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.rest).not.toContain('read');
+      expect(stateAfter.tagBuckets.study).toContain('read');
+    });
+
+    it('drop to same bucket is a no-op', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'read');
+      dt.setData('application/x-source-bucket', 'rest');
+      const restSubtags = document.querySelector('[data-bucket="rest"] .tag-bucket-subtags');
+      const originalState = store.getState();
+      restSubtags.dispatchEvent(createDragEvent('drop', dt));
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.rest).toEqual(originalState.tagBuckets.rest);
+    });
+
+    it('drop removes drag-over class', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const studySubtags = document.querySelector('[data-bucket="study"] .tag-bucket-subtags');
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'read');
+      dt.setData('application/x-source-bucket', 'rest');
+      studySubtags.dispatchEvent(createDragEvent('dragover'));
+      studySubtags.dispatchEvent(createDragEvent('drop', dt));
+      expect(studySubtags.classList.contains('drag-over')).toBe(false);
     });
   });
 });
