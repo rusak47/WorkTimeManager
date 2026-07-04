@@ -565,21 +565,21 @@ describe('app event handlers', () => {
 
   it('loadStateFromStorage restores tagBuckets from saved state', async () => {
     storage.loadState.mockResolvedValue({
-      tagBuckets: { work: [], rest: ['sleep'] },
+      tagBuckets: { work: [], rest: ['sleep'], study: [], sport: [], other: [] },
     });
     await app.loadData();
-    expect(store.getState().tagBuckets).toEqual({ work: [], rest: ['sleep'] });
+    expect(store.getState().tagBuckets).toEqual({ work: [], rest: ['sleep'], study: [], sport: [], other: [] });
   });
 
   it('saveState includes tagBuckets in persisted state', () => {
     storage.saveState.mockClear();
-    store.setState({ tagBuckets: { work: [], rest: ['sleep'] } });
+    store.setState({ tagBuckets: { work: [], rest: ['sleep'], study: [], sport: [], other: [] } });
     app.persistAndRender();
     const saved = storage.saveState.mock.calls[0][0];
-    expect(saved.tagBuckets).toEqual({ work: [], rest: ['sleep'] });
+    expect(saved.tagBuckets).toEqual({ work: [], rest: ['sleep'], study: [], sport: [], other: [] });
   });
 
-  it('loadData seeds tagBuckets from DEFAULT_BUCKET_MAP when empty', async () => {
+  it('loadData seeds tagBuckets from DEFAULT_BUCKET_MAP when empty or partial', async () => {
     storage.loadState.mockResolvedValue(null);
     store.setState({ tags: [], tagBuckets: {} });
     await app.loadData();
@@ -591,6 +591,19 @@ describe('app event handlers', () => {
     expect(bucketKeys).toContain('study');
     expect(bucketKeys).toContain('sport');
     expect(bucketKeys).toContain('other');
+    expect(s.tagBuckets.rest).toContain('sleep');
+  });
+
+  it('loadData replaces incomplete tagBuckets with full DEFAULT_BUCKET_MAP', async () => {
+    storage.loadState.mockResolvedValue({
+      tagBuckets: { other: ['custom'] },
+    });
+    store.setState({ tags: [{ name: 'work', isDefault: true, isEnabled: true, isCustom: false }] });
+    await app.loadData();
+    const s = store.getState();
+    expect(Object.keys(s.tagBuckets)).toEqual(expect.arrayContaining(['work', 'rest', 'study', 'sport', 'other']));
+    expect(s.tagBuckets.work).toEqual([]);
+    expect(s.tagBuckets.rest).toContain('sleep');
   });
 
   it('loadData bootstraps tags from DEFAULT_TAGS and DEFAULT_BUCKET_MAP when no saved state', async () => {

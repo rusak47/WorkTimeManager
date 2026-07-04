@@ -68,12 +68,13 @@ export function createEventHandlers(deps) {
         }
       }
       const s = store.getState();
-      if (!s.tagBuckets || Object.keys(s.tagBuckets).length === 0) {
-        const { DEFAULT_BUCKET_MAP } = await import('./constants.js');
+      const { DEFAULT_TAGS, DEFAULT_BUCKET_MAP } = await import('./constants.js');
+      const allDefaultKeysPresent = s.tagBuckets
+        && DEFAULT_TAGS.every(t => Object.prototype.hasOwnProperty.call(s.tagBuckets, t));
+      if (!allDefaultKeysPresent) {
         store.setState({ tagBuckets: { ...DEFAULT_BUCKET_MAP } });
       }
       if (s.tags.length > 0 && typeof s.tags[0] === 'string') {
-        const { DEFAULT_TAGS, DEFAULT_BUCKET_MAP } = await import('./constants.js');
         const subtagNames = [...new Set(Object.values(DEFAULT_BUCKET_MAP).flat())];
         store.setState({
           tags: [
