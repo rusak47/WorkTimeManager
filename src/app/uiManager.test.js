@@ -812,5 +812,47 @@ describe('uiManager', () => {
       expect(stateAfter.tagBuckets.study).toContain('read');
       expect(stateAfter.tagBuckets.study.length).toBe(countBefore);
     });
+
+    it('renders remove button on each non-default subtag chip', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const restSubtagChips = document.querySelectorAll('[data-bucket="rest"] .tag-item:not([data-default="true"])');
+      restSubtagChips.forEach(chip => {
+        const removeBtn = chip.querySelector('.tag-remove-btn');
+        expect(removeBtn).toBeTruthy();
+      });
+    });
+
+    it('does not render remove button on default tag chips', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const defaultChips = document.querySelectorAll('.tag-item[data-default="true"]');
+      defaultChips.forEach(chip => {
+        expect(chip.querySelector('.tag-remove-btn')).toBeFalsy();
+      });
+    });
+
+    it('clicking remove button removes subtag from bucket', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const stateBefore = store.getState();
+      expect(stateBefore.tagBuckets.rest).toContain('read');
+      const readChip = Array.from(document.querySelectorAll('[data-bucket="rest"] .tag-item:not([data-default="true"])'))
+        .find(c => c.textContent.includes('read'));
+      const removeBtn = readChip.querySelector('.tag-remove-btn');
+      removeBtn.click();
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.rest).not.toContain('read');
+      expect(stateAfter.tagBuckets.study).toContain('read');
+    });
+
+    it('shows no-subtags placeholder when bucket has no subtags', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const workSubtags = document.querySelector('[data-bucket="work"] .tag-bucket-subtags');
+      expect(workSubtags.textContent).toContain('no subtags');
+    });
   });
 });

@@ -1,6 +1,6 @@
 import { Chart } from 'chart.js/auto';
 import * as utils from '../js/utils.js';
-import { moveSubtagBetweenBuckets } from './tagManager.js';
+import { moveSubtagBetweenBuckets, removeTagFromBucket } from './tagManager.js';
 
 export function createUIManager(store) {
   let _showCurrentRest = true;
@@ -755,9 +755,28 @@ export function createUIManager(store) {
         subtagsContainer.appendChild(createTagChip(bucketTag, true));
       }
 
+      if (bucketSubtags.length === 0) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'text-xs text-gray-400 italic';
+        placeholder.textContent = '(no subtags)';
+        subtagsContainer.appendChild(placeholder);
+      }
+
       for (const tag of bucketSubtags) {
         const chip = createTagChip(tag, false);
         chip.dataset.sourceBucket = bucketName;
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'ml-2 text-gray-400 hover:text-red-500 tag-remove-btn';
+        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const s = store.getState();
+          const newBuckets = removeTagFromBucket(tag.name, bucketName, s.tagBuckets);
+          store.setState({ tagBuckets: newBuckets });
+          renderTagSettings();
+          if (_onTagBucketsChange) _onTagBucketsChange();
+        });
+        chip.appendChild(removeBtn);
         subtagsContainer.appendChild(chip);
       }
 
