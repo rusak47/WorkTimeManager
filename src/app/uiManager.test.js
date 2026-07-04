@@ -854,5 +854,28 @@ describe('uiManager', () => {
       const workSubtags = document.querySelector('[data-bucket="work"] .tag-bucket-subtags');
       expect(workSubtags.textContent).toContain('no subtags');
     });
+
+    it('drag from unassigned adds tag to target bucket', () => {
+      store.setState({
+        tags: [
+          { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'rest', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'read', isDefault: false, isEnabled: true, isCustom: false },
+          { name: 'untagged', isDefault: false, isEnabled: true, isCustom: true },
+        ],
+        tagBuckets: { work: [], rest: [], sport: [], study: [], other: [] },
+      });
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const unassignedGroup = document.querySelector('[data-bucket="unassigned"]');
+      expect(unassignedGroup).toBeTruthy();
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'untagged');
+      dt.setData('application/x-source-bucket', 'unassigned');
+      const workSubtags = document.querySelector('[data-bucket="work"] .tag-bucket-subtags');
+      workSubtags.dispatchEvent(createDragEvent('drop', dt));
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.work).toContain('untagged');
+    });
   });
 });

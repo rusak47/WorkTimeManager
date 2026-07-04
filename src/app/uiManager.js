@@ -696,7 +696,9 @@ export function createUIManager(store) {
       if (!tagName || !sourceBucket || sourceBucket === bucketName) return;
       const s = store.getState();
       let newBuckets;
-      if (e.ctrlKey || e.metaKey) {
+      const isCopy = e.ctrlKey || e.metaKey;
+      const isUnassignedSrc = sourceBucket === 'unassigned' || !s.tagBuckets[sourceBucket];
+      if (isCopy || isUnassignedSrc) {
         if (s.tagBuckets[bucketName] && s.tagBuckets[bucketName].includes(tagName)) return;
         newBuckets = {};
         for (const [bucket, subtags] of Object.entries(s.tagBuckets)) {
@@ -723,7 +725,7 @@ export function createUIManager(store) {
     container.innerHTML = '';
 
     const allSubtags = new Set(Object.values(s.tagBuckets).flat());
-    const unassignedTags = s.tags.filter(t => t.isCustom && !allSubtags.has(t.name) && !s.tagBuckets[t.name]);
+    const unassignedTags = s.tags.filter(t => !t.isDefault && !allSubtags.has(t.name) && !s.tagBuckets[t.name]);
 
     for (const [bucketName, subtagNames] of Object.entries(s.tagBuckets)) {
       const bucketTag = s.tags.find(t => t.name === bucketName && t.isDefault);
