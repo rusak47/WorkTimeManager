@@ -3,6 +3,14 @@
 ## Unreleased (2026-07-04)
 
 ### Added
+- **Tag Bucket System — Phase 2: Settings Tree View & Drag-and-Drop** — Interactive tag bucket management in settings tab. See `tasks/pending/20260704-tag-bucket-p2-settings-dnd.md`.
+  - Tree view: buckets displayed as collapsible groups with ▼/▶ expand/collapse toggle
+  - Native HTML5 DnD: drag subtags between buckets with dashed highlight on drag-over
+  - Ctrl+drag: duplicate subtag into another bucket (keeps source copy); green outline visual indicator
+  - Remove (X) button: removes subtag from individual bucket without affecting other buckets
+  - Empty bucket placeholder: shows "(no subtags)" when bucket has no assigned subtags
+  - New `tagManager.js` functions: `moveSubtagBetweenBuckets()`, `removeTagFromBucket()`
+  - `setOnTagBucketsChange()` callback wired to `saveState()` for persistence
 - **Tag Bucket System — Phase 1: Data Model & Backward Compatibility** — Introduced tag hierarchy where default tags act as top-level buckets with assigned subtags. See `tasks/done/2026-07-04-tag-bucket-p1-data-model.md`.
   - `DEFAULT_TAGS` expanded from `[work, rest]` to `[work, rest, study, sport, other]`
   - `DEFAULT_BUCKET_MAP` replaces `PRESET_TAGS` with 5 buckets and their subtag arrays
