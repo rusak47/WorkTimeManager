@@ -27,6 +27,7 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 
 ## Statistics
 - [ ] [low+ - must have] Generate work stats by subtags — render tag filter similarly to session-save tag picker; all tags including custom should appear for filtering.
+    - Daily statistics - each bar is a subset of core tags per each session it consists of. 
 - [ ] [low - must have] Add refresh button in statistics tab (auto-refresh on tab switch is insufficient).
 
 ## Calendar
