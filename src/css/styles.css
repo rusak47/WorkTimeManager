@@ -116,6 +116,11 @@
             min-height: 32px;
         }
 
+        .tag-bucket-subtags.drag-over-ctrl {
+            outline: 2px dashed #10b981;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
         .star {
             color: #f59e0b;
             transition: all 0.2s;

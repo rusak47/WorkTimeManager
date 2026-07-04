@@ -675,20 +675,41 @@ export function createUIManager(store) {
     container.addEventListener('dragover', (e) => {
       e.preventDefault();
       container.classList.add('drag-over');
+      if (e.ctrlKey || e.metaKey) {
+        container.classList.add('drag-over-ctrl');
+      } else {
+        container.classList.remove('drag-over-ctrl');
+      }
     });
 
     container.addEventListener('dragleave', () => {
       container.classList.remove('drag-over');
+      container.classList.remove('drag-over-ctrl');
     });
 
     container.addEventListener('drop', (e) => {
       e.preventDefault();
       container.classList.remove('drag-over');
+      container.classList.remove('drag-over-ctrl');
       const tagName = e.dataTransfer.getData('text/plain');
       const sourceBucket = e.dataTransfer.getData('application/x-source-bucket');
       if (!tagName || !sourceBucket || sourceBucket === bucketName) return;
       const s = store.getState();
-      const newBuckets = moveSubtagBetweenBuckets(tagName, sourceBucket, bucketName, s.tagBuckets);
+      let newBuckets;
+      if (e.ctrlKey || e.metaKey) {
+        if (s.tagBuckets[bucketName] && s.tagBuckets[bucketName].includes(tagName)) return;
+        newBuckets = {};
+        for (const [bucket, subtags] of Object.entries(s.tagBuckets)) {
+          newBuckets[bucket] = [...subtags];
+        }
+        if (newBuckets[bucketName]) {
+          newBuckets[bucketName] = [...newBuckets[bucketName], tagName];
+        } else {
+          newBuckets[bucketName] = [tagName];
+        }
+      } else {
+        newBuckets = moveSubtagBetweenBuckets(tagName, sourceBucket, bucketName, s.tagBuckets);
+      }
       store.setState({ tagBuckets: newBuckets });
       renderTagSettings();
       if (_onTagBucketsChange) _onTagBucketsChange();

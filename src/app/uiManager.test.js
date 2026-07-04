@@ -12,9 +12,11 @@ class MockDataTransfer {
   getData(type) { return this._data[type] || ''; }
 }
 
-function createDragEvent(type, dt) {
+function createDragEvent(type, dt, opts = {}) {
   const event = new Event(type, { bubbles: true, cancelable: true });
   event.dataTransfer = dt || new MockDataTransfer();
+  if (opts.ctrlKey) event.ctrlKey = true;
+  if (opts.metaKey) event.metaKey = true;
   return event;
 }
 
@@ -775,6 +777,40 @@ describe('uiManager', () => {
       studySubtags.dispatchEvent(createDragEvent('dragover'));
       studySubtags.dispatchEvent(createDragEvent('drop', dt));
       expect(studySubtags.classList.contains('drag-over')).toBe(false);
+    });
+
+    it('ctrl+drag duplicates subtag into target bucket without removing from source', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'read');
+      dt.setData('application/x-source-bucket', 'rest');
+      const workSubtags = document.querySelector('[data-bucket="work"] .tag-bucket-subtags');
+      const stateBefore = store.getState();
+      expect(stateBefore.tagBuckets.rest).toContain('read');
+      expect(stateBefore.tagBuckets.work).not.toContain('read');
+      workSubtags.dispatchEvent(createDragEvent('drop', dt, { ctrlKey: true }));
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.rest).toContain('read');
+      expect(stateAfter.tagBuckets.work).toContain('read');
+    });
+
+    it('ctrl+drag to bucket that already contains tag is a no-op', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'read');
+      dt.setData('application/x-source-bucket', 'rest');
+      const studySubtags = document.querySelector('[data-bucket="study"] .tag-bucket-subtags');
+      const stateBefore = store.getState();
+      expect(stateBefore.tagBuckets.study).toContain('read');
+      const countBefore = stateBefore.tagBuckets.study.length;
+      studySubtags.dispatchEvent(createDragEvent('drop', dt, { ctrlKey: true }));
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.study).toContain('read');
+      expect(stateAfter.tagBuckets.study.length).toBe(countBefore);
     });
   });
 });
