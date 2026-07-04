@@ -66,10 +66,21 @@ export function createEventHandlers(deps) {
           ];
           store.setState({ tags });
         }
-        if (!s.tagBuckets || Object.keys(s.tagBuckets).length === 0) {
-          const { DEFAULT_BUCKET_MAP } = await import('./constants.js');
-          store.setState({ tagBuckets: { ...DEFAULT_BUCKET_MAP } });
-        }
+      }
+      const s = store.getState();
+      if (!s.tagBuckets || Object.keys(s.tagBuckets).length === 0) {
+        const { DEFAULT_BUCKET_MAP } = await import('./constants.js');
+        store.setState({ tagBuckets: { ...DEFAULT_BUCKET_MAP } });
+      }
+      if (s.tags.length > 0 && typeof s.tags[0] === 'string') {
+        const { DEFAULT_TAGS, DEFAULT_BUCKET_MAP } = await import('./constants.js');
+        const subtagNames = [...new Set(Object.values(DEFAULT_BUCKET_MAP).flat())];
+        store.setState({
+          tags: [
+            ...DEFAULT_TAGS.map(t => ({ name: t, isDefault: true, isEnabled: true, isCustom: false })),
+            ...subtagNames.map(t => ({ name: t, isDefault: false, isEnabled: s.tags.includes(t), isCustom: false })),
+          ],
+        });
       }
     } catch (err) {
       console.error('Failed to load data:', err);
