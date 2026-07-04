@@ -594,4 +594,86 @@ describe('uiManager', () => {
       expect(items.length).toBe(1);
     });
   });
+
+  describe('renderTagSettings', () => {
+    function setupTagsState(store) {
+      store.setState({
+        tags: [
+          { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'rest', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'study', isDefault: false, isEnabled: true, isCustom: false },
+          { name: 'music', isDefault: false, isEnabled: false, isCustom: false },
+          { name: 'customTag', isDefault: false, isEnabled: true, isCustom: true },
+          { name: 'read', isDefault: false, isEnabled: true, isCustom: false },
+          { name: 'sleep', isDefault: false, isEnabled: true, isCustom: false },
+        ],
+        tagBuckets: {
+          work: [],
+          rest: ['read', 'sleep', 'music'],
+          study: ['read'],
+          sport: [],
+          other: ['customTag'],
+        },
+      });
+    }
+
+    it('renders a collapsible bucket header for each bucket', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const headers = document.querySelectorAll('.tag-bucket-header');
+      expect(headers.length).toBe(5);
+      const hasBucketName = (name) => Array.from(headers).some(h => h.textContent.includes(name));
+      expect(hasBucketName('work')).toBe(true);
+      expect(hasBucketName('rest')).toBe(true);
+      expect(hasBucketName('study')).toBe(true);
+      expect(hasBucketName('sport')).toBe(true);
+      expect(hasBucketName('other')).toBe(true);
+    });
+
+    it('renders subtag chips inside each bucket', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const restGroup = document.querySelector('[data-bucket="rest"]');
+      expect(restGroup).toBeTruthy();
+      const subtags = restGroup.querySelectorAll('.tag-item:not([data-default="true"])');
+      expect(subtags.length).toBe(3);
+    });
+
+    it('renders collapse arrow on each header', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const arrows = document.querySelectorAll('.tag-bucket-header .collapse-arrow');
+      expect(arrows.length).toBe(5);
+      expect(arrows[0].textContent).toContain('▼');
+    });
+
+    it('toggles subtag visibility when header is clicked', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const header = document.querySelector('[data-bucket="rest"] .tag-bucket-header');
+      const subtagsContainer = document.querySelector('[data-bucket="rest"] .tag-bucket-subtags');
+      expect(subtagsContainer.classList.contains('collapsed')).toBe(false);
+      header.click();
+      expect(subtagsContainer.classList.contains('collapsed')).toBe(true);
+      header.click();
+      expect(subtagsContainer.classList.contains('collapsed')).toBe(false);
+    });
+
+    it('renders unassigned section with custom tags not in any bucket', () => {
+      store.setState({
+        tags: [
+          { name: 'custom1', isDefault: false, isEnabled: true, isCustom: true },
+          { name: 'custom2', isDefault: false, isEnabled: true, isCustom: true },
+          { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+        ],
+        tagBuckets: { work: [], rest: [], study: [], sport: [], other: ['custom1'] },
+      });
+      ui.renderTagSettings();
+      const unassignedGroup = document.querySelector('[data-bucket="unassigned"]');
+      expect(unassignedGroup).toBeTruthy();
+      const unassignedTags = unassignedGroup.querySelectorAll('.tag-item');
+      expect(unassignedTags.length).toBe(1);
+      expect(unassignedTags[0].textContent).toContain('custom2');
+    });
+  });
 });

@@ -682,38 +682,62 @@ export function createUIManager(store) {
 
       const group = document.createElement('div');
       group.className = 'tag-bucket-group';
+      group.dataset.bucket = bucketName;
 
-      const header = document.createElement('h4');
-      header.className = 'text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize';
-      header.textContent = bucketName;
-      group.appendChild(header);
+      const header = document.createElement('button');
+      header.className = 'tag-bucket-header text-sm font-semibold text-gray-700 dark:text-gray-300 capitalize flex items-center gap-2 w-full text-left';
+      header.type = 'button';
 
-      const chips = document.createElement('div');
-      chips.className = 'flex flex-wrap gap-2';
+      const arrow = document.createElement('span');
+      arrow.className = 'collapse-arrow';
+      arrow.textContent = '▼';
+      header.appendChild(arrow);
 
-      if (bucketTag) {
-        chips.appendChild(createTagChip(bucketTag, true));
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = bucketName;
+      header.appendChild(nameSpan);
+
+      const subtagsContainer = document.createElement('div');
+      subtagsContainer.className = 'tag-bucket-subtags flex flex-wrap gap-2 ml-4 mt-1';
+
+      if (bucketTag && bucketTag.isDefault) {
+        subtagsContainer.appendChild(createTagChip(bucketTag, true));
       }
 
       for (const tag of bucketSubtags) {
-        chips.appendChild(createTagChip(tag, false));
+        subtagsContainer.appendChild(createTagChip(tag, false));
       }
 
-      group.appendChild(chips);
+      header.addEventListener('click', () => {
+        subtagsContainer.classList.toggle('collapsed');
+        arrow.textContent = subtagsContainer.classList.contains('collapsed') ? '▶' : '▼';
+      });
+
+      group.appendChild(header);
+      group.appendChild(subtagsContainer);
       container.appendChild(group);
     }
 
     if (unassignedTags.length > 0) {
       const group = document.createElement('div');
       group.className = 'tag-bucket-group';
+      group.dataset.bucket = 'unassigned';
 
-      const header = document.createElement('h4');
-      header.className = 'text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2';
-      header.textContent = 'Unassigned';
-      group.appendChild(header);
+      const header = document.createElement('button');
+      header.className = 'tag-bucket-header text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 w-full text-left';
+      header.type = 'button';
 
-      const chips = document.createElement('div');
-      chips.className = 'flex flex-wrap gap-2';
+      const arrow = document.createElement('span');
+      arrow.className = 'collapse-arrow';
+      arrow.textContent = '▼';
+      header.appendChild(arrow);
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = 'Unassigned';
+      header.appendChild(nameSpan);
+
+      const subtagsContainer = document.createElement('div');
+      subtagsContainer.className = 'tag-bucket-subtags flex flex-wrap gap-2 ml-4 mt-1';
 
       for (const tag of unassignedTags) {
         const chip = createTagChip(tag, false);
@@ -721,10 +745,16 @@ export function createUIManager(store) {
         deleteBtn.className = 'ml-2 text-gray-500 hover:text-red-500';
         deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
         chip.appendChild(deleteBtn);
-        chips.appendChild(chip);
+        subtagsContainer.appendChild(chip);
       }
 
-      group.appendChild(chips);
+      header.addEventListener('click', () => {
+        subtagsContainer.classList.toggle('collapsed');
+        arrow.textContent = subtagsContainer.classList.contains('collapsed') ? '▶' : '▼';
+      });
+
+      group.appendChild(header);
+      group.appendChild(subtagsContainer);
       container.appendChild(group);
     }
   }
@@ -732,6 +762,7 @@ export function createUIManager(store) {
   function createTagChip(tag, isDefault) {
     const chip = document.createElement('div');
     chip.className = `tag-item flex items-center px-3 py-1 rounded-full text-sm ${getTagBadgeClass(tag.name, tag.isEnabled)}`;
+    if (isDefault) chip.dataset.default = 'true';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = tag.isEnabled;
