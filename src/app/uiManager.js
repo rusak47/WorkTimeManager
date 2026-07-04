@@ -666,40 +666,85 @@ export function createUIManager(store) {
   }
 
   function renderTagSettings() {
-    const defaultContainer = document.getElementById('default-tags');
-    const presetContainer = document.getElementById('preset-tags');
-    const customContainer = document.getElementById('custom-tags');
+    const container = document.getElementById('tag-bucket-settings');
     const s = store.getState();
-    if (!defaultContainer || !presetContainer || !customContainer) return;
-    defaultContainer.innerHTML = '';
-    presetContainer.innerHTML = '';
-    customContainer.innerHTML = '';
-    for (const tag of s.tags) {
-      const tagEl = document.createElement('div');
-      tagEl.className = `tag-item flex items-center px-3 py-1 rounded-full text-sm ${getTagBadgeClass(tag.name, tag.isEnabled)}`;
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = tag.isEnabled;
-      checkbox.className = 'mr-2';
-      checkbox.disabled = tag.isDefault;
-      checkbox.addEventListener('change', () => {
-        const updated = s.tags.map(t => t.name === tag.name ? { ...t, isEnabled: checkbox.checked } : t);
-        store.setState({ tags: updated });
-      });
-      tagEl.appendChild(checkbox);
-      tagEl.appendChild(document.createTextNode(tag.name));
-      if (tag.isCustom) {
+    if (!container) return;
+    container.innerHTML = '';
+
+    const allSubtags = new Set(Object.values(s.tagBuckets).flat());
+    const unassignedTags = s.tags.filter(t => t.isCustom && !allSubtags.has(t.name) && !s.tagBuckets[t.name]);
+
+    for (const [bucketName, subtagNames] of Object.entries(s.tagBuckets)) {
+      const bucketTag = s.tags.find(t => t.name === bucketName && t.isDefault);
+      const bucketSubtags = subtagNames
+        .map(name => s.tags.find(t => t.name === name))
+        .filter(Boolean);
+
+      const group = document.createElement('div');
+      group.className = 'tag-bucket-group';
+
+      const header = document.createElement('h4');
+      header.className = 'text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize';
+      header.textContent = bucketName;
+      group.appendChild(header);
+
+      const chips = document.createElement('div');
+      chips.className = 'flex flex-wrap gap-2';
+
+      if (bucketTag) {
+        chips.appendChild(createTagChip(bucketTag, true));
+      }
+
+      for (const tag of bucketSubtags) {
+        chips.appendChild(createTagChip(tag, false));
+      }
+
+      group.appendChild(chips);
+      container.appendChild(group);
+    }
+
+    if (unassignedTags.length > 0) {
+      const group = document.createElement('div');
+      group.className = 'tag-bucket-group';
+
+      const header = document.createElement('h4');
+      header.className = 'text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2';
+      header.textContent = 'Unassigned';
+      group.appendChild(header);
+
+      const chips = document.createElement('div');
+      chips.className = 'flex flex-wrap gap-2';
+
+      for (const tag of unassignedTags) {
+        const chip = createTagChip(tag, false);
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'ml-2 text-gray-500 hover:text-red-500';
         deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
-        tagEl.appendChild(deleteBtn);
-        customContainer.appendChild(tagEl);
-      } else if (tag.isDefault) {
-        defaultContainer.appendChild(tagEl);
-      } else {
-        presetContainer.appendChild(tagEl);
+        chip.appendChild(deleteBtn);
+        chips.appendChild(chip);
       }
+
+      group.appendChild(chips);
+      container.appendChild(group);
     }
+  }
+
+  function createTagChip(tag, isDefault) {
+    const chip = document.createElement('div');
+    chip.className = `tag-item flex items-center px-3 py-1 rounded-full text-sm ${getTagBadgeClass(tag.name, tag.isEnabled)}`;
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = tag.isEnabled;
+    checkbox.className = 'mr-2';
+    checkbox.disabled = isDefault;
+    checkbox.addEventListener('change', () => {
+      const s = store.getState();
+      const updated = s.tags.map(t => t.name === tag.name ? { ...t, isEnabled: checkbox.checked } : t);
+      store.setState({ tags: updated });
+    });
+    chip.appendChild(checkbox);
+    chip.appendChild(document.createTextNode(tag.name));
+    return chip;
   }
 
   function createStars() {

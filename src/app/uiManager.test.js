@@ -79,9 +79,7 @@ function setupDOM() {
     <div id="config-content" class="hidden"></div>
     <select id="tag-filter"><option value="all">All Tags</option></select>
     <select id="mood-threshold"><option value="1">1</option></select>
-    <div id="default-tags"></div>
-    <div id="preset-tags"></div>
-    <div id="custom-tags"></div>
+    <div id="tag-bucket-settings"></div>
     <div id="current-session-start-time-input"></div>
     <div id="current-session-end-time-input"></div>
     <div id="current-session-accumulated-rest-duration-input"></div>

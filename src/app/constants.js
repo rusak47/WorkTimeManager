@@ -1,12 +1,14 @@
 export const DATA_VERSION = '1.1';
 
-export const DEFAULT_TAGS = ['work', 'rest'];
+export const DEFAULT_TAGS = ['work', 'rest', 'study', 'sport', 'other'];
 
-export const PRESET_TAGS = [
-  'sleep', 'read', 'study', 'socialize',
-  'write', 'sport', 'music', 'hygiene',
-  'tv', 'online', 'home tasks',
-];
+export const DEFAULT_BUCKET_MAP = {
+  work: [],
+  rest: ['sleep', 'hygiene', 'tv', 'read', 'write', 'music'],
+  sport: ['cycling', 'horse', 'running'],
+  study: ['rtu', 'read', 'write', 'music'],
+  other: ['socialize', 'online', 'home tasks'],
+};
 
 export const DAY_TYPES = ['Workday', 'Weekend', 'Holiday', 'Vacation'];
 

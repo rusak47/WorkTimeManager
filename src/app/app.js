@@ -12,6 +12,7 @@ const INITIAL_STATE = Object.freeze({
   darkMode: false,
   backupIntervalMs: 300000,
   tracker: { startTime: null, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
+  tagBuckets: {},
 });
 
 function getDayType(dateStr, state) {
@@ -37,6 +38,7 @@ export function createEventHandlers(deps) {
     if (state && state.tags) store.setState({ tags: state.tags });
     if (state && state.darkMode !== undefined) store.setState({ darkMode: state.darkMode });
     if (state && state.backupIntervalMs) store.setState({ backupIntervalMs: state.backupIntervalMs });
+    if (state && state.tagBuckets) store.setState({ tagBuckets: state.tagBuckets });
     if (state && state.tracker && state.tracker.startTime) {
       const age = Date.now() - state.tracker.startTime;
       if (age < 24 * 3600 * 1000) {
@@ -56,12 +58,17 @@ export function createEventHandlers(deps) {
           configManager.addConfig();
         }
         if (s.tags.length === 0) {
-          const { DEFAULT_TAGS, PRESET_TAGS } = await import('./constants.js');
+          const { DEFAULT_TAGS, DEFAULT_BUCKET_MAP } = await import('./constants.js');
+          const subtagNames = [...new Set(Object.values(DEFAULT_BUCKET_MAP).flat())];
           const tags = [
             ...DEFAULT_TAGS.map(t => ({ name: t, isDefault: true, isEnabled: true, isCustom: false })),
-            ...PRESET_TAGS.map(t => ({ name: t, isDefault: false, isEnabled: true, isCustom: false })),
+            ...subtagNames.map(t => ({ name: t, isDefault: false, isEnabled: true, isCustom: false })),
           ];
           store.setState({ tags });
+        }
+        if (!s.tagBuckets || Object.keys(s.tagBuckets).length === 0) {
+          const { DEFAULT_BUCKET_MAP } = await import('./constants.js');
+          store.setState({ tagBuckets: { ...DEFAULT_BUCKET_MAP } });
         }
       }
     } catch (err) {
@@ -80,6 +87,7 @@ export function createEventHandlers(deps) {
         darkMode: s.darkMode,
         tracker: s.tracker,
         backupIntervalMs: s.backupIntervalMs,
+        tagBuckets: s.tagBuckets,
       });
     } catch (err) {
       console.error('Failed to save data:', err);
@@ -541,8 +549,9 @@ export function createEventHandlers(deps) {
       configs: s.configs,
       markedDays: s.markedDays,
       tags: s.tags,
+      tagBuckets: s.tagBuckets,
       exportedAt: new Date().toISOString(),
-      version: '1.1',
+      version: '1.2',
     };
     const dataStr = JSON.stringify(data, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
@@ -566,7 +575,8 @@ export function createEventHandlers(deps) {
         const data = JSON.parse(e.target.result);
         if (!data || typeof data !== 'object') throw new Error('Invalid data format');
         if (!confirm('Are you sure you want to import this data? This will overwrite your current data.')) return;
-        const { DEFAULT_TAGS, PRESET_TAGS } = await import('./constants.js');
+        const { DEFAULT_TAGS, DEFAULT_BUCKET_MAP } = await import('./constants.js');
+        const subtagNames = [...new Set(Object.values(DEFAULT_BUCKET_MAP).flat())];
         store.setState({
           sessions: Array.isArray(data.sessions) ? data.sessions.map(s => ({
             ...s,
@@ -577,8 +587,9 @@ export function createEventHandlers(deps) {
           markedDays: Array.isArray(data.markedDays) ? data.markedDays : [],
           tags: Array.isArray(data.tags) ? data.tags : [
             ...DEFAULT_TAGS.map(t => ({ name: t, isDefault: true, isEnabled: true, isCustom: false })),
-            ...PRESET_TAGS.map(t => ({ name: t, isDefault: false, isEnabled: true, isCustom: false })),
+            ...subtagNames.map(t => ({ name: t, isDefault: false, isEnabled: true, isCustom: false })),
           ],
+          tagBuckets: data.tagBuckets && Object.keys(data.tagBuckets).length > 0 ? data.tagBuckets : { ...DEFAULT_BUCKET_MAP },
         });
         const impState = store.getState();
 
@@ -637,8 +648,12 @@ export function createEventHandlers(deps) {
     if (!input) return;
     const tagName = input.value.trim();
     if (tagName && !s.tags.some(t => t.name === tagName)) {
+      const tagBuckets = { ...s.tagBuckets };
+      if (!tagBuckets.other) tagBuckets.other = [];
+      tagBuckets.other = [...tagBuckets.other, tagName];
       store.setState({
         tags: [...s.tags, { name: tagName, isDefault: false, isEnabled: true, isCustom: true }],
+        tagBuckets,
       });
       input.value = '';
       ui.renderTagSettings();
@@ -649,7 +664,16 @@ export function createEventHandlers(deps) {
   function deleteCustomTag(tagName) {
     if (!confirm(`Are you sure you want to delete the "${tagName}" tag?`)) return;
     const s = store.getState();
-    store.setState({ tags: s.tags.filter(t => t.name !== tagName) });
+    const tagBuckets = { ...s.tagBuckets };
+    for (const bucket of Object.keys(tagBuckets)) {
+      if (tagBuckets[bucket].includes(tagName)) {
+        tagBuckets[bucket] = tagBuckets[bucket].filter(t => t !== tagName);
+      }
+    }
+    store.setState({
+      tags: s.tags.filter(t => t.name !== tagName),
+      tagBuckets,
+    });
     ui.renderTagSettings();
     saveState();
   }

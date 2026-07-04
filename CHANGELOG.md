@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased (2026-07-04)
+
+### Added
+- **Tag Bucket System — Phase 1: Data Model & Backward Compatibility** — Introduced tag hierarchy where default tags act as top-level buckets with assigned subtags. See `tasks/done/2026-07-04-tag-bucket-p1-data-model.md`.
+  - `DEFAULT_TAGS` expanded from `[work, rest]` to `[work, rest, study, sport, other]`
+  - `DEFAULT_BUCKET_MAP` replaces `PRESET_TAGS` with 5 buckets and their subtag arrays
+  - `PRESET_TAGS` removed; bootstrapping derives from `DEFAULT_BUCKET_MAP` via deduped `Set` of all subtag names
+  - `tagBuckets` in `INITIAL_STATE`, persisted to storage, restored on load, seeded from `DEFAULT_BUCKET_MAP` when empty
+  - `resolveSessionBucket()` infers bucket from `session.tags` for legacy sessions with no stored bucket
+  - New `tagManager.js` with `getSubtagsForBucket`, `getAvailableBuckets`, `getParentBuckets`, `getUnassignedTags`
+  - Tags settings UI grouped by bucket (`#tag-bucket-settings`) replacing 3 separate containers
+  - Custom tags auto-assigned to `tagBuckets.other`; delete removes from all bucket arrays
+  - Full test coverage — `tagManager.js` and `constants.js` at 100%
+
 ## Unreleased (2026-06-27)
 
 ### Fixed

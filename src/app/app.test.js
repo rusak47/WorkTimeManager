@@ -104,9 +104,7 @@ function setupDOM() {
     <button id="reset-marked-days"></button>
     <div id="config-history-list"></div>
     <div id="config-history-modal" class="hidden"></div>
-    <div id="default-tags"></div>
-    <div id="preset-tags"></div>
-    <div id="custom-tags"></div>
+    <div id="tag-bucket-settings"></div>
     <div id="stats-period-title"></div>
     <div id="tracker-tab"></div>
     <div id="sessions-tab"></div>
@@ -133,6 +131,7 @@ describe('app event handlers', () => {
       configs: [],
       markedDays: [],
       tags: [{ name: 'work', isDefault: true, isEnabled: true, isCustom: false }],
+      tagBuckets: {},
       currentTab: 'tracker',
       currentStatsPeriod: 'daily',
       darkMode: false,
@@ -248,10 +247,13 @@ describe('app event handlers', () => {
     expect(storage.saveState).toHaveBeenCalled();
   });
 
-  it('addCustomTag adds tag', () => {
+  it('addCustomTag adds tag and assigns to tagBuckets.other', () => {
+    store.setState({ tagBuckets: { other: [] } });
     document.getElementById('new-tag-input').value = 'design';
     app.addCustomTag();
-    expect(store.getState().tags.some(t => t.name === 'design')).toBe(true);
+    const s = store.getState();
+    expect(s.tags.some(t => t.name === 'design')).toBe(true);
+    expect(s.tagBuckets.other).toContain('design');
   });
 
   it('saveConfig creates config via configManager', () => {
@@ -431,11 +433,16 @@ describe('app event handlers', () => {
     expect(workTags.length).toBe(1);
   });
 
-  it('deleteCustomTag removes tag after confirm', () => {
-    store.setState({ tags: [{ name: 'custom1', isDefault: false, isEnabled: true, isCustom: true }] });
+  it('deleteCustomTag removes tag and clears from tagBuckets', () => {
+    store.setState({
+      tags: [{ name: 'custom1', isDefault: false, isEnabled: true, isCustom: true }],
+      tagBuckets: { other: ['custom1'] },
+    });
     window.confirm = vi.fn(() => true);
     app.deleteCustomTag('custom1');
-    expect(store.getState().tags.some(t => t.name === 'custom1')).toBe(false);
+    const s = store.getState();
+    expect(s.tags.some(t => t.name === 'custom1')).toBe(false);
+    expect(s.tagBuckets.other).not.toContain('custom1');
     expect(storage.saveState).toHaveBeenCalled();
   });
 
@@ -554,6 +561,53 @@ describe('app event handlers', () => {
     await app.loadData();
     const s = store.getState();
     expect(s.tracker.startTime).toBeNull();
+  });
+
+  it('loadStateFromStorage restores tagBuckets from saved state', async () => {
+    storage.loadState.mockResolvedValue({
+      tagBuckets: { work: [], rest: ['sleep'] },
+    });
+    await app.loadData();
+    expect(store.getState().tagBuckets).toEqual({ work: [], rest: ['sleep'] });
+  });
+
+  it('saveState includes tagBuckets in persisted state', () => {
+    storage.saveState.mockClear();
+    store.setState({ tagBuckets: { work: [], rest: ['sleep'] } });
+    app.persistAndRender();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tagBuckets).toEqual({ work: [], rest: ['sleep'] });
+  });
+
+  it('loadData seeds tagBuckets from DEFAULT_BUCKET_MAP when empty', async () => {
+    storage.loadState.mockResolvedValue(null);
+    store.setState({ tags: [], tagBuckets: {} });
+    await app.loadData();
+    const s = store.getState();
+    expect(s.tagBuckets).toBeDefined();
+    const bucketKeys = Object.keys(s.tagBuckets);
+    expect(bucketKeys).toContain('work');
+    expect(bucketKeys).toContain('rest');
+    expect(bucketKeys).toContain('study');
+    expect(bucketKeys).toContain('sport');
+    expect(bucketKeys).toContain('other');
+  });
+
+  it('loadData bootstraps tags from DEFAULT_TAGS and DEFAULT_BUCKET_MAP when no saved state', async () => {
+    storage.loadState.mockResolvedValue(null);
+    store.setState({ tags: [] });
+    await app.loadData();
+    const tags = store.getState().tags;
+    const defaults = tags.filter(t => t.isDefault).map(t => t.name);
+    expect(defaults).toContain('work');
+    expect(defaults).toContain('rest');
+    expect(defaults).toContain('study');
+    expect(defaults).toContain('sport');
+    expect(defaults).toContain('other');
+    const presets = tags.filter(t => !t.isDefault && !t.isCustom);
+    expect(presets.length).toBeGreaterThan(0);
+    expect(presets.every(t => t.isEnabled === true)).toBe(true);
+    expect(presets.every(t => t.isCustom === false)).toBe(true);
   });
 
   it('saveConfig reads backup interval from input', () => {
