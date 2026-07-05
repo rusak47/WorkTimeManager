@@ -121,7 +121,10 @@ export function createEventHandlers(deps) {
   ui.setOnTagBucketsChange(saveState);
   ui.setOnDeleteCustomTag(deleteCustomTag);
 
-  function startSession() {
+  function startSession(bucket) {
+    if (bucket) {
+      ui.initializeCurrentSessionTags(bucket);
+    }
     clearInterval(timerInterval);
     clearInterval(backupInterval);
     sessionManager.startTracking();
@@ -729,7 +732,56 @@ export function createEventHandlers(deps) {
     document.getElementById('stats-tab')?.addEventListener('click', () => switchTab('stats'));
     document.getElementById('calendar-tab')?.addEventListener('click', () => switchTab('calendar'));
     document.getElementById('config-tab')?.addEventListener('click', () => switchTab('config'));
-    document.getElementById('start-btn')?.addEventListener('click', startSession);
+    let startPressTimer = null;
+    let startLongPress = false;
+
+    const startBtn = document.getElementById('start-btn');
+    if (startBtn) {
+      startBtn.addEventListener('mousedown', () => {
+        startLongPress = false;
+        startPressTimer = setTimeout(() => {
+          startLongPress = true;
+          ui.showStartPicker((bucket) => {
+            startSession(bucket);
+          });
+        }, 500);
+      });
+      startBtn.addEventListener('mouseup', () => {
+        clearTimeout(startPressTimer);
+        startPressTimer = null;
+        if (startLongPress) {
+          startLongPress = false;
+          return;
+        }
+        startSession();
+      });
+      startBtn.addEventListener('mouseleave', () => {
+        clearTimeout(startPressTimer);
+        startPressTimer = null;
+      });
+      startBtn.addEventListener('touchstart', () => {
+        startLongPress = false;
+        startPressTimer = setTimeout(() => {
+          startLongPress = true;
+          ui.showStartPicker((bucket) => {
+            startSession(bucket);
+          });
+        }, 500);
+      }, { passive: true });
+      startBtn.addEventListener('touchend', () => {
+        clearTimeout(startPressTimer);
+        startPressTimer = null;
+        if (startLongPress) {
+          startLongPress = false;
+          return;
+        }
+        startSession();
+      });
+      startBtn.addEventListener('touchcancel', () => {
+        clearTimeout(startPressTimer);
+        startPressTimer = null;
+      });
+    }
     document.getElementById('stop-btn')?.addEventListener('click', stopSession);
     document.getElementById('pause-btn')?.addEventListener('click', togglePause);
     document.getElementById('recent-sessions-grid-toggle')?.addEventListener('click', () => ui.toggleRecentSessionsGrid());

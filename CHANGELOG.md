@@ -8,6 +8,7 @@
   - P3-C: **Two-row tag picker in tracker tab** — `initializeCurrentSessionTags()` rendered as two-row picker: row 1 (5 defaults, radio-style), row 2 (subtags from `tagBuckets`, max 6 visible, `+N more` expander). Click handlers for default switching and subtag toggle. Legacy fallback for sessions without `tagBuckets`.
   - P3-D: **Two-row tag picker in session modal** — `initializeSessionModalTags()` rewritten with two-row layout; `editSession()` refactored to call shared picker; `handleSessionFormSubmit` reads `.tag-chip.selected` and passes `bucket`; warning for multiple default tags in edit. `renderRow2` accepts `selectedSubtags` param for pre-selection.
   - **Visual fix: selected tags color + outline** — Saved session views pass `selected=true` to `getTagBadgeClass` so tags show bucket colors; `renderRow2` click handlers swap `getTagBadgeClass` on toggle so subtags show/hide background; CSS `.tag-chip.selected` adds outline instead of inline ring classes.
+  - P3-E: **Long-press on Start button** — ~500ms hold on Start shows floating picker (`rest`/`study`/`sport`/`other`/`work`), short press starts with `work` as before. `startSession(bucket)` accepts optional bucket param; picker positioned below the button with backdrop-neutral styling.
 
 ## Unreleased (2026-07-04)
 

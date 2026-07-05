@@ -575,6 +575,49 @@ describe('uiManager', () => {
     });
   });
 
+  describe('showStartPicker / hideStartPicker', () => {
+    it('creates a floating picker with 5 bucket chips', () => {
+      ui.showStartPicker(() => {});
+      const picker = document.getElementById('start-picker');
+      expect(picker).not.toBeNull();
+      expect(picker.classList.contains('start-picker')).toBe(true);
+      const chips = picker.querySelectorAll('.start-picker-chip');
+      expect(chips.length).toBe(5);
+      const names = Array.from(chips).map(c => c.dataset.tag);
+      expect(names).toEqual(['rest', 'study', 'sport', 'other', 'work']);
+    });
+
+    it('calls onSelect with bucket name when chip clicked', () => {
+      const onSelect = vi.fn();
+      ui.showStartPicker(onSelect);
+      const chips = document.querySelectorAll('.start-picker-chip');
+      chips[2].click();
+      expect(onSelect).toHaveBeenCalledWith('sport');
+    });
+
+    it('calls onSelect with bucket name for the last chip (work)', () => {
+      const onSelect = vi.fn();
+      ui.showStartPicker(onSelect);
+      const chips = document.querySelectorAll('.start-picker-chip');
+      chips[4].click();
+      expect(onSelect).toHaveBeenCalledWith('work');
+    });
+
+    it('removes picker when hideStartPicker is called', () => {
+      ui.showStartPicker(() => {});
+      ui.hideStartPicker();
+      expect(document.getElementById('start-picker')).toBeNull();
+    });
+
+    it('hides picker after chip click', () => {
+      const onSelect = vi.fn();
+      ui.showStartPicker(onSelect);
+      const chips = document.querySelectorAll('.start-picker-chip');
+      chips[0].click();
+      expect(document.getElementById('start-picker')).toBeNull();
+    });
+  });
+
   describe('initializeCurrentSessionTags', () => {
     const buckets = {
       work: ['coding', 'meeting', 'email', 'planning', 'review', 'deploy', 'docs'],

@@ -57,6 +57,46 @@ export function createUIManager(store) {
     return chip;
   }
 
+  function showStartPicker(onSelect) {
+    hideStartPicker();
+    const picker = document.createElement('div');
+    picker.id = 'start-picker';
+    picker.className = 'start-picker fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-1';
+    const title = document.createElement('div');
+    title.className = 'text-xs text-gray-500 dark:text-gray-400 px-2 pb-1 border-b border-gray-100 dark:border-gray-700 mb-1';
+    title.textContent = 'Start with:';
+    picker.appendChild(title);
+
+    const buckets = ['rest', 'study', 'sport', 'other', 'work'];
+    for (const bucket of buckets) {
+      const chip = createPickerTagChip(bucket, false);
+      chip.classList.add('start-picker-chip');
+      chip.addEventListener('click', () => {
+        onSelect(bucket);
+        hideStartPicker();
+      });
+      picker.appendChild(chip);
+    }
+
+    document.body.appendChild(picker);
+
+    const btn = document.getElementById('start-btn');
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      picker.style.left = Math.max(4, rect.left) + 'px';
+      picker.style.top = (rect.bottom + 4) + 'px';
+    } else {
+      picker.style.left = '50%';
+      picker.style.top = '50%';
+      picker.style.transform = 'translate(-50%, -50%)';
+    }
+  }
+
+  function hideStartPicker() {
+    const existing = document.getElementById('start-picker');
+    if (existing) existing.remove();
+  }
+
   function updateCurrentTime() {
     const el = document.getElementById('current-time');
     if (el) el.textContent = utils.formatTime(new Date());
@@ -1524,6 +1564,8 @@ export function createUIManager(store) {
     setOnDeleteCustomTag,
     getTagBadgeClass,
     createPickerTagChip,
+    showStartPicker,
+    hideStartPicker,
     enableDarkMode,
     disableDarkMode,
     toggleDarkMode,
