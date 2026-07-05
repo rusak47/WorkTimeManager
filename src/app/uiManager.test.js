@@ -675,7 +675,51 @@ describe('uiManager', () => {
   });
 
   describe('initializeSessionModalTags', () => {
-    it('renders tags with visible styling for unselected state', () => {
+    const modalBuckets = {
+      work: ['coding', 'meeting', 'email'],
+      rest: ['sleep'],
+      study: ['rtu'],
+      sport: ['cycling'],
+      other: [],
+    };
+
+    it('renders two-row picker when tagBuckets present', () => {
+      store.setState({ tags: mockTags, tagBuckets: modalBuckets });
+      ui.initializeSessionModalTags();
+      const container = document.getElementById('tags-container');
+      const row1 = container.querySelector('.picker-row-1');
+      const row2 = container.querySelector('.picker-row-2');
+      expect(row1).toBeTruthy();
+      expect(row2).toBeTruthy();
+      const chips = container.querySelectorAll('.tag-chip');
+      expect(chips.length).toBeGreaterThan(0);
+    });
+
+    it('pre-selects work bucket by default', () => {
+      store.setState({ tags: mockTags, tagBuckets: modalBuckets });
+      ui.initializeSessionModalTags();
+      const selected = document.querySelectorAll('#tags-container .tag-chip.selected');
+      expect(selected.length).toBe(1);
+      expect(selected[0].dataset.tag).toBe('work');
+    });
+
+    it('pre-selects given bucket', () => {
+      store.setState({ tags: mockTags, tagBuckets: modalBuckets });
+      ui.initializeSessionModalTags('rest');
+      const selected = document.querySelectorAll('#tags-container .tag-chip.selected');
+      expect(selected.length).toBe(1);
+      expect(selected[0].dataset.tag).toBe('rest');
+    });
+
+    it('pre-selects given subtags', () => {
+      store.setState({ tags: mockTags, tagBuckets: modalBuckets });
+      ui.initializeSessionModalTags('work', ['work', 'coding']);
+      const row2Chips = document.querySelectorAll('#tags-container .picker-row-2 .tag-chip.selected');
+      const selectedSubtagNames = Array.from(row2Chips).map(el => el.dataset.tag);
+      expect(selectedSubtagNames).toContain('coding');
+    });
+
+    it('falls back to legacy picker when no tagBuckets', () => {
       store.setState({ tags: mockTags });
       ui.initializeSessionModalTags();
       const container = document.getElementById('tags-container');

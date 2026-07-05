@@ -290,6 +290,26 @@ describe('app event handlers', () => {
     expect(document.getElementById('session-id').value).toBe('42');
   });
 
+  it('editSession shows warning for multiple default tags', () => {
+    store.setState({
+      sessions: [{
+        id: 43, date: '2026-06-25', startTime: '2026-06-25T08:00:00',
+        endTime: '2026-06-25T09:00:00', duration: '01:00:00', durationSec: 3600,
+        dayType: 'Workday', tags: ['work', 'rest'], mood: 4,
+      }],
+      tags: [
+        { name: 'work', isDefault: true, isEnabled: true },
+        { name: 'rest', isDefault: true, isEnabled: true },
+      ],
+      tagBuckets: { work: [], rest: [], study: [], sport: [], other: [] },
+    });
+    app.editSession(43);
+    const warning = document.getElementById('multiple-defaults-warning');
+    expect(warning).toBeTruthy();
+    expect(warning.textContent).toContain('work');
+    expect(warning.textContent).toContain('rest');
+  });
+
   it('handleSessionFormSubmit updates session duration with accumulatedPauseTimeSec', () => {
     const e = { preventDefault: vi.fn() };
     store.setState({

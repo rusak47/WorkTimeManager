@@ -519,6 +519,8 @@ export function createUIManager(store) {
     if (dayTypeInput) dayTypeInput.value = 'Workday';
     if (modalNotes) modalNotes.value = '';
     initializeSessionModalTags();
+    const existingWarning = document.getElementById('multiple-defaults-warning');
+    if (existingWarning) existingWarning.remove();
     const moodRating = document.getElementById('mood-rating');
     const moodInput = document.getElementById('session-mood');
     const moodValue = document.getElementById('mood-value');
@@ -532,6 +534,8 @@ export function createUIManager(store) {
   function hideSessionModal() {
     const modal = document.getElementById('session-modal');
     if (modal) modal.classList.add('hidden');
+    const existingWarning = document.getElementById('multiple-defaults-warning');
+    if (existingWarning) existingWarning.remove();
   }
 
   function showMarkDayModal(dayType) {
@@ -679,8 +683,9 @@ export function createUIManager(store) {
     renderRow2(container, row2, tagBuckets, selectedDefault);
   }
 
-  function renderRow2(container, row2, tagBuckets, defaultName) {
+  function renderRow2(container, row2, tagBuckets, defaultName, selectedSubtags = []) {
     row2.innerHTML = '';
+    const selectedSet = new Set(selectedSubtags);
     const subtags = tagBuckets[defaultName] || [];
     if (subtags.length === 0) return;
 
@@ -690,7 +695,8 @@ export function createUIManager(store) {
     const hidden = hasMore ? subtags.slice(maxVisible) : [];
 
     for (const subtag of visible) {
-      const chip = createPickerTagChip(subtag, false);
+      const isSelected = selectedSet.has(subtag);
+      const chip = createPickerTagChip(subtag, isSelected);
       chip.addEventListener('click', () => {
         chip.classList.toggle('selected');
       });
@@ -704,7 +710,8 @@ export function createUIManager(store) {
       moreBtn.addEventListener('click', () => {
         moreBtn.remove();
         for (const subtag of hidden) {
-          const chip = createPickerTagChip(subtag, false);
+          const isSelected = selectedSet.has(subtag);
+          const chip = createPickerTagChip(subtag, isSelected);
           chip.addEventListener('click', () => {
             chip.classList.toggle('selected');
           });
@@ -736,11 +743,55 @@ export function createUIManager(store) {
     }
   }
 
-  function initializeSessionModalTags() {
+  function initializeSessionModalTags(bucket = 'work', subtags = []) {
     const container = document.getElementById('tags-container');
     const s = store.getState();
     if (!container) return;
     container.innerHTML = '';
+
+    const tagBuckets = s.tagBuckets || {};
+    const hasBuckets = DEFAULT_BUCKET_KEYS.every(k => Array.isArray(tagBuckets[k]));
+
+    if (!hasBuckets) {
+      renderLegacyModalTagPicker(container, s);
+      return;
+    }
+
+    let selectedDefault = bucket;
+
+    const row1 = document.createElement('div');
+    row1.className = 'picker-row-1 flex flex-wrap gap-1.5 mb-2';
+
+    for (const tagName of DEFAULT_BUCKET_KEYS) {
+      const isSelected = tagName === selectedDefault;
+      const chip = createPickerTagChip(tagName, isSelected);
+      chip.addEventListener('click', () => {
+        if (chip.classList.contains('selected')) return;
+        row1.querySelectorAll('.tag-chip.selected').forEach(el => {
+          el.classList.remove('selected');
+          el.className = el.className.replace(/selected\s*/, '');
+          const tn = el.dataset.tag;
+          el.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${getTagBadgeClass(tn, false)}`;
+        });
+        chip.classList.add('selected');
+        chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none selected ${getTagBadgeClass(tagName, true)}`;
+        selectedDefault = tagName;
+        renderRow2(container, row2, tagBuckets, selectedDefault);
+      });
+      row1.appendChild(chip);
+    }
+
+    const row2 = document.createElement('div');
+    row2.className = 'picker-row-2 flex flex-wrap gap-1.5';
+
+    container.appendChild(row1);
+    container.appendChild(row2);
+
+    const subtagNames = subtags.filter(t => !DEFAULT_BUCKET_KEYS.includes(t));
+    renderRow2(container, row2, tagBuckets, selectedDefault, subtagNames);
+  }
+
+  function renderLegacyModalTagPicker(container, s) {
     const enabledTags = s.tags.filter(t => t.isEnabled);
     for (const tag of enabledTags) {
       const tagEl = document.createElement('div');

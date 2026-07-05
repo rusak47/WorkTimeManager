@@ -34,13 +34,15 @@ Deliver the visible user-facing changes: a two-level tag picker during session c
 - **Files:** `src/app/uiManager.js`, `src/app/app.js`, `src/app/uiManager.test.js`
 - Tests: 267/267 passing (10 new tests)
 
-### P3-D: Two-row picker — Edit modal + refactor `editSession()` (spec 3.1)
+### ✅ P3-D: Two-row picker — Edit modal + refactor `editSession()` *(done)*
 
 - Rewrite `initializeSessionModalTags()` with same two-row layout
 - Pre-select from `session.bucket` (from P3-B)
-- Refactor `editSession()` (`app.js:369-391`) — remove inline tag rendering, call shared picker function
+- Refactor `editSession()` — remove inline tag rendering, call shared picker function
 - Warning when session has multiple default tags (e.g. `work` + `rest`)
-- **Files:** `src/app/uiManager.js`, `src/app/app.js`, `src/css/styles.css`
+- `renderRow2()`: add optional `selectedSubtags` parameter for pre-selection state
+- Cleanup `multiple-defaults-warning` on modal open/close
+- **Files:** `src/app/uiManager.js`, `src/app/app.js`, `src/app/uiManager.test.js`, `src/app/app.test.js`
 
 ### P3-E: Long-press on Start button (spec 3.1)
 

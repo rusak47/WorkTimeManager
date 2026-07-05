@@ -31,7 +31,7 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 - [ ] [low - must have] Add refresh button in statistics tab (auto-refresh on tab switch is insufficient).
 
 ## UI/UX
-- [ ] [low] - long press on start shows a tooltip to select default tag for this session (eg rest/study/sports/other, work is enabled by default so its placed at the end of selection)
+- [ ] [low] — **P3-E**: long press on start shows a tooltip to select default tag for this session (eg rest/study/sports/other, work is enabled by default so its placed at the end of selection)
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
 - [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `tasks/new/tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
 - [ ] [high] - when in grid mode and session description is hidden add a tooltip with session description

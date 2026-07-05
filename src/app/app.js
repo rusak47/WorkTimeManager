@@ -1,6 +1,7 @@
 import * as utils from '../js/utils.js';
 import { createCalendarView } from './calendarView.js';
-import { DEFAULT_BACKUP_INTERVAL_MS, CURRENT_SESSION_INIT } from './constants.js';
+import { DEFAULT_BACKUP_INTERVAL_MS, CURRENT_SESSION_INIT, DEFAULT_TAGS } from './constants.js';
+import { resolveSessionBucket } from './tagManager.js';
 
 const INITIAL_STATE = Object.freeze({
   sessions: [],
@@ -313,9 +314,19 @@ export function createEventHandlers(deps) {
     const dayType = dayTypeInput ? dayTypeInput.value : 'Workday';
     const notes = modalNotes ? modalNotes.value.trim() : '';
     const selectedTags = [];
-    document.querySelectorAll('#tags-container .tag.selected').forEach(el => {
-      selectedTags.push(el.dataset.tag);
-    });
+    let bucket;
+    const chips = document.querySelectorAll('#tags-container .tag-chip.selected');
+    if (chips.length > 0) {
+      chips.forEach(el => {
+        selectedTags.push(el.dataset.tag);
+        const parentRow = el.closest('.picker-row-1');
+        if (parentRow) bucket = el.dataset.tag;
+      });
+    } else {
+      document.querySelectorAll('#tags-container .tag.selected').forEach(el => {
+        selectedTags.push(el.dataset.tag);
+      });
+    }
     const isBreak = selectedTags.includes('rest') && !selectedTags.includes('work');
     if (!isBreak && selectedTags.length === 0) selectedTags.unshift('work');
     const mood = moodInput ? parseFloat(moodInput.value) : 5;
@@ -331,6 +342,7 @@ export function createEventHandlers(deps) {
         tags: selectedTags,
         mood,
         isBreak,
+        bucket,
       });
     } else {
       sessionManager.addSession({
@@ -345,6 +357,7 @@ export function createEventHandlers(deps) {
         tags: selectedTags,
         mood,
         isBreak,
+        bucket,
       });
     }
     ui.hideSessionModal();
@@ -370,29 +383,23 @@ export function createEventHandlers(deps) {
     if (endTimeInput) endTimeInput.value = utils.formatDateTimeLocal(new Date(session.endTime));
     if (dayTypeInput) dayTypeInput.value = session.dayType || 'Workday';
     if (modalNotes) modalNotes.value = session.notes || '';
-    const tagsContainer = document.getElementById('tags-container');
-    if (tagsContainer) {
-      tagsContainer.innerHTML = '';
-      const enabledTags = s.tags.filter(t => t.isEnabled);
-      for (const tag of enabledTags) {
-        const tagEl = document.createElement('div');
-        const isSelected = session.tags && session.tags.includes(tag.name);
-        tagEl.className = `tag px-2 py-1 rounded-full text-sm cursor-pointer ${isSelected ? 'selected' : ''} ${ui.getTagBadgeClass(tag.name, isSelected)}`;
-        tagEl.dataset.tag = tag.name;
-        tagEl.textContent = tag.name;
-        tagEl.addEventListener('click', () => {
-          const selected = tagsContainer.querySelectorAll('.tag.selected');
-          const selectedNames = Array.from(selected).map(el => el.dataset.tag);
-          if (selectedNames.length <= 1 && selectedNames.includes(tag.name)) return;
-          tagEl.classList.toggle('selected');
-          tagEl.classList.toggle('bg-blue-100');
-          tagEl.classList.toggle('text-blue-800');
-          tagEl.classList.toggle('dark:bg-blue-900');
-          tagEl.classList.toggle('dark:text-blue-300');
-        });
-        tagsContainer.appendChild(tagEl);
+    const bucket = session.bucket || resolveSessionBucket(session);
+    const sessionTags = session.tags || [];
+    const defaultsInTags = sessionTags.filter(t => DEFAULT_TAGS.includes(t));
+    if (defaultsInTags.length > 1) {
+      const existingWarning = document.getElementById('multiple-defaults-warning');
+      if (!existingWarning) {
+        const warning = document.createElement('div');
+        warning.id = 'multiple-defaults-warning';
+        warning.className = 'text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 rounded mb-2';
+        warning.textContent = `Session has multiple bucket tags (${defaultsInTags.join(', ')}). Only one bucket can be active.`;
+        const tagsContainer = document.getElementById('tags-container');
+        if (tagsContainer && tagsContainer.parentNode) {
+          tagsContainer.parentNode.insertBefore(warning, tagsContainer);
+        }
       }
     }
+    ui.initializeSessionModalTags(bucket, sessionTags);
     const rating = session.mood || 5;
     if (moodRating) moodRating.dataset.rating = rating;
     if (moodInput) moodInput.value = rating;

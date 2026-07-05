@@ -6,6 +6,7 @@
 - **Tag Bucket System — Phase 3: Two-Row Tag Picker & Hashtag Autocomplete** — Ongoing. See `tasks/new/20260704-tag-bucket-p3-picker-hashtag-stats.md`.
   - P3-B: **Store bucket on session save** — `stopTracking()` now passes `meta.bucket` through to the session object. `handleSessionFormSubmit` reads bucket from selected row-1 default tag and includes it in `addSession()`.
   - P3-C: **Two-row tag picker in tracker tab** — `initializeCurrentSessionTags()` rendered as two-row picker: row 1 (5 defaults, radio-style), row 2 (subtags from `tagBuckets`, max 6 visible, `+N more` expander). Click handlers for default switching and subtag toggle. Legacy fallback for sessions without `tagBuckets`.
+  - P3-D: **Two-row tag picker in session modal** — `initializeSessionModalTags()` rewritten with two-row layout; `editSession()` refactored to call shared picker; `handleSessionFormSubmit` reads `.tag-chip.selected` and passes `bucket`; warning for multiple default tags in edit. `renderRow2` accepts `selectedSubtags` param for pre-selection.
 
 ## Unreleased (2026-07-04)
 
