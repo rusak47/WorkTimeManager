@@ -238,8 +238,11 @@ export function createEventHandlers(deps) {
     const date = utils.formatDate(startDate);
     const dayType = getDayType(date, s);
     const selectedTags = [];
-    document.querySelectorAll('#current-session-tags .tag.selected').forEach(el => {
+    let bucket;
+    document.querySelectorAll('#current-session-tags .tag-chip.selected').forEach(el => {
       selectedTags.push(el.dataset.tag);
+      const parentRow = el.closest('.picker-row-1');
+      if (parentRow) bucket = el.dataset.tag;
     });
     if (selectedTags.length === 0) selectedTags.push('work');
     const moodInput = document.getElementById('current-session-mood-input');
@@ -255,6 +258,7 @@ export function createEventHandlers(deps) {
       dayType,
       tags: selectedTags,
       mood: moodInput ? parseFloat(moodInput.value) : 5,
+      bucket,
     });
     if (notesInput) notesInput.value = '';
     const durEl = document.getElementById('active-duration');

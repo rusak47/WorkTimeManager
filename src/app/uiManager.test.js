@@ -20,6 +20,10 @@ function createDragEvent(type, dt, opts = {}) {
   return event;
 }
 
+function containerQSA(sel) {
+  return document.getElementById('current-session-tags').querySelectorAll(sel);
+}
+
 function setupDOM() {
   document.body.innerHTML = `
     <div id="current-time"></div>
@@ -514,28 +518,159 @@ describe('uiManager', () => {
       expect(cls).toContain('bg-blue-100');
     });
 
+    it('returns correct class for rest tag when selected', () => {
+      const cls = ui.getTagBadgeClass('rest', true);
+      expect(cls).toContain('bg-purple-100');
+    });
+
+    it('returns correct class for study tag when selected', () => {
+      const cls = ui.getTagBadgeClass('study', true);
+      expect(cls).toContain('bg-orange-100');
+    });
+
+    it('returns correct class for sport tag when selected', () => {
+      const cls = ui.getTagBadgeClass('sport', true);
+      expect(cls).toContain('bg-green-100');
+    });
+
+    it('returns correct class for other tag when selected', () => {
+      const cls = ui.getTagBadgeClass('other', true);
+      expect(cls).toContain('bg-gray-100');
+    });
+
     it('returns unselected class when not selected', () => {
       const cls = ui.getTagBadgeClass('work', false);
       expect(cls).toContain('text-gray-800');
     });
+
+    it('returns gray for unknown tag when selected', () => {
+      const cls = ui.getTagBadgeClass('unknown', true);
+      expect(cls).toContain('bg-gray-100');
+    });
+  });
+
+  describe('createPickerTagChip', () => {
+    it('creates a chip element with tag name', () => {
+      const chip = ui.createPickerTagChip('study');
+      expect(chip.tagName).toBe('DIV');
+      expect(chip.textContent).toBe('study');
+      expect(chip.classList.contains('tag-chip')).toBe(true);
+    });
+
+    it('applies bucket color when selected', () => {
+      const chip = ui.createPickerTagChip('study', true);
+      expect(chip.classList.contains('selected')).toBe(true);
+      expect(chip.className).toContain('bg-orange-100');
+    });
+
+    it('applies gray when not selected', () => {
+      const chip = ui.createPickerTagChip('study', false);
+      expect(chip.classList.contains('selected')).toBe(false);
+      expect(chip.className).toContain('text-gray-800');
+    });
+
+    it('sets dataset.tag to tag name', () => {
+      const chip = ui.createPickerTagChip('rest');
+      expect(chip.dataset.tag).toBe('rest');
+    });
   });
 
   describe('initializeCurrentSessionTags', () => {
-    it('renders tags with visible styling for unselected state', () => {
-      store.setState({ tags: mockTags });
+    const buckets = {
+      work: ['coding', 'meeting', 'email', 'planning', 'review', 'deploy', 'docs'],
+      rest: ['sleep', 'tv'],
+      study: ['rtu'],
+      sport: ['cycling'],
+      other: [],
+    };
+
+    it('renders two rows: default tags and subtags', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
       ui.initializeCurrentSessionTags();
       const container = document.getElementById('current-session-tags');
-      const tagEls = container.querySelectorAll('.tag');
-      expect(tagEls.length).toBe(mockTags.filter(t => t.isEnabled).length);
-      const unselected = container.querySelectorAll('.tag:not(.selected)');
-      expect(unselected.length).toBeGreaterThan(0);
-      const selected = container.querySelectorAll('.tag.selected');
+      expect(container.querySelector('.picker-row-1')).not.toBeNull();
+      expect(container.querySelector('.picker-row-2')).not.toBeNull();
+    });
+
+    it('renders all 5 default tags in row 1', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const chips = containerQSA('.picker-row-1 .tag-chip');
+      expect(chips.length).toBe(5);
+      const names = Array.from(chips).map(c => c.dataset.tag);
+      expect(names).toEqual(['work', 'rest', 'study', 'sport', 'other']);
+    });
+
+    it('pre-selects work in row 1', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const selected = containerQSA('.picker-row-1 .tag-chip.selected');
       expect(selected.length).toBe(1);
       expect(selected[0].dataset.tag).toBe('work');
-      for (const el of unselected) {
-        expect(el.classList.contains('selected')).toBe(false);
-        expect(el.textContent).toBeTruthy();
-      }
+    });
+
+    it('shows up to 6 subtags of selected default in row 2', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const subtagChips = containerQSA('.picker-row-2 .tag-chip');
+      const names = Array.from(subtagChips).map(c => c.dataset.tag);
+      expect(names).toEqual(['coding', 'meeting', 'email', 'planning', 'review', 'deploy']);
+      expect(containerQSA('.picker-row-2 .tag-more-btn').length).toBe(1);
+    });
+
+    it('shows all subtags when 6 or fewer', () => {
+      store.setState({ tags: mockTags, tagBuckets: { work: ['a', 'b', 'c'], rest: [], study: [], sport: [], other: [] } });
+      ui.initializeCurrentSessionTags();
+      const names = Array.from(containerQSA('.picker-row-2 .tag-chip')).map(c => c.dataset.tag);
+      expect(names).toEqual(['a', 'b', 'c']);
+    });
+
+    it('clicking a different default tag switches row 2 subtags', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const restChip = containerQSA('.picker-row-1 .tag-chip')[1];
+      restChip.click();
+      const subtagNames = Array.from(containerQSA('.picker-row-2 .tag-chip')).map(c => c.dataset.tag);
+      expect(subtagNames).toEqual(['sleep', 'tv']);
+    });
+
+    it('limits subtags to 6 with +N more expander', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const visibleChips = Array.from(containerQSA('.picker-row-2 .tag-chip:not(.tag-chip-hidden)'));
+      expect(visibleChips.length).toBe(6);
+      const expander = containerQSA('.picker-row-2 .tag-more-btn');
+      expect(expander.length).toBe(1);
+      expect(expander[0].textContent).toContain('+1 more');
+    });
+
+    it('expander click reveals hidden subtags', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const moreBtn = containerQSA('.picker-row-2 .tag-more-btn')[0];
+      moreBtn.click();
+      const allChips = containerQSA('.picker-row-2 .tag-chip');
+      expect(allChips.length).toBe(7);
+      expect(containerQSA('.picker-row-2 .tag-more-btn').length).toBe(0);
+    });
+
+    it('toggles subtag selection on click', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const chip = containerQSA('.picker-row-2 .tag-chip')[0];
+      expect(chip.classList.contains('selected')).toBe(false);
+      chip.click();
+      expect(chip.classList.contains('selected')).toBe(true);
+    });
+
+    it('only one default can be selected at a time (radio-style)', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const chips = containerQSA('.picker-row-1 .tag-chip');
+      chips[1].click();
+      const selected = containerQSA('.picker-row-1 .tag-chip.selected');
+      expect(selected.length).toBe(1);
+      expect(selected[0].dataset.tag).toBe('rest');
     });
   });
 

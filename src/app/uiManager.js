@@ -40,9 +40,21 @@ export function createUIManager(store) {
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
       case 'rest':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 'study':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+      case 'sport':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
+  }
+
+  function createPickerTagChip(tagName, selected = false) {
+    const chip = document.createElement('div');
+    chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${selected ? 'selected' : ''} ${getTagBadgeClass(tagName, selected)}`;
+    chip.dataset.tag = tagName;
+    chip.textContent = tagName;
+    return chip;
   }
 
   function updateCurrentTime() {
@@ -618,11 +630,92 @@ export function createUIManager(store) {
       `Inflation Rate: ${config.inflationRate}%`);
   }
 
+  const DEFAULT_BUCKET_KEYS = ['work', 'rest', 'study', 'sport', 'other'];
+
   function initializeCurrentSessionTags() {
     const container = document.getElementById('current-session-tags');
     const s = store.getState();
     if (!container) return;
     container.innerHTML = '';
+
+    const tagBuckets = s.tagBuckets || {};
+    const hasBuckets = DEFAULT_BUCKET_KEYS.every(k => Array.isArray(tagBuckets[k]));
+
+    if (!hasBuckets) {
+      renderLegacyTagPicker(container, s);
+      return;
+    }
+
+    let selectedDefault = 'work';
+
+    const row1 = document.createElement('div');
+    row1.className = 'picker-row-1 flex flex-wrap gap-1.5 mb-2';
+
+    for (const tagName of DEFAULT_BUCKET_KEYS) {
+      const isSelected = tagName === selectedDefault;
+      const chip = createPickerTagChip(tagName, isSelected);
+      chip.addEventListener('click', () => {
+        if (chip.classList.contains('selected')) return;
+        row1.querySelectorAll('.tag-chip.selected').forEach(el => {
+          el.classList.remove('selected');
+          el.className = el.className.replace(/selected\s*/, '');
+          const tn = el.dataset.tag;
+          el.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${getTagBadgeClass(tn, false)}`;
+        });
+        chip.classList.add('selected');
+        chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none selected ${getTagBadgeClass(tagName, true)}`;
+        selectedDefault = tagName;
+        renderRow2(container, row2, tagBuckets, selectedDefault);
+      });
+      row1.appendChild(chip);
+    }
+
+    const row2 = document.createElement('div');
+    row2.className = 'picker-row-2 flex flex-wrap gap-1.5';
+
+    container.appendChild(row1);
+    container.appendChild(row2);
+
+    renderRow2(container, row2, tagBuckets, selectedDefault);
+  }
+
+  function renderRow2(container, row2, tagBuckets, defaultName) {
+    row2.innerHTML = '';
+    const subtags = tagBuckets[defaultName] || [];
+    if (subtags.length === 0) return;
+
+    const maxVisible = 6;
+    const hasMore = subtags.length > maxVisible;
+    const visible = hasMore ? subtags.slice(0, maxVisible) : subtags;
+    const hidden = hasMore ? subtags.slice(maxVisible) : [];
+
+    for (const subtag of visible) {
+      const chip = createPickerTagChip(subtag, false);
+      chip.addEventListener('click', () => {
+        chip.classList.toggle('selected');
+      });
+      row2.appendChild(chip);
+    }
+
+    if (hasMore) {
+      const moreBtn = document.createElement('button');
+      moreBtn.className = 'tag-more-btn inline-block px-2 py-1 rounded-full text-sm cursor-pointer text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 bg-transparent border border-dashed border-gray-300 dark:border-gray-600';
+      moreBtn.textContent = `+${hidden.length} more`;
+      moreBtn.addEventListener('click', () => {
+        moreBtn.remove();
+        for (const subtag of hidden) {
+          const chip = createPickerTagChip(subtag, false);
+          chip.addEventListener('click', () => {
+            chip.classList.toggle('selected');
+          });
+          row2.appendChild(chip);
+        }
+      });
+      row2.appendChild(moreBtn);
+    }
+  }
+
+  function renderLegacyTagPicker(container, s) {
     const enabledTags = s.tags.filter(t => t.isEnabled);
     for (const tag of enabledTags) {
       const tagEl = document.createElement('div');
@@ -1377,6 +1470,7 @@ export function createUIManager(store) {
     setOnTagBucketsChange,
     setOnDeleteCustomTag,
     getTagBadgeClass,
+    createPickerTagChip,
     enableDarkMode,
     disableDarkMode,
     toggleDarkMode,
