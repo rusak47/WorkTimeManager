@@ -1,7 +1,8 @@
 # TODO
 
 ## Bugs
-- [low] — year selector dropdown in session view doesn't filter sessions when changed
+- [ ] [low] — year selector dropdown in session view doesn't filter sessions when changed
+- [ ] [high] [P3-E: Long-press on Start button] - when stopping session selected tag on long press is not applied and default one (work) is choosen
 
 ## Sessions
 - [ ] [normal++ - benefits?] - currently work session is not saved on pause, but accumulates brake time and is calculated afterwards. isnt it better to save work each time pause is pressed? what are the benefits - easier to calculate work time, no dependency on internal brake time accumulation, no sessions possible spanning over multiple days; possible cons - no behindhand work sessions possible (manual edit only or add shortcuts like move back -24h), one task sessions shattered in more pieces, e.g. 15min breaks. other ideas? (design spec: `tasks/new/20260629-save-on-pause-spec.md`)
@@ -20,7 +21,8 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 - [ ] [low priority - maybe] Support multiple notes per session (store as array).
 
 ## Tags
-- [ ] [normal++ - blocking - must have] **#tag parsing in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. New tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save.
+- [x] **#tag dropdown in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. (P3-F done, 286 tests)
+- [ ] [normal++ - blocking - must have] **#tag auto-add on session save** — new tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save.
 - [ ] [normal+ - must have] Filter statistics by subtags — tags stored with `#` prefix in sessions should be filterable. All configured tags (custom + default) should appear as filter options.
 - [ ] [low - maybe] Early tagging — tag picker on the "Start Session" button so sessions are tagged from the beginning.
 - [ ] [duplicate — covered by #tag parsing above] Allow entering custom tags on the fly.

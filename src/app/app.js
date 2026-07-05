@@ -831,6 +831,12 @@ export function createEventHandlers(deps) {
       tagSettingsTab.addEventListener('click', () => switchSettingsTab('tags'));
     }
     document.addEventListener('click', (e) => {
+      if (!e.target.closest('#hashtag-dropdown, #hashtag-dropdown *')) {
+        const dd = document.getElementById('hashtag-dropdown');
+        if (dd && !e.target.closest('.hashtag-item') && !e.target.closest('textarea')) {
+          dd.remove();
+        }
+      }
       const editBtn = e.target.closest('.edit-session');
       if (editBtn && editBtn.dataset.id) {
         editSession(parseInt(editBtn.dataset.id, 10));
@@ -853,6 +859,8 @@ export function createEventHandlers(deps) {
       moodRating.addEventListener('mousemove', ui.handleStarHover);
       moodRating.addEventListener('mouseleave', ui.resetStarDisplay);
     }
+    ui.initHashtagAutocomplete('notes');
+    ui.initHashtagAutocomplete('modal-notes');
   }
 
   async function init() {

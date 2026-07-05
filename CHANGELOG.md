@@ -9,6 +9,7 @@
   - P3-D: **Two-row tag picker in session modal** — `initializeSessionModalTags()` rewritten with two-row layout; `editSession()` refactored to call shared picker; `handleSessionFormSubmit` reads `.tag-chip.selected` and passes `bucket`; warning for multiple default tags in edit. `renderRow2` accepts `selectedSubtags` param for pre-selection.
   - **Visual fix: selected tags color + outline** — Saved session views pass `selected=true` to `getTagBadgeClass` so tags show bucket colors; `renderRow2` click handlers swap `getTagBadgeClass` on toggle so subtags show/hide background; CSS `.tag-chip.selected` adds outline instead of inline ring classes.
   - P3-E: **Long-press on Start button** — ~500ms hold on Start shows floating picker (`rest`/`study`/`sport`/`other`/`work`), short press starts with `work` as before. `startSession(bucket)` accepts optional bucket param; picker positioned below the button with backdrop-neutral styling.
+  - P3-F: **Inline hashtag autocomplete in notes** — `#`-prefix matching in `#notes` and `#modal-notes` textareas with colored bucket-dot badges via `getBucketColorClass()`. Dropdown positioned above/below cursor, dismiss on Escape/blur. `getAllTagNames()` collects all bucket keys + subtags from `tagBuckets`. No auto-add of new tags yet (see bug in TODO).
 
 ## Unreleased (2026-07-04)
 

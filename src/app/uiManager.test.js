@@ -56,6 +56,7 @@ function setupDOM() {
     <input id="end-time" />
     <input id="day-type" />
     <textarea id="modal-notes"></textarea>
+    <textarea id="notes"></textarea>
     <input id="session-mood" />
     <div id="mood-value"></div>
     <div id="mood-rating" data-rating="5"></div>
@@ -615,6 +616,101 @@ describe('uiManager', () => {
       const chips = document.querySelectorAll('.start-picker-chip');
       chips[0].click();
       expect(document.getElementById('start-picker')).toBeNull();
+    });
+  });
+
+  describe('initHashtagAutocomplete', () => {
+    const bucketData = {
+      work: ['coding', 'meeting', 'email'],
+      rest: ['sleep', 'read', 'music'],
+      study: ['rtu', 'read'],
+      sport: ['cycling'],
+      other: [],
+    };
+
+    beforeEach(() => {
+      store.setState({ tags: mockTags, tagBuckets: bucketData });
+    });
+
+    function typeText(id, text) {
+      const ta = document.getElementById(id);
+      ta.value = text;
+      ta.selectionStart = ta.selectionEnd = text.length;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    it('shows dropdown when #prefix typed in modal-notes', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', 'Worked on #re');
+      const dd = document.getElementById('hashtag-dropdown');
+      expect(dd).not.toBeNull();
+      expect(dd.querySelectorAll('.hashtag-item').length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('shows dropdown when #prefix typed in notes', () => {
+      ui.initHashtagAutocomplete('notes');
+      typeText('notes', '#re');
+      expect(document.getElementById('hashtag-dropdown')).not.toBeNull();
+    });
+
+    it('does not show dropdown when no hash', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', 'Worked on meeting');
+      expect(document.getElementById('hashtag-dropdown')).toBeNull();
+    });
+
+    it('does not show dropdown for just #', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', '#');
+      expect(document.getElementById('hashtag-dropdown')).toBeNull();
+    });
+
+    it('filters tags by prefix', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', '#si');
+      const dd = document.getElementById('hashtag-dropdown');
+      // 'si' matches nothing
+      expect(dd).toBeNull();
+    });
+
+    it('clicking item inserts full tag text into textarea', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', 'Worked on #re');
+      const items = document.querySelectorAll('.hashtag-item');
+      expect(items.length).toBeGreaterThan(0);
+      items[0].click();
+      const ta = document.getElementById('modal-notes');
+      expect(ta.value).toMatch(/rest|read/);
+      expect(ta.value.length).toBeGreaterThan('Worked on #re'.length);
+      expect(document.getElementById('hashtag-dropdown')).toBeNull();
+    });
+
+    it('escape key closes dropdown', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', '#re');
+      expect(document.getElementById('hashtag-dropdown')).not.toBeNull();
+      document.getElementById('modal-notes')
+        .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(document.getElementById('hashtag-dropdown')).toBeNull();
+    });
+
+    it('blur closes dropdown', () => new Promise(done => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', '#re');
+      expect(document.getElementById('hashtag-dropdown')).not.toBeNull();
+      document.getElementById('modal-notes').dispatchEvent(new Event('blur'));
+      setTimeout(() => {
+        expect(document.getElementById('hashtag-dropdown')).toBeNull();
+        done();
+      }, 200);
+    }));
+
+    it('includes default tags as suggestions', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', '#wo');
+      const items = document.querySelectorAll('.hashtag-item');
+      const names = Array.from(items).map(el => el.textContent.trim());
+      expect(names).toContain('work');
     });
   });
 

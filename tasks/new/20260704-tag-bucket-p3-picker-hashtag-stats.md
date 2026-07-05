@@ -52,7 +52,7 @@ Deliver the visible user-facing changes: a two-level tag picker during session c
 - CSS for tooltip overlay
 - **Files:** `src/app/uiManager.js`, `src/app/app.js`, `src/css/styles.css`
 
-### P3-F: Inline hashtag autocomplete (spec 3.3)
+### ✅ P3-F: Inline hashtag autocomplete *(done 2026-07-05)*
 
 - `input` event on `#notes` + `#modal-notes`
 - Prefix match on `#[a-zA-Z0-9]`

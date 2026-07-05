@@ -97,6 +97,133 @@ export function createUIManager(store) {
     if (existing) existing.remove();
   }
 
+  function getAllTagNames() {
+    const s = store.getState();
+    const tagBuckets = s.tagBuckets || {};
+    const names = new Set();
+    for (const bucket of Object.keys(tagBuckets)) {
+      names.add(bucket);
+      for (const subtag of (tagBuckets[bucket] || [])) {
+        names.add(subtag);
+      }
+    }
+    return Array.from(names);
+  }
+
+  function getBucketColorClass(tagName) {
+    const s = store.getState();
+    const tagBuckets = s.tagBuckets || {};
+    const parents = [];
+    for (const [bucket, subtags] of Object.entries(tagBuckets)) {
+      if (subtags.includes(tagName)) parents.push(bucket);
+    }
+    if (parents.length === 0 && tagBuckets[tagName] !== undefined) parents.push(tagName);
+    return parents.map(b => {
+      const cls = getTagBadgeClass(b, true);
+      const match = cls.match(/bg-\w+-\d+/);
+      return match ? match[0] : 'bg-gray-500';
+    });
+  }
+
+  let activeDropdown = null;
+
+  function showHashtagDropdown(textarea, tags, startPos) {
+    hideHashtagDropdown();
+    const dd = document.createElement('div');
+    dd.id = 'hashtag-dropdown';
+    dd.className = 'fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-1 min-w-[100px] max-h-[200px] overflow-y-auto';
+
+    for (const tag of tags) {
+      const item = document.createElement('div');
+      item.className = 'hashtag-item px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-1.5';
+      const colors = getBucketColorClass(tag);
+      for (const c of colors) {
+        const dot = document.createElement('span');
+        dot.className = `inline-block w-2 h-2 rounded-full ${c}`;
+        item.appendChild(dot);
+      }
+      const label = document.createElement('span');
+      label.textContent = tag;
+      item.appendChild(label);
+
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const before = textarea.value.substring(0, startPos);
+        const afterHash = textarea.value.substring(startPos + 1);
+        const endOfWord = afterHash.search(/[\s\W]|$/);
+        const endPos = endOfWord >= 0 ? startPos + 1 + endOfWord : textarea.value.length;
+        const newVal = textarea.value.substring(0, startPos) + tag + ' ' + textarea.value.substring(endPos);
+        textarea.value = newVal;
+        const newCursor = startPos + tag.length + 1;
+        textarea.selectionStart = textarea.selectionEnd = newCursor;
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        hideHashtagDropdown();
+        textarea.focus();
+      });
+
+      dd.appendChild(item);
+    }
+
+    document.body.appendChild(dd);
+
+    const rect = textarea.getBoundingClientRect();
+    dd.style.left = Math.max(4, rect.left + 8) + 'px';
+    dd.style.top = Math.max(4, rect.top - dd.offsetHeight - 4) + 'px';
+    if (parseInt(dd.style.top) < 4) {
+      dd.style.top = (rect.bottom + 4) + 'px';
+    }
+
+    activeDropdown = dd;
+  }
+
+  function hideHashtagDropdown() {
+    const existing = document.getElementById('hashtag-dropdown');
+    if (existing) existing.remove();
+    activeDropdown = null;
+  }
+
+  function initHashtagAutocomplete(textareaId) {
+    const textarea = document.getElementById(textareaId);
+    if (!textarea) return;
+
+    const onInput = () => {
+      const pos = textarea.selectionStart;
+      const before = textarea.value.substring(0, pos);
+      const hashIdx = before.lastIndexOf('#');
+      if (hashIdx === -1 || hashIdx === pos - 1) {
+        hideHashtagDropdown();
+        return;
+      }
+      const query = before.substring(hashIdx + 1);
+      if (!query || query.includes(' ')) {
+        hideHashtagDropdown();
+        return;
+      }
+
+      const allTags = getAllTagNames();
+      const matches = allTags.filter(t => t.startsWith(query));
+      if (matches.length === 0) {
+        hideHashtagDropdown();
+        return;
+      }
+
+      showHashtagDropdown(textarea, matches, hashIdx);
+    };
+
+    textarea.addEventListener('input', onInput);
+
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        hideHashtagDropdown();
+        textarea.focus();
+      }
+    });
+
+    textarea.addEventListener('blur', () => {
+      setTimeout(hideHashtagDropdown, 150);
+    });
+  }
+
   function updateCurrentTime() {
     const el = document.getElementById('current-time');
     if (el) el.textContent = utils.formatTime(new Date());
@@ -1566,6 +1693,7 @@ export function createUIManager(store) {
     createPickerTagChip,
     showStartPicker,
     hideStartPicker,
+    initHashtagAutocomplete,
     enableDarkMode,
     disableDarkMode,
     toggleDarkMode,
