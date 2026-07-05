@@ -557,10 +557,11 @@ describe('uiManager', () => {
       expect(chip.classList.contains('tag-chip')).toBe(true);
     });
 
-    it('applies bucket color when selected', () => {
+    it('applies bucket color and ring when selected', () => {
       const chip = ui.createPickerTagChip('study', true);
       expect(chip.classList.contains('selected')).toBe(true);
       expect(chip.className).toContain('bg-orange-100');
+      expect(chip.className).toContain('ring-2');
     });
 
     it('applies gray when not selected', () => {

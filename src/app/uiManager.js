@@ -51,7 +51,8 @@ export function createUIManager(store) {
 
   function createPickerTagChip(tagName, selected = false) {
     const chip = document.createElement('div');
-    chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${selected ? 'selected' : ''} ${getTagBadgeClass(tagName, selected)}`;
+    const selectedClass = selected ? 'selected ring-2 ring-inset ring-gray-400 dark:ring-gray-500' : '';
+    chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${selectedClass} ${getTagBadgeClass(tagName, selected)}`;
     chip.dataset.tag = tagName;
     chip.textContent = tagName;
     return chip;
@@ -363,7 +364,7 @@ export function createUIManager(store) {
         <div class="flex justify-between items-center">
           <div class="flex flex-wrap gap-1">
             ${session.tags ? session.tags.map(tag => `
-              <span class="text-xs px-1.5 py-0.5 rounded-full ${getTagBadgeClass(tag)}">${tag}</span>
+              <span class="text-xs px-1.5 py-0.5 rounded-full ${getTagBadgeClass(tag, true)}">${tag}</span>
             `).join('') : ''}
           </div>
           <div class="flex space-x-2">
@@ -403,7 +404,7 @@ export function createUIManager(store) {
         <div class="flex justify-between items-center mt-3">
           <div class="flex flex-wrap gap-1">
             ${session.tags ? session.tags.map(tag => `
-              <span class="text-xs px-2 py-1 rounded-full ${getTagBadgeClass(tag)}">
+              <span class="text-xs px-2 py-1 rounded-full ${getTagBadgeClass(tag, true)}">
                 ${tag}
               </span>
             `).join('') : ''}
