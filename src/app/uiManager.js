@@ -5,6 +5,7 @@ import { moveSubtagBetweenBuckets, removeTagFromBucket } from './tagManager.js';
 export function createUIManager(store) {
   let _showCurrentRest = true;
   let _onTagBucketsChange = null;
+  let _onDeleteCustomTag = null;
   let _showTodayWorkOnly = true;
   let _isGridMode = false;
   let timeChart = null;
@@ -671,6 +672,10 @@ export function createUIManager(store) {
     _onTagBucketsChange = cb;
   }
 
+  function setOnDeleteCustomTag(cb) {
+    _onDeleteCustomTag = cb;
+  }
+
   function setupDropZone(container, bucketName) {
     container.addEventListener('dragover', (e) => {
       e.preventDefault();
@@ -753,10 +758,6 @@ export function createUIManager(store) {
       const subtagsContainer = document.createElement('div');
       subtagsContainer.className = 'tag-bucket-subtags flex flex-wrap gap-2 ml-4 mt-1';
 
-      if (bucketTag && bucketTag.isDefault) {
-        subtagsContainer.appendChild(createTagChip(bucketTag, true));
-      }
-
       if (bucketSubtags.length === 0) {
         const placeholder = document.createElement('span');
         placeholder.className = 'text-xs text-gray-400 italic';
@@ -821,6 +822,9 @@ export function createUIManager(store) {
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'ml-2 text-gray-500 hover:text-red-500';
         deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+        deleteBtn.addEventListener('click', () => {
+          if (_onDeleteCustomTag) _onDeleteCustomTag(tag.name);
+        });
         chip.appendChild(deleteBtn);
         subtagsContainer.appendChild(chip);
       }
@@ -1371,6 +1375,7 @@ export function createUIManager(store) {
     createStarsForCurrentSession,
     renderTagSettings,
     setOnTagBucketsChange,
+    setOnDeleteCustomTag,
     getTagBadgeClass,
     enableDarkMode,
     disableDarkMode,

@@ -2,6 +2,11 @@
 
 ## Unreleased (2026-07-04)
 
+### Fixed
+- **Default tag chips no longer render as subtags in own bucket** — Removed `renderTagSettings` block that inserted the bucket's own default tag (e.g. `work` inside Work) as a subtag chip, causing visual duplication.
+- **Unassigned tags delete button now wired** — `setOnDeleteCustomTag` callback and function added; delete button in unassigned section calls `deleteCustomTag` in app.js.
+- **`ui is not defined` error in createUIManager** — `setOnDeleteCustomTag` was incorrectly assigned to `ui` variable (non-existent in return-object pattern), changed to standalone function.
+
 ### Added
 - **Tag Bucket System — Phase 2: Settings Tree View & Drag-and-Drop** — Interactive tag bucket management in settings tab. See `tasks/pending/20260704-tag-bucket-p2-settings-dnd.md`.
   - Tree view: buckets displayed as collapsible groups with ▼/▶ expand/collapse toggle

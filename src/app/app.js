@@ -118,6 +118,7 @@ export function createEventHandlers(deps) {
   }
 
   ui.setOnTagBucketsChange(saveState);
+  ui.setOnDeleteCustomTag(deleteCustomTag);
 
   function startSession() {
     clearInterval(timerInterval);
