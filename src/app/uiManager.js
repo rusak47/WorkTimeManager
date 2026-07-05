@@ -51,8 +51,7 @@ export function createUIManager(store) {
 
   function createPickerTagChip(tagName, selected = false) {
     const chip = document.createElement('div');
-    const selectedClass = selected ? 'selected ring-2 ring-inset ring-gray-400 dark:ring-gray-500' : '';
-    chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${selectedClass} ${getTagBadgeClass(tagName, selected)}`;
+    chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${selected ? 'selected' : ''} ${getTagBadgeClass(tagName, selected)}`;
     chip.dataset.tag = tagName;
     chip.textContent = tagName;
     return chip;
@@ -699,7 +698,8 @@ export function createUIManager(store) {
       const isSelected = selectedSet.has(subtag);
       const chip = createPickerTagChip(subtag, isSelected);
       chip.addEventListener('click', () => {
-        chip.classList.toggle('selected');
+        const nowSelected = chip.classList.toggle('selected');
+        chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${nowSelected ? 'selected' : ''} ${getTagBadgeClass(chip.dataset.tag, nowSelected)}`;
       });
       row2.appendChild(chip);
     }
@@ -714,7 +714,8 @@ export function createUIManager(store) {
           const isSelected = selectedSet.has(subtag);
           const chip = createPickerTagChip(subtag, isSelected);
           chip.addEventListener('click', () => {
-            chip.classList.toggle('selected');
+            const nowSelected = chip.classList.toggle('selected');
+            chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${nowSelected ? 'selected' : ''} ${getTagBadgeClass(chip.dataset.tag, nowSelected)}`;
           });
           row2.appendChild(chip);
         }

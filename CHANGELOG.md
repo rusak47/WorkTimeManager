@@ -7,6 +7,7 @@
   - P3-B: **Store bucket on session save** — `stopTracking()` now passes `meta.bucket` through to the session object. `handleSessionFormSubmit` reads bucket from selected row-1 default tag and includes it in `addSession()`.
   - P3-C: **Two-row tag picker in tracker tab** — `initializeCurrentSessionTags()` rendered as two-row picker: row 1 (5 defaults, radio-style), row 2 (subtags from `tagBuckets`, max 6 visible, `+N more` expander). Click handlers for default switching and subtag toggle. Legacy fallback for sessions without `tagBuckets`.
   - P3-D: **Two-row tag picker in session modal** — `initializeSessionModalTags()` rewritten with two-row layout; `editSession()` refactored to call shared picker; `handleSessionFormSubmit` reads `.tag-chip.selected` and passes `bucket`; warning for multiple default tags in edit. `renderRow2` accepts `selectedSubtags` param for pre-selection.
+  - **Visual fix: selected tags color + outline** — Saved session views pass `selected=true` to `getTagBadgeClass` so tags show bucket colors; `renderRow2` click handlers swap `getTagBadgeClass` on toggle so subtags show/hide background; CSS `.tag-chip.selected` adds outline instead of inline ring classes.
 
 ## Unreleased (2026-07-04)
 
