@@ -375,6 +375,12 @@ describe('app event handlers', () => {
     expect(s.tags.some(t => t.name === 'review')).toBe(true);
     expect(s.tagBuckets.other).toContain('design');
     expect(s.tagBuckets.other).toContain('review');
+    const session = s.sessions[0];
+    expect(session.tags).toContain('work');
+    expect(session.tags).toContain('design');
+    expect(session.tags).toContain('review');
+    expect(session.notes).not.toContain('#design');
+    expect(session.notes).not.toContain('#review');
   });
 
   it('persistAndRender calls saveState and renders', async () => {
@@ -523,6 +529,56 @@ describe('app event handlers', () => {
     app.syncHashtagTags('#design', 'nonexistent');
     const s = store.getState();
     expect(s.tagBuckets.other).toContain('design');
+  });
+
+  it('syncHashtagTags returns added tags and cleaned notes', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    const result = app.syncHashtagTags('Working on #design and #work', 'work');
+    expect(result).toEqual({
+      addedTags: ['design'],
+      cleanedNotes: 'Working on and #work',
+    });
+  });
+
+  it('syncHashtagTags returns undefined when no new tags', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    const result = app.syncHashtagTags('Working on #work', 'work');
+    expect(result).toBeUndefined();
+  });
+
+  it('syncHashtagTags cleans multiple new tag mentions from notes', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    const result = app.syncHashtagTags('#design and #review for #work', 'work');
+    expect(result.addedTags).toEqual(['design', 'review']);
+    expect(result.cleanedNotes).toBe('and for #work');
+  });
+
+  it('syncHashtagTags + renderTagSettings shows new subtag in settings', () => {
+    store.setState({
+      tags: [
+        { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+        { name: 'study', isDefault: true, isEnabled: true, isCustom: false },
+      ],
+      tagBuckets: { work: ['dev'], study: [], other: [] },
+    });
+    app.syncHashtagTags('Working on #design and #coding', 'work');
+    ui.renderTagSettings();
+    const workBucket = document.querySelector('[data-bucket="work"]');
+    expect(workBucket).not.toBeNull();
+    const chips = workBucket.querySelectorAll('.tag-item');
+    const texts = Array.from(chips).map(c => c.textContent.trim());
+    expect(texts).toContain('design');
+    expect(texts).toContain('coding');
+    expect(texts).toContain('dev');
   });
 
   it('exportAllData creates and triggers download', () => {

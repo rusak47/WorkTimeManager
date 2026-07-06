@@ -673,15 +673,16 @@ describe('uiManager', () => {
       expect(dd).toBeNull();
     });
 
-    it('clicking item inserts full tag text into textarea', () => {
+    it('clicking item inserts #tag text into textarea preserving hash', () => {
       ui.initHashtagAutocomplete('modal-notes');
+      const textarea = document.getElementById('modal-notes');
       typeText('modal-notes', 'Worked on #re');
       const items = document.querySelectorAll('.hashtag-item');
       expect(items.length).toBeGreaterThan(0);
       items[0].click();
-      const ta = document.getElementById('modal-notes');
-      expect(ta.value).toMatch(/rest|read/);
-      expect(ta.value.length).toBeGreaterThan('Worked on #re'.length);
+      expect(textarea.value).toMatch(/#(rest|read)\s/);
+      expect(textarea.value.length).toBeGreaterThan('Worked on #re'.length);
+      expect(textarea.value.startsWith('Worked on #')).toBe(true);
       expect(document.getElementById('hashtag-dropdown')).toBeNull();
     });
 
@@ -999,6 +1000,24 @@ describe('uiManager', () => {
       expect(restGroup).toBeTruthy();
       const subtags = restGroup.querySelectorAll('.tag-item:not([data-default="true"])');
       expect(subtags.length).toBe(3);
+    });
+
+    it('renders subtag chips even when tag objects missing from s.tags', () => {
+      store.setState({
+        tags: [
+          { name: 'work', isDefault: true, isEnabled: true },
+          { name: 'sport', isDefault: true, isEnabled: true },
+        ],
+        tagBuckets: { work: [], sport: ['cycling', 'horse', 'running'], other: [] },
+      });
+      ui.renderTagSettings();
+      const sportGroup = document.querySelector('[data-bucket="sport"]');
+      expect(sportGroup).toBeTruthy();
+      const chips = sportGroup.querySelectorAll('.tag-item');
+      const chipNames = Array.from(chips).map(c => c.textContent.trim());
+      expect(chipNames).toContain('cycling');
+      expect(chipNames).toContain('horse');
+      expect(chipNames).toContain('running');
     });
 
     it('renders collapse arrow on each header', () => {

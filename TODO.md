@@ -21,8 +21,8 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 - [ ] [low priority - maybe] Support multiple notes per session (store as array).
 
 ## Tags
-- [x] **#tag dropdown in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. (P3-F done, 286 tests)
-- [ ] [normal++ - blocking - must have] **#tag auto-add on session save** — new tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save.
+- [x] **#tag dropdown in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. (P3-F done, 297 tests)
+- [x] [normal++ - blocking - must have] **#tag auto-add on session save** — new tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save. Also appends new tags to session tags array, strips `#tag` mentions from saved notes, and calls `renderTagSettings()` immediately so settings tab is never stale. (297 tests)
 - [ ] [normal+ - must have] Filter statistics by subtags — tags stored with `#` prefix in sessions should be filterable. All configured tags (custom + default) should appear as filter options.
 - [ ] [low - maybe] Early tagging — tag picker on the "Start Session" button so sessions are tagged from the beginning.
 - [ ] [duplicate — covered by #tag parsing above] Allow entering custom tags on the fly.

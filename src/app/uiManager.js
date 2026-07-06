@@ -152,9 +152,9 @@ export function createUIManager(store) {
         const afterHash = textarea.value.substring(startPos + 1);
         const endOfWord = afterHash.search(/[\s\W]|$/);
         const endPos = endOfWord >= 0 ? startPos + 1 + endOfWord : textarea.value.length;
-        const newVal = textarea.value.substring(0, startPos) + tag + ' ' + textarea.value.substring(endPos);
+        const newVal = textarea.value.substring(0, startPos) + '#' + tag + ' ' + textarea.value.substring(endPos);
         textarea.value = newVal;
-        const newCursor = startPos + tag.length + 1;
+        const newCursor = startPos + 1 + tag.length + 1;
         textarea.selectionStart = textarea.selectionEnd = newCursor;
         textarea.dispatchEvent(new Event('input', { bubbles: true }));
         hideHashtagDropdown();
@@ -187,15 +187,15 @@ export function createUIManager(store) {
     if (!textarea) return;
 
     const onInput = () => {
-      const pos = textarea.selectionStart;
-      const before = textarea.value.substring(0, pos);
-      const hashIdx = before.lastIndexOf('#');
-      if (hashIdx === -1 || hashIdx === pos - 1) {
+      const hashIdx = textarea.value.lastIndexOf('#');
+      if (hashIdx === -1) {
         hideHashtagDropdown();
         return;
       }
-      const query = before.substring(hashIdx + 1);
-      if (!query || query.includes(' ')) {
+      const rest = textarea.value.substring(hashIdx + 1);
+      const endOfWord = rest.search(/[\s\W]|$/);
+      const query = endOfWord >= 0 ? rest.substring(0, endOfWord) : rest;
+      if (!query) {
         hideHashtagDropdown();
         return;
       }
@@ -1049,7 +1049,7 @@ export function createUIManager(store) {
     for (const [bucketName, subtagNames] of Object.entries(s.tagBuckets)) {
       const bucketTag = s.tags.find(t => t.name === bucketName && t.isDefault);
       const bucketSubtags = subtagNames
-        .map(name => s.tags.find(t => t.name === name))
+        .map(name => s.tags.find(t => t.name === name) || { name, isEnabled: true, isDefault: false })
         .filter(Boolean);
 
       const group = document.createElement('div');
