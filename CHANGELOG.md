@@ -6,6 +6,11 @@
 - **P3-E: Long-press bucket lost on stop** — `initializeCurrentSessionTags()` now accepts optional `bucket` parameter and uses it instead of hardcoding `'work'`.
 - **Settings tag view stale after new tags added** — `syncHashtagTags()` now calls `ui.renderTagSettings()` immediately after updating the store, ensuring new subtags are always rendered regardless of when the user navigates to settings.
 - **Duplicate `[data-settings-tab="tags"]` event handler removed** — The tags tab was registered twice (once in the `forEach` loop, once standalone), causing redundant `renderTagSettings()` calls.
+- **Hashtag dropdown below cursor** — `getCursorCoords()` helper places dropdown at cursor position (mirror div overlay); flips above on viewport overflow, shifts left if off-screen right.
+- **Hashtag dropdown re-show on subsequent keystrokes** — Removed redundant `input` dispatch from click handler; added `dismissedHash` tracker so Esc/Space/Enter permanently suppress re-show for the same `#` query at the same position.
+- **Exact-match guard hiding continuation matches** — `#re` with tags `re`, `rea`, `read` now shows all three instead of hiding the dropdown when `re` is an exact match.
+- **Single color dot in hashtag dropdown** — Tags in multiple buckets now render one dot (first bucket's color) instead of one per parent bucket.
+- **Start picker not dismissed on short press** — `ui.hideStartPicker()` called on mousedown/touchstart and mouseup/touchend; added click-outside dismissal.
 
 ### Added
 - **Tag Bucket System — Phase 3: Two-Row Tag Picker & Hashtag Autocomplete** — Ongoing. See `tasks/new/20260704-tag-bucket-p3-picker-hashtag-stats.md`.

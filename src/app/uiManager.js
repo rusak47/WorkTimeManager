@@ -126,6 +126,60 @@ export function createUIManager(store) {
   }
 
   let activeDropdown = null;
+  let dismissedHash = null;
+
+  function getCursorCoords(textarea, charIndex) {
+    const mirror = document.createElement('div');
+    const style = window.getComputedStyle(textarea);
+    const tr = textarea.getBoundingClientRect();
+    const props = [
+      ['position', 'fixed'],
+      ['top', tr.top + 'px'],
+      ['left', tr.left + 'px'],
+      ['opacity', '0'],
+      ['pointerEvents', 'none'],
+      ['zIndex', '-1'],
+      ['white-space', 'pre-wrap'],
+      ['word-wrap', 'break-word'],
+      ['overflow-wrap', 'break-word'],
+      ['font-family', style.fontFamily],
+      ['font-size', style.fontSize],
+      ['font-weight', style.fontWeight],
+      ['font-style', style.fontStyle],
+      ['line-height', style.lineHeight],
+      ['letter-spacing', style.letterSpacing],
+      ['padding-top', style.paddingTop],
+      ['padding-right', style.paddingRight],
+      ['padding-bottom', style.paddingBottom],
+      ['padding-left', style.paddingLeft],
+      ['border-top-width', style.borderTopWidth],
+      ['border-right-width', style.borderRightWidth],
+      ['border-bottom-width', style.borderBottomWidth],
+      ['border-left-width', style.borderLeftWidth],
+      ['box-sizing', style.boxSizing],
+      ['width', textarea.offsetWidth + 'px'],
+    ];
+    props.forEach(([k, v]) => { mirror.style[k] = v; });
+
+    const textBefore = textarea.value.substring(0, charIndex);
+    const textAfter = textarea.value.substring(charIndex);
+    mirror.textContent = textBefore;
+    const marker = document.createElement('span');
+    marker.textContent = '\u200B';
+    mirror.appendChild(marker);
+    mirror.appendChild(document.createTextNode(textAfter));
+    document.body.appendChild(mirror);
+
+    const markerRect = marker.getBoundingClientRect();
+    document.body.removeChild(mirror);
+
+    return {
+      left: markerRect.left,
+      top: markerRect.top - textarea.scrollTop,
+      bottom: markerRect.top - textarea.scrollTop + markerRect.height,
+      height: markerRect.height,
+    };
+  }
 
   function showHashtagDropdown(textarea, tags, startPos) {
     hideHashtagDropdown();
@@ -137,11 +191,9 @@ export function createUIManager(store) {
       const item = document.createElement('div');
       item.className = 'hashtag-item px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-1.5';
       const colors = getBucketColorClass(tag);
-      for (const c of colors) {
-        const dot = document.createElement('span');
-        dot.className = `inline-block w-2 h-2 rounded-full ${c}`;
-        item.appendChild(dot);
-      }
+      const dot = document.createElement('span');
+      dot.className = `inline-block w-2 h-2 rounded-full ${colors[0] || 'bg-gray-500'}`;
+      item.appendChild(dot);
       const label = document.createElement('span');
       label.textContent = tag;
       item.appendChild(label);
@@ -156,7 +208,7 @@ export function createUIManager(store) {
         textarea.value = newVal;
         const newCursor = startPos + 1 + tag.length + 1;
         textarea.selectionStart = textarea.selectionEnd = newCursor;
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        dismissedHash = null;
         hideHashtagDropdown();
         textarea.focus();
       });
@@ -166,11 +218,17 @@ export function createUIManager(store) {
 
     document.body.appendChild(dd);
 
-    const rect = textarea.getBoundingClientRect();
-    dd.style.left = Math.max(4, rect.left + 8) + 'px';
-    dd.style.top = Math.max(4, rect.top - dd.offsetHeight - 4) + 'px';
-    if (parseInt(dd.style.top) < 4) {
-      dd.style.top = (rect.bottom + 4) + 'px';
+    const cursorPos = textarea.selectionStart;
+    const coords = getCursorCoords(textarea, cursorPos);
+    dd.style.left = Math.max(4, coords.left) + 'px';
+    dd.style.top = (coords.bottom + 4) + 'px';
+
+    const ddRect = dd.getBoundingClientRect();
+    if (ddRect.bottom > window.innerHeight) {
+      dd.style.top = Math.max(4, coords.top - ddRect.height - 4) + 'px';
+    }
+    if (ddRect.right > window.innerWidth) {
+      dd.style.left = Math.max(4, window.innerWidth - ddRect.width - 8) + 'px';
     }
 
     activeDropdown = dd;
@@ -190,6 +248,7 @@ export function createUIManager(store) {
       const hashIdx = textarea.value.lastIndexOf('#');
       if (hashIdx === -1) {
         hideHashtagDropdown();
+        dismissedHash = null;
         return;
       }
       const rest = textarea.value.substring(hashIdx + 1);
@@ -197,25 +256,42 @@ export function createUIManager(store) {
       const query = endOfWord >= 0 ? rest.substring(0, endOfWord) : rest;
       if (!query) {
         hideHashtagDropdown();
+        dismissedHash = null;
         return;
       }
 
-      const allTags = getAllTagNames();
-      const matches = allTags.filter(t => t.startsWith(query));
-      if (matches.length === 0) {
+      if (dismissedHash && dismissedHash.hashIdx === hashIdx && dismissedHash.query === query) {
         hideHashtagDropdown();
         return;
       }
 
+      const allTags = getAllTagNames();
+      const exact = allTags.includes(query);
+      const matches = allTags.filter(t => t.startsWith(query));
+      const hasContinuations = matches.some(t => t.length > query.length);
+      if (matches.length === 0 || (exact && !hasContinuations)) {
+        hideHashtagDropdown();
+        dismissedHash = null;
+        return;
+      }
+
+      dismissedHash = null;
       showHashtagDropdown(textarea, matches, hashIdx);
     };
 
     textarea.addEventListener('input', onInput);
 
     textarea.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        hideHashtagDropdown();
-        textarea.focus();
+      if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') {
+        if (activeDropdown) {
+          const hashIdx = textarea.value.lastIndexOf('#');
+          if (hashIdx >= 0) {
+            const rest = textarea.value.substring(hashIdx + 1);
+            const endOfWord = rest.search(/[\s\W]|$/);
+            dismissedHash = { hashIdx, query: endOfWord >= 0 ? rest.substring(0, endOfWord) : rest };
+          }
+          hideHashtagDropdown();
+        }
       }
     });
 

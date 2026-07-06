@@ -777,6 +777,7 @@ export function createEventHandlers(deps) {
     const startBtn = document.getElementById('start-btn');
     if (startBtn) {
       startBtn.addEventListener('mousedown', () => {
+        ui.hideStartPicker();
         startLongPress = false;
         startPressTimer = setTimeout(() => {
           startLongPress = true;
@@ -792,6 +793,7 @@ export function createEventHandlers(deps) {
           startLongPress = false;
           return;
         }
+        ui.hideStartPicker();
         startSession();
       });
       startBtn.addEventListener('mouseleave', () => {
@@ -799,6 +801,7 @@ export function createEventHandlers(deps) {
         startPressTimer = null;
       });
       startBtn.addEventListener('touchstart', () => {
+        ui.hideStartPicker();
         startLongPress = false;
         startPressTimer = setTimeout(() => {
           startLongPress = true;
@@ -814,6 +817,7 @@ export function createEventHandlers(deps) {
           startLongPress = false;
           return;
         }
+        ui.hideStartPicker();
         startSession();
       });
       startBtn.addEventListener('touchcancel', () => {
@@ -871,6 +875,9 @@ export function createEventHandlers(deps) {
         if (dd && !e.target.closest('.hashtag-item') && !e.target.closest('textarea')) {
           dd.remove();
         }
+      }
+      if (!e.target.closest('#start-picker, #start-picker *, #start-btn')) {
+        ui.hideStartPicker();
       }
       const editBtn = e.target.closest('.edit-session');
       if (editBtn && editBtn.dataset.id) {
