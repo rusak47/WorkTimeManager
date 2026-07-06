@@ -3,7 +3,7 @@
 ## Bugs
 - [ ] [low] — year selector dropdown in session view doesn't filter sessions when changed
 - [x] [high] [P3-E: Long-press on Start button] - when stopping session selected tag on long press is not applied and default one (work) is choosen (2026-07-06)
-- [x] [high] Edit session drops legacy subtags not in tagBuckets — renderRow2 only renders bucket subtags, silently dropping legacy tags. Fixed: legacy tags render as read-only selected chips; bucket-switch now preserves preselected subtags. (315 tests)
+- [x] [high] Edit session drops legacy subtags not in tagBuckets — renderRow2 only renders bucket subtags, silently dropping legacy tags. Fixed: legacy tags render as read-only selected chips; bucket-switch now preserves preselected subtags. (316 tests)
 
 ## Sessions
 - [ ] [normal++ - benefits?] - currently work session is not saved on pause, but accumulates brake time and is calculated afterwards. isnt it better to save work each time pause is pressed? what are the benefits - easier to calculate work time, no dependency on internal brake time accumulation, no sessions possible spanning over multiple days; possible cons - no behindhand work sessions possible (manual edit only or add shortcuts like move back -24h), one task sessions shattered in more pieces, e.g. 15min breaks. other ideas? (design spec: `tasks/new/20260629-save-on-pause-spec.md`)
@@ -24,12 +24,12 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 ## Tags
 - [x] **#tag dropdown in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. (P3-F done, 313 tests)
 - [x] [normal++ - blocking - must have] **#tag auto-add on session save** — new tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save. Also appends new tags to session tags array, strips `#tag` mentions from saved notes, and calls `renderTagSettings()` immediately so settings tab is never stale. (313 tests)
-- [ ] [normal+ - must have] Filter statistics by subtags — tags stored with `#` prefix in sessions should be filterable. All configured tags (custom + default) should appear as filter options. (see Statistics section)
+- [x] [normal+ - must have] Filter statistics by subtags — tags stored with `#` prefix in sessions should be filterable. All configured tags (custom + default) should appear as filter options. (2026-07-06)
 - [x] **P3-G**: bucketed statistics section in stats tab — shows time grouped by default buckets with subtag drill-down. (313 tests)
 
 ## Statistics
-- [ ] [low+ - must have] Generate work stats by subtags — render tag filter similarly to session-save tag picker; all tags including custom should appear for filtering.
-    - Daily statistics - each bar is a subset of core tags per each session it consists of. 
+- [x] [low+ - must have] Generate work stats by subtags — render tag filter similarly to session-save tag picker; all tags including custom should appear for filtering.
+    - Daily statistics - each bar is a subset of core tags per each session it consists of. (2026-07-06, stacked chart) 
 - [ ] [low - must have] Add refresh button in statistics tab (auto-refresh on tab switch is insufficient).
 
 ## UI/UX

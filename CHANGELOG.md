@@ -11,6 +11,8 @@
 - **Subtag filter "All Subtags" bypassed entire tag filter** — The `includes('all')` guard was false when `all` was in the combined tag+subtag array, causing the entire filter block to be skipped. Now filters out `all` meta-values before building the active filter list. Fixes: total time showing unfiltered aggregate, wrong tags appearing on chart.
 - **Default tag filter selection lost** — `app.js` tag-filter rewrite removed `selected` from the Work option. Now restored so Work + All Subtags is the default filter, not "no filter".
 - **Edit session drops legacy subtags not in tagBuckets** — Two bugs: (1) `renderRow2()` had `if (subtags.length === 0) return;` before legacy tag rendering code, so when `tagBuckets[defaultName]` was empty (e.g. `work: []`) the function exited without rendering any legacy subtags. (2) Bucket-switch click handler didn't pass `subtagNames` to `renderRow2`, losing preselected subtags on bucket change. Fix: wrap toggleable subtag rendering in `if (subtags.length > 0)` and run legacy subtag rendering unconditionally. Legacy tags render as `.tag-chip.selected.readonly` so `handleSessionFormSubmit()` preserves them on save. (316 tests)
+- **Stacked bar chart double-counts multi-subtag sessions** — sessions with multiple subtags (e.g. `4203+plais`) added full duration to each subtag's series separately, inflating daily totals. Now grouped by unique subtag combination so each session contributes to exactly one stack segment.
+- **Mood rating filter pre-selected by default** — removed `selected` from the 5 Stars `<option>` so no mood filter is applied unless user explicitly picks one. All sessions show regardless of mood on initial load.
 
 ## 1.1.0 (2026-07-06)
 

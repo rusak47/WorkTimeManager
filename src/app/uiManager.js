@@ -1573,8 +1573,7 @@ export function createUIManager(store) {
           }
         }
         if (subtagsInBucket.size > 0) {
-          const subtagHours = {};
-          for (const subtag of subtagsInBucket) subtagHours[subtag] = new Array(7).fill(0);
+          const comboHours = {};
           for (let i = 6; i >= 0; i--) {
             const date = new Date(now);
             date.setDate(date.getDate() - i);
@@ -1582,24 +1581,26 @@ export function createUIManager(store) {
             const daySessions = filteredSessions.filter(sess => sess.date === dateStr);
             for (const sess of daySessions) {
               if (sess.tags) {
-                for (const tag of sess.tags) {
-                  if (subtagsInBucket.has(tag)) {
-                    subtagHours[tag][6 - i] += (sess.durationSec || 0) / 3600;
+                const matchTags = sess.tags.filter(t => subtagsInBucket.has(t));
+                if (matchTags.length > 0) {
+                  const key = [...matchTags].sort().join('+');
+                  if (!comboHours[key]) {
+                    comboHours[key] = { label: key, hours: new Array(7).fill(0) };
                   }
+                  comboHours[key].hours[6 - i] += (sess.durationSec || 0) / 3600;
                 }
               }
             }
           }
-          stackedDatasets = Object.entries(subtagHours).map(([name, hours], idx) => ({
-            label: name,
-            data: hours,
+          stackedDatasets = Object.values(comboHours).map((entry, idx) => ({
+            label: entry.label,
+            data: entry.hours,
             backgroundColor: subtagColors[idx % subtagColors.length],
             borderWidth: 1,
           }));
         }
       } else if (topSelected.length === 0 && childSelected.length >= 2) {
-        const subtagHours = {};
-        for (const subtag of childSelected) subtagHours[subtag] = new Array(7).fill(0);
+        const comboHours = {};
         for (let i = 6; i >= 0; i--) {
           const date = new Date(now);
           date.setDate(date.getDate() - i);
@@ -1607,17 +1608,20 @@ export function createUIManager(store) {
           const daySessions = filteredSessions.filter(sess => sess.date === dateStr);
           for (const sess of daySessions) {
             if (sess.tags) {
-              for (const tag of sess.tags) {
-                if (childSelected.includes(tag)) {
-                  subtagHours[tag][6 - i] += (sess.durationSec || 0) / 3600;
+              const matchTags = sess.tags.filter(t => childSelected.includes(t));
+              if (matchTags.length > 0) {
+                const key = [...matchTags].sort().join('+');
+                if (!comboHours[key]) {
+                  comboHours[key] = { label: key, hours: new Array(7).fill(0) };
                 }
+                comboHours[key].hours[6 - i] += (sess.durationSec || 0) / 3600;
               }
             }
           }
         }
-        stackedDatasets = Object.entries(subtagHours).map(([name, hours], idx) => ({
-          label: name,
-          data: hours,
+        stackedDatasets = Object.values(comboHours).map((entry, idx) => ({
+          label: entry.label,
+          data: entry.hours,
           backgroundColor: subtagColors[idx % subtagColors.length],
           borderWidth: 1,
         }));
