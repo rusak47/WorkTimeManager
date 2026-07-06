@@ -28,4 +28,4 @@ npm-debug.log*
 session_*.md
 
 # custom backups
-*.bk.tar.gz
+*.bk.*

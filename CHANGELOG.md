@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased (2026-07-06)
+## Unreleased
+
+## 1.1.0 (2026-07-06)
 
 ### Fixed
 - **P3-E: Long-press bucket lost on stop** — `initializeCurrentSessionTags()` now accepts optional `bucket` parameter and uses it instead of hardcoding `'work'`.
