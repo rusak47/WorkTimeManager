@@ -2,7 +2,7 @@
 
 ## Bugs
 - [ ] [low] — year selector dropdown in session view doesn't filter sessions when changed
-- [ ] [high] [P3-E: Long-press on Start button] - when stopping session selected tag on long press is not applied and default one (work) is choosen
+- [x] [high] [P3-E: Long-press on Start button] - when stopping session selected tag on long press is not applied and default one (work) is choosen (2026-07-06)
 
 ## Sessions
 - [ ] [normal++ - benefits?] - currently work session is not saved on pause, but accumulates brake time and is calculated afterwards. isnt it better to save work each time pause is pressed? what are the benefits - easier to calculate work time, no dependency on internal brake time accumulation, no sessions possible spanning over multiple days; possible cons - no behindhand work sessions possible (manual edit only or add shortcuts like move back -24h), one task sessions shattered in more pieces, e.g. 15min breaks. other ideas? (design spec: `tasks/new/20260629-save-on-pause-spec.md`)

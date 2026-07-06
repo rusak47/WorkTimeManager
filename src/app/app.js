@@ -232,6 +232,16 @@ export function createEventHandlers(deps) {
     const trackerEndInput = document.getElementById('current-session-end-time-input');
     const restInput = document.getElementById('current-session-accumulated-rest-duration-input');
     const notesInput = document.getElementById('notes');
+    const notesValue = notesInput ? notesInput.value.trim() : '';
+    const selectedTags = [];
+    let bucket;
+    document.querySelectorAll('#current-session-tags .tag-chip.selected').forEach(el => {
+      selectedTags.push(el.dataset.tag);
+      const parentRow = el.closest('.picker-row-1');
+      if (parentRow) bucket = el.dataset.tag;
+    });
+    if (selectedTags.length === 0) selectedTags.push('work');
+    syncHashtagTags(notesValue, bucket);
     const startTimeMs = parseInt(trackerStartInput ? trackerStartInput.value : '0', 10);
     const endTimeMs = parseInt(trackerEndInput ? trackerEndInput.value : '0', 10);
     const accumulatedPauseTimeMs = parseInt(restInput ? restInput.value : '0', 10);
@@ -241,14 +251,6 @@ export function createEventHandlers(deps) {
     const accumulatedPauseTimeSec = Math.floor(accumulatedPauseTimeMs / 1000);
     const date = utils.formatDate(startDate);
     const dayType = getDayType(date, s);
-    const selectedTags = [];
-    let bucket;
-    document.querySelectorAll('#current-session-tags .tag-chip.selected').forEach(el => {
-      selectedTags.push(el.dataset.tag);
-      const parentRow = el.closest('.picker-row-1');
-      if (parentRow) bucket = el.dataset.tag;
-    });
-    if (selectedTags.length === 0) selectedTags.push('work');
     const moodInput = document.getElementById('current-session-mood-input');
     sessionManager.addSession({
       id: Date.now(),
@@ -258,7 +260,7 @@ export function createEventHandlers(deps) {
       duration: utils.formatDuration(duration),
       durationSec: duration,
       accumulatedPauseTimeSec,
-      notes: notesInput ? notesInput.value.trim() : '',
+      notes: notesValue,
       dayType,
       tags: selectedTags,
       mood: moodInput ? parseFloat(moodInput.value) : 5,
@@ -332,6 +334,7 @@ export function createEventHandlers(deps) {
     }
     const isBreak = selectedTags.includes('rest') && !selectedTags.includes('work');
     if (!isBreak && selectedTags.length === 0) selectedTags.unshift('work');
+    syncHashtagTags(notes, bucket);
     const mood = moodInput ? parseFloat(moodInput.value) : 5;
     if (sessionId) {
       sessionManager.updateSession(parseInt(sessionId, 10), {
@@ -707,6 +710,30 @@ export function createEventHandlers(deps) {
     saveState();
   }
 
+  function syncHashtagTags(notes, bucket) {
+    if (!notes) return;
+    const s = store.getState();
+    const existing = new Set(s.tags.map(t => t.name));
+    const hashtagRegex = /#(\w+)/g;
+    const toAdd = [];
+    let match;
+    while ((match = hashtagRegex.exec(notes)) !== null) {
+      const name = match[1];
+      if (!existing.has(name) && !toAdd.includes(name)) {
+        toAdd.push(name);
+      }
+    }
+    if (toAdd.length === 0) return;
+    const tagBuckets = { ...s.tagBuckets };
+    const targetBucket = bucket && tagBuckets[bucket] ? bucket : 'other';
+    if (!tagBuckets[targetBucket]) tagBuckets[targetBucket] = [];
+    tagBuckets[targetBucket] = [...tagBuckets[targetBucket], ...toAdd];
+    store.setState({
+      tags: [...s.tags, ...toAdd.map(name => ({ name, isDefault: false, isEnabled: true, isCustom: true }))],
+      tagBuckets,
+    });
+  }
+
   function showMarkDayModal(dayType) {
     ui.showMarkDayModal(dayType);
   }
@@ -932,7 +959,7 @@ export function createEventHandlers(deps) {
     showConfigHistoryModal, hideConfigHistoryModal, restoreConfig,
     exportAllData, importData,
     resetSessionsFn, resetConfigFn, resetMarkedDaysFn,
-    addCustomTag, deleteCustomTag, setupEventListeners, loadData,
+    addCustomTag, deleteCustomTag, syncHashtagTags, setupEventListeners, loadData,
     persistAndRender,
   };
 }

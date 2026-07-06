@@ -748,6 +748,14 @@ describe('uiManager', () => {
       expect(selected[0].dataset.tag).toBe('work');
     });
 
+    it('pre-selects bucket passed as argument', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags('rest');
+      const selected = containerQSA('.picker-row-1 .tag-chip.selected');
+      expect(selected.length).toBe(1);
+      expect(selected[0].dataset.tag).toBe('rest');
+    });
+
     it('shows up to 6 subtags of selected default in row 2', () => {
       store.setState({ tags: mockTags, tagBuckets: buckets });
       ui.initializeCurrentSessionTags();
@@ -911,6 +919,26 @@ describe('uiManager', () => {
       if (gen) gen.classList.remove('hidden');
       ui.switchSettingsTab('salary');
       expect(document.getElementById('general-settings').classList.contains('hidden')).toBe(true);
+    });
+
+    it('re-renders tag settings when switching to tags tab', () => {
+      store.setState({
+        tags: [
+          { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'rest', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'study', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'sport', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'other', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'hiking', isDefault: false, isEnabled: true, isCustom: true },
+        ],
+        tagBuckets: {
+          work: [], rest: [], study: [], sport: ['hiking'], other: [],
+        },
+      });
+      ui.switchSettingsTab('tags');
+      const sportGroup = document.querySelector('[data-bucket="sport"]');
+      expect(sportGroup).toBeTruthy();
+      expect(sportGroup.textContent).toContain('hiking');
     });
   });
 

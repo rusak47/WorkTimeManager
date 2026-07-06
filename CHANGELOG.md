@@ -2,6 +2,10 @@
 
 ## Unreleased (2026-07-05)
 
+### Fixed
+- **P3-E: Long-press bucket lost on stop** — `initializeCurrentSessionTags()` now accepts optional `bucket` parameter and uses it instead of hardcoding `'work'`.
+- **Settings tag view stale after new tags added** — `switchSettingsTab('tags')` now calls `renderTagSettings()` so new tags added via `syncHashtagTags` appear immediately in the settings panel.
+
 ### Added
 - **Tag Bucket System — Phase 3: Two-Row Tag Picker & Hashtag Autocomplete** — Ongoing. See `tasks/new/20260704-tag-bucket-p3-picker-hashtag-stats.md`.
   - P3-B: **Store bucket on session save** — `stopTracking()` now passes `meta.bucket` through to the session object. `handleSessionFormSubmit` reads bucket from selected row-1 default tag and includes it in `addSession()`.
@@ -9,7 +13,7 @@
   - P3-D: **Two-row tag picker in session modal** — `initializeSessionModalTags()` rewritten with two-row layout; `editSession()` refactored to call shared picker; `handleSessionFormSubmit` reads `.tag-chip.selected` and passes `bucket`; warning for multiple default tags in edit. `renderRow2` accepts `selectedSubtags` param for pre-selection.
   - **Visual fix: selected tags color + outline** — Saved session views pass `selected=true` to `getTagBadgeClass` so tags show bucket colors; `renderRow2` click handlers swap `getTagBadgeClass` on toggle so subtags show/hide background; CSS `.tag-chip.selected` adds outline instead of inline ring classes.
   - P3-E: **Long-press on Start button** — ~500ms hold on Start shows floating picker (`rest`/`study`/`sport`/`other`/`work`), short press starts with `work` as before. `startSession(bucket)` accepts optional bucket param; picker positioned below the button with backdrop-neutral styling.
-  - P3-F: **Inline hashtag autocomplete in notes** — `#`-prefix matching in `#notes` and `#modal-notes` textareas with colored bucket-dot badges via `getBucketColorClass()`. Dropdown positioned above/below cursor, dismiss on Escape/blur. `getAllTagNames()` collects all bucket keys + subtags from `tagBuckets`. No auto-add of new tags yet (see bug in TODO).
+  - P3-F: **Inline hashtag autocomplete + auto-add on session save** — `#`-prefix matching in `#notes` and `#modal-notes` textareas with colored bucket-dot badges via `getBucketColorClass()`. Dropdown positioned above/below cursor, dismiss on Escape/blur. `getAllTagNames()` collects all bucket keys + subtags from `tagBuckets`. `syncHashtagTags(notes, bucket)` extracts `#`-prefixed words from notes and adds unknown ones as custom subtags under the selected parent bucket, wired into both `saveSession()` and `handleSessionFormSubmit()`.
 
 ## Unreleased (2026-07-04)
 

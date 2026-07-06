@@ -354,6 +354,29 @@ describe('app event handlers', () => {
     expect(e.preventDefault).toHaveBeenCalled();
   });
 
+  it('handleSessionFormSubmit auto-adds #tags from notes to tagBuckets.other', () => {
+    const e = { preventDefault: vi.fn() };
+    const now = new Date();
+    const later = new Date(now.getTime() + 3600000);
+    document.getElementById('start-time').value = now.toISOString().slice(0, 16);
+    document.getElementById('end-time').value = later.toISOString().slice(0, 16);
+    document.getElementById('modal-notes').value = 'Worked on #design and #review';
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    const tagEl = document.createElement('div');
+    tagEl.className = 'tag selected';
+    tagEl.dataset.tag = 'work';
+    document.getElementById('tags-container').appendChild(tagEl);
+    app.handleSessionFormSubmit(e);
+    const s = store.getState();
+    expect(s.tags.some(t => t.name === 'design')).toBe(true);
+    expect(s.tags.some(t => t.name === 'review')).toBe(true);
+    expect(s.tagBuckets.other).toContain('design');
+    expect(s.tagBuckets.other).toContain('review');
+  });
+
   it('persistAndRender calls saveState and renders', async () => {
     store.setState({
       sessions: [{ id: 1, date: '2026-06-24', startTime: '2026-06-24T08:00:00',
@@ -464,6 +487,42 @@ describe('app event handlers', () => {
     expect(s.tags.some(t => t.name === 'custom1')).toBe(false);
     expect(s.tagBuckets.other).not.toContain('custom1');
     expect(storage.saveState).toHaveBeenCalled();
+  });
+
+  it('syncHashtagTags extracts #tags from notes and adds unknown ones', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    app.syncHashtagTags('Working on #design and #review with #work');
+    const s = store.getState();
+    expect(s.tags.some(t => t.name === 'design')).toBe(true);
+    expect(s.tags.some(t => t.name === 'review')).toBe(true);
+    expect(s.tagBuckets.other).toContain('design');
+    expect(s.tagBuckets.other).toContain('review');
+    expect(s.tagBuckets.other).not.toContain('work');
+  });
+
+  it('syncHashtagTags adds to given bucket when passed', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], study: [], other: [] },
+    });
+    app.syncHashtagTags('#deepfocus and #coding', 'work');
+    const s = store.getState();
+    expect(s.tagBuckets.work).toContain('deepfocus');
+    expect(s.tagBuckets.work).toContain('coding');
+    expect(s.tagBuckets.other).toEqual([]);
+  });
+
+  it('syncHashtagTags falls back to other when bucket does not exist in tagBuckets', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    app.syncHashtagTags('#design', 'nonexistent');
+    const s = store.getState();
+    expect(s.tagBuckets.other).toContain('design');
   });
 
   it('exportAllData creates and triggers download', () => {

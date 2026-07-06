@@ -441,6 +441,7 @@ export function createUIManager(store) {
     if (target) target.classList.remove('hidden');
     const activeBtn = document.querySelector(`[data-settings-tab="${tab}"]`);
     if (activeBtn) activeBtn.classList.add('settings-tab-active');
+    if (tab === 'tags') renderTagSettings();
   }
 
   function switchStatsPeriod(period) {
@@ -803,7 +804,7 @@ export function createUIManager(store) {
 
   const DEFAULT_BUCKET_KEYS = ['work', 'rest', 'study', 'sport', 'other'];
 
-  function initializeCurrentSessionTags() {
+  function initializeCurrentSessionTags(bucket = 'work') {
     const container = document.getElementById('current-session-tags');
     const s = store.getState();
     if (!container) return;
@@ -817,7 +818,7 @@ export function createUIManager(store) {
       return;
     }
 
-    let selectedDefault = 'work';
+    let selectedDefault = bucket;
 
     const row1 = document.createElement('div');
     row1.className = 'picker-row-1 flex flex-wrap gap-1.5 mb-2';
