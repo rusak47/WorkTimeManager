@@ -139,6 +139,7 @@ export function createUIManager(store) {
 
   let activeDropdown = null;
   let dismissedHash = null;
+  let hashtagSelectedIndex = -1;
 
   function getCursorCoords(textarea, charIndex) {
     const mirror = document.createElement('div');
@@ -199,9 +200,25 @@ export function createUIManager(store) {
     dd.id = 'hashtag-dropdown';
     dd.className = 'fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-1 min-w-[100px] max-h-[200px] overflow-y-auto';
 
-    for (const tag of tags) {
+    const handleItemClick = (tag) => {
+      const before = textarea.value.substring(0, startPos);
+      const afterHash = textarea.value.substring(startPos + 1);
+      const endOfWord = afterHash.search(/[\s\W]|$/);
+      const endPos = endOfWord >= 0 ? startPos + 1 + endOfWord : textarea.value.length;
+      const newVal = textarea.value.substring(0, startPos) + '#' + tag + ' ' + textarea.value.substring(endPos);
+      textarea.value = newVal;
+      const newCursor = startPos + 1 + tag.length + 1;
+      textarea.selectionStart = textarea.selectionEnd = newCursor;
+      dismissedHash = null;
+      hideHashtagDropdown();
+      textarea.focus();
+    };
+
+    for (let i = 0; i < tags.length; i++) {
+      const tag = tags[i];
       const item = document.createElement('div');
       item.className = 'hashtag-item px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-1.5';
+      item.dataset.index = i;
       const colors = getBucketColorClass(tag);
       const dot = document.createElement('span');
       dot.className = `inline-block w-2 h-2 rounded-full ${colors[0] || 'bg-gray-500'}`;
@@ -212,17 +229,7 @@ export function createUIManager(store) {
 
       item.addEventListener('click', (e) => {
         e.preventDefault();
-        const before = textarea.value.substring(0, startPos);
-        const afterHash = textarea.value.substring(startPos + 1);
-        const endOfWord = afterHash.search(/[\s\W]|$/);
-        const endPos = endOfWord >= 0 ? startPos + 1 + endOfWord : textarea.value.length;
-        const newVal = textarea.value.substring(0, startPos) + '#' + tag + ' ' + textarea.value.substring(endPos);
-        textarea.value = newVal;
-        const newCursor = startPos + 1 + tag.length + 1;
-        textarea.selectionStart = textarea.selectionEnd = newCursor;
-        dismissedHash = null;
-        hideHashtagDropdown();
-        textarea.focus();
+        handleItemClick(tag);
       });
 
       dd.appendChild(item);
@@ -250,6 +257,7 @@ export function createUIManager(store) {
     const existing = document.getElementById('hashtag-dropdown');
     if (existing) existing.remove();
     activeDropdown = null;
+    hashtagSelectedIndex = -1;
   }
 
   function initHashtagAutocomplete(textareaId) {
@@ -294,16 +302,50 @@ export function createUIManager(store) {
     textarea.addEventListener('input', onInput);
 
     textarea.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') {
-        if (activeDropdown) {
-          const hashIdx = textarea.value.lastIndexOf('#');
-          if (hashIdx >= 0) {
-            const rest = textarea.value.substring(hashIdx + 1);
-            const endOfWord = rest.search(/[\s\W]|$/);
-            dismissedHash = { hashIdx, query: endOfWord >= 0 ? rest.substring(0, endOfWord) : rest };
-          }
-          hideHashtagDropdown();
+      if (!activeDropdown) return;
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const items = activeDropdown.querySelectorAll('.hashtag-item');
+        if (!items.length) return;
+
+        if (items.length === 1 && e.key === 'ArrowDown') {
+          items[0].click();
+          return;
         }
+
+        items.forEach(el => el.classList.remove('hashtag-highlighted'));
+
+        if (e.key === 'ArrowDown') {
+          hashtagSelectedIndex = Math.min(hashtagSelectedIndex + 1, items.length - 1);
+        } else {
+          hashtagSelectedIndex = Math.max(hashtagSelectedIndex - 1, -1);
+        }
+
+        if (hashtagSelectedIndex >= 0) {
+          items[hashtagSelectedIndex].classList.add('hashtag-highlighted');
+          items[hashtagSelectedIndex].scrollIntoView({ block: 'nearest' });
+        }
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        if (hashtagSelectedIndex >= 0) {
+          e.preventDefault();
+          const items = activeDropdown.querySelectorAll('.hashtag-item');
+          items[hashtagSelectedIndex].click();
+          return;
+        }
+      }
+
+      if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') {
+        const hashIdx = textarea.value.lastIndexOf('#');
+        if (hashIdx >= 0) {
+          const rest = textarea.value.substring(hashIdx + 1);
+          const endOfWord = rest.search(/[\s\W]|$/);
+          dismissedHash = { hashIdx, query: endOfWord >= 0 ? rest.substring(0, endOfWord) : rest };
+        }
+        hideHashtagDropdown();
       }
     });
 
