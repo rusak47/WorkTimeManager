@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- **Legacy session tag migration** — one-time `migration/v1.0.0-to-v1.1.0.js` script normalizes legacy sessions on first load: extracts `#hashtags` from notes into structured `tags` array, strips them from notes. Runs once, persisted via `_migrationVersion` flag. Does not touch tagBuckets or settings. 313 tests.
+
 ## 1.1.0 (2026-07-06)
 
 ### Fixed

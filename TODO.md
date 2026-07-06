@@ -21,10 +21,10 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 - [ ] [low priority - maybe] Support multiple notes per session (store as array).
 
 ## Tags
-- [x] **#tag dropdown in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. (P3-F done, 306 tests)
-- [x] [normal++ - blocking - must have] **#tag auto-add on session save** — new tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save. Also appends new tags to session tags array, strips `#tag` mentions from saved notes, and calls `renderTagSettings()` immediately so settings tab is never stale. (306 tests)
+- [x] **#tag dropdown in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. (P3-F done, 313 tests)
+- [x] [normal++ - blocking - must have] **#tag auto-add on session save** — new tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save. Also appends new tags to session tags array, strips `#tag` mentions from saved notes, and calls `renderTagSettings()` immediately so settings tab is never stale. (313 tests)
 - [ ] [normal+ - must have] Filter statistics by subtags — tags stored with `#` prefix in sessions should be filterable. All configured tags (custom + default) should appear as filter options. (see Statistics section)
-- [x] **P3-G**: bucketed statistics section in stats tab — shows time grouped by default buckets with subtag drill-down. (306 tests)
+- [x] **P3-G**: bucketed statistics section in stats tab — shows time grouped by default buckets with subtag drill-down. (313 tests)
 
 ## Statistics
 - [ ] [low+ - must have] Generate work stats by subtags — render tag filter similarly to session-save tag picker; all tags including custom should appear for filtering.

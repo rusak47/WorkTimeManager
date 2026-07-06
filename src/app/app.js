@@ -52,7 +52,17 @@ export function createEventHandlers(deps) {
     try {
       const saved = await storage.loadState();
       if (saved) {
-        loadStateFromStorage(saved);
+        if (!saved._migrationVersion) {
+          const { migrateSessionTags } = await import('../../migration/v1.0.0-to-v1.1.0.js');
+          const migrated = { ...saved, _migrationVersion: '1.1.0' };
+          if (migrated.sessions) {
+            migrated.sessions = migrateSessionTags(migrated.sessions);
+          }
+          await storage.saveState(migrated);
+          loadStateFromStorage(migrated);
+        } else {
+          loadStateFromStorage(saved);
+        }
       } else {
         const s = store.getState();
         if (s.configs.length === 0) {

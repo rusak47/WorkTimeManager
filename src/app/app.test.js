@@ -265,6 +265,7 @@ describe('app event handlers', () => {
 
   it('loadData from storage loads state', async () => {
     storage.loadState.mockResolvedValue({
+      _migrationVersion: '1.1.0',
       sessions: [{ id: 1, date: '2026-01-01', durationSec: 3600 }],
       configs: [{ id: 100, workingHours: 8, breakDuration: 60, weekStart: 1, salaryType: 'hourly', salaryTaxType: 'net', salaryValue: 15, salaryTax: 20, untaxedMin: 500, inflationRate: 2.5, darkMode: false }],
       markedDays: [{ date: '2026-12-25', dayType: 'Holiday' }],
@@ -661,6 +662,7 @@ describe('app event handlers', () => {
   it('loadData restores fresh tracker from backup', async () => {
     const now = Date.now();
     storage.loadState.mockResolvedValue({
+      _migrationVersion: '1.1.0',
       sessions: [],
       configs: [],
       markedDays: [],
@@ -678,6 +680,7 @@ describe('app event handlers', () => {
   it('loadData discards stale tracker older than 24h', async () => {
     const staleTime = Date.now() - 25 * 3600 * 1000;
     storage.loadState.mockResolvedValue({
+      _migrationVersion: '1.1.0',
       sessions: [],
       configs: [],
       markedDays: [],
@@ -693,6 +696,7 @@ describe('app event handlers', () => {
 
   it('loadData does not override tracker when no tracker in saved state', async () => {
     storage.loadState.mockResolvedValue({
+      _migrationVersion: '1.1.0',
       sessions: [],
       configs: [],
       markedDays: [],
@@ -706,10 +710,31 @@ describe('app event handlers', () => {
 
   it('loadStateFromStorage restores tagBuckets from saved state', async () => {
     storage.loadState.mockResolvedValue({
+      _migrationVersion: '1.1.0',
       tagBuckets: { work: [], rest: ['sleep'], study: [], sport: [], other: [] },
     });
     await app.loadData();
     expect(store.getState().tagBuckets).toEqual({ work: [], rest: ['sleep'], study: [], sport: [], other: [] });
+  });
+
+  it('loadData runs session tag migration and persists version flag', async () => {
+    storage.loadState.mockResolvedValue({
+      sessions: [
+        { id: 1, notes: 'Worked on #design and #review', tags: ['work'], durationSec: 3600 },
+        { id: 2, notes: 'Already clean', tags: ['work'], durationSec: 1800 },
+      ],
+      tags: [{ name: 'work', isDefault: true, isEnabled: true, isCustom: false }],
+      tagBuckets: { work: [], rest: [], study: [], sport: [], other: [] },
+    });
+    storage.saveState.mockResolvedValue(true);
+    await app.loadData();
+    const s = store.getState();
+    expect(s.sessions[0].tags).toEqual(['work', 'design', 'review']);
+    expect(s.sessions[0].notes).toBe('Worked on and');
+    expect(s.sessions[1]).toEqual({ id: 2, notes: 'Already clean', tags: ['work'], durationSec: 1800 });
+    const saved = storage.saveState.mock.calls.find(c => c[0] && c[0]._migrationVersion);
+    expect(saved).toBeDefined();
+    expect(saved[0]._migrationVersion).toBe('1.1.0');
   });
 
   it('saveState includes tagBuckets in persisted state', () => {
@@ -737,6 +762,7 @@ describe('app event handlers', () => {
 
   it('loadData replaces incomplete tagBuckets with full DEFAULT_BUCKET_MAP', async () => {
     storage.loadState.mockResolvedValue({
+      _migrationVersion: '1.1.0',
       tagBuckets: { other: ['custom'] },
     });
     store.setState({ tags: [{ name: 'work', isDefault: true, isEnabled: true, isCustom: false }] });
