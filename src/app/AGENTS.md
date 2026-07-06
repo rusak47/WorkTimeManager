@@ -35,6 +35,15 @@
 ## renderRow2 guard order (uiManager.js:985-1050)
 - Legacy subtag rendering must run **unconditionally** after the toggleable bucket subtag block. Early returns (`if (subtags.length === 0) return;`) before legacy code silently drop non-bucket tags when `tagBuckets[bucket]` is empty. Fix: wrap the toggleable block in `if (subtags.length > 0)`, keep fallthrough code outside.
 
+## stopSession cleanup order (app.js)
+- `updateTimerDisplay()` (uiManager.js:366) early-returns when both `startTime` and `pauseStart` are null. Setting `durEl.textContent = '00:00:00'` and then calling `updateTimerDisplay()` before `resetTracker()` gets overwritten — the old `startTime` is still active so the function runs and re-calculates elapsed seconds. Fix: `resetTracker()` first, then set `00:00:00` explicitly.
+- DevTools single-step is the only reliable way to see this intermediate state — the overwrite is silent with no error.
+
+## Dead code removal cascade (app.js)
+- Removing a function like `saveSession()` requires tracing ALL its side effects: DOM resets (timer display, form fields, mood, tags), re-renders (recent/all sessions lists, today total), and hiding UI elements. These side effects are not documented in the function signature and must be absorbed by remaining callers.
+- `persistAndRender()` bundles `saveState() + renderRecentSessions() + renderAllSessions() + updateTodayTotal() + updateTodayStatus() + populateYearSelector()` — replacing `saveState()` with `persistAndRender()` is the correct migration path when a save-button flow is removed and cleanup must include re-render.
+- `saveState()` alone silently starves the UI of updates; no error, no warning, just stale DOM.
+
 ## Multi-select default filter trap
 - A `<select multiple>` with `selected` on any `<option>` silently activates that filter on first page load. The statistics mood filter was filtering to 5-star sessions only because `<option value="5" selected>` pre-selected it. No option should be pre-selected unless the user explicitly wants that filter active by default.
 

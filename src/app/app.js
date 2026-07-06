@@ -135,13 +135,23 @@ export function createEventHandlers(deps) {
     const notesInput = document.getElementById('notes');
     const moodInput = document.getElementById('current-session-mood-input');
     const selectedTags = [];
+    let bucket;
     document.querySelectorAll('#current-session-tags .tag-chip.selected').forEach(el => {
       selectedTags.push(el.dataset.tag);
+      const parentRow = el.closest('.picker-row-1');
+      if (parentRow) bucket = el.dataset.tag;
     });
+    if (selectedTags.length === 0) selectedTags.push('work');
+    const notesValue = notesInput ? notesInput.value.trim() : '';
+    const syncResult = syncHashtagTags(notesValue, bucket);
+    if (syncResult) {
+      syncResult.foundTags.forEach(t => { if (!selectedTags.includes(t)) selectedTags.push(t); });
+    }
     return {
-      notes: notesInput ? notesInput.value.trim() : '',
-      tags: selectedTags.length > 0 ? selectedTags : ['work'],
+      notes: syncResult ? syncResult.cleanedNotes : notesValue,
+      tags: selectedTags,
       mood: moodInput ? parseFloat(moodInput.value) : 5,
+      bucket,
     };
   }
 
@@ -232,12 +242,12 @@ export function createEventHandlers(deps) {
     if (endTimeInput && lastSegment) endTimeInput.value = new Date(lastSegment.endTime).getTime().toString();
     if (restDurationInput) restDurationInput.value = '0';
     if (trackerSessionIdInput && lastSegment) trackerSessionIdInput.value = lastSegment.id.toString();
-    ui.updateTimerDisplay();
     sessionManager.resetTracker();
+    if (durEl) durEl.textContent = '00:00:00';
     ui.updateButtonStates(false);
-    saveState();
+    persistAndRender();
     const notes = document.getElementById('session-notes');
-    if (notes) notes.classList.remove('hidden');
+    if (notes) notes.classList.add('hidden');
   }
 
   function togglePause() {
@@ -301,92 +311,6 @@ export function createEventHandlers(deps) {
     }
     ui.updateTimerDisplay();
     persistAndRender();
-  }
-
-  async function saveSession() {
-    const s = store.getState();
-    if (s.tracker.startTime) return;
-    const trackerStartInput = document.getElementById('current-session-start-time-input');
-    const trackerEndInput = document.getElementById('current-session-end-time-input');
-    const restInput = document.getElementById('current-session-accumulated-rest-duration-input');
-    const notesInput = document.getElementById('notes');
-    const trackerSessionIdInput = document.getElementById('tracker-session-id');
-    let notesValue = notesInput ? notesInput.value.trim() : '';
-    const selectedTags = [];
-    let bucket;
-    document.querySelectorAll('#current-session-tags .tag-chip.selected').forEach(el => {
-      selectedTags.push(el.dataset.tag);
-      const parentRow = el.closest('.picker-row-1');
-      if (parentRow) bucket = el.dataset.tag;
-    });
-    if (selectedTags.length === 0) selectedTags.push('work');
-    const syncResult = syncHashtagTags(notesValue, bucket);
-    if (syncResult) {
-      syncResult.foundTags.forEach(t => { if (!selectedTags.includes(t)) selectedTags.push(t); });
-      notesValue = syncResult.cleanedNotes;
-    }
-    const startTimeMs = parseInt(trackerStartInput ? trackerStartInput.value : '0', 10);
-    const endTimeMs = parseInt(trackerEndInput ? trackerEndInput.value : '0', 10);
-    const accumulatedPauseTimeMs = parseInt(restInput ? restInput.value : '0', 10);
-    const startDate = new Date(startTimeMs);
-    const endDate = new Date(endTimeMs);
-    const duration = Math.max(0, Math.floor((endTimeMs - startTimeMs - accumulatedPauseTimeMs) / 1000));
-    const accumulatedPauseTimeSec = Math.floor(accumulatedPauseTimeMs / 1000);
-    const date = utils.formatDate(startDate);
-    const dayType = getDayType(date, s);
-    const moodInput = document.getElementById('current-session-mood-input');
-    const existingId = trackerSessionIdInput ? parseInt(trackerSessionIdInput.value, 10) : null;
-    if (existingId) {
-      sessionManager.updateSession(existingId, {
-        date,
-        startTime: startDate.toISOString(),
-        endTime: endDate.toISOString(),
-        duration: utils.formatDuration(duration),
-        durationSec: duration,
-        accumulatedPauseTimeSec,
-        notes: notesValue,
-        dayType,
-        tags: selectedTags,
-        mood: moodInput ? parseFloat(moodInput.value) : 5,
-        bucket,
-      });
-    } else {
-      sessionManager.addSession({
-        id: Date.now(),
-        date,
-        startTime: startDate.toISOString(),
-        endTime: endDate.toISOString(),
-        duration: utils.formatDuration(duration),
-        durationSec: duration,
-        accumulatedPauseTimeSec,
-        notes: notesValue,
-        dayType,
-        tags: selectedTags,
-        mood: moodInput ? parseFloat(moodInput.value) : 5,
-        bucket,
-      });
-    }
-    if (notesInput) notesInput.value = '';
-    const durEl = document.getElementById('active-duration');
-    if (durEl) durEl.textContent = '00:00:00';
-    const notes = document.getElementById('session-notes');
-    if (notes) notes.classList.add('hidden');
-    const moodContainer = document.getElementById('current-session-mood');
-    if (moodContainer) moodContainer.dataset.rating = '5';
-    const moodVal = document.getElementById('current-mood-value');
-    if (moodVal) moodVal.textContent = '5.0';
-    if (trackerStartInput) trackerStartInput.value = '0';
-    if (trackerEndInput) trackerEndInput.value = '0';
-    if (restInput) restInput.value = '0';
-    if (trackerSessionIdInput) trackerSessionIdInput.value = '';
-    document.querySelectorAll('#current-session-mood .star').forEach(star => { star.innerHTML = '\u2605'; });
-    ui.initializeCurrentSessionTags();
-    ui.initializeCurrentSessionMood();
-    await saveState();
-    ui.renderRecentSessions();
-    ui.updateTodayTotal();
-    const state = store.getState();
-    if (state.currentTab === 'stats') ui.updateStatistics();
   }
 
   function showAddSessionModal() {
@@ -940,7 +864,6 @@ export function createEventHandlers(deps) {
     document.getElementById('stop-btn')?.addEventListener('click', stopSession);
     document.getElementById('pause-btn')?.addEventListener('click', togglePause);
     document.getElementById('recent-sessions-grid-toggle')?.addEventListener('click', () => ui.toggleRecentSessionsGrid());
-    document.getElementById('save-session')?.addEventListener('click', saveSession);
     document.getElementById('add-session-btn')?.addEventListener('click', showAddSessionModal);
     document.getElementById('close-modal')?.addEventListener('click', hideSessionModal);
     document.getElementById('cancel-session')?.addEventListener('click', hideSessionModal);
@@ -1083,7 +1006,7 @@ export function createEventHandlers(deps) {
 
   return {
     init,
-    startSession, stopSession, togglePause, saveSession,
+    startSession, stopSession, togglePause,
     showAddSessionModal, hideSessionModal, editSession, handleSessionFormSubmit,
     showDeleteModal, hideDeleteModal, confirmDeleteSession,
     applyFilters, saveMarkedDay, showMarkDayModal, hideMarkDayModal,

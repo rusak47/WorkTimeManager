@@ -80,7 +80,6 @@ function setupDOM() {
     <button id="start-btn"></button>
     <button id="stop-btn"></button>
     <button id="pause-btn"></button>
-    <button id="save-session"></button>
     <button id="add-session-btn"></button>
     <button id="close-modal"></button>
     <button id="cancel-session"></button>
@@ -157,7 +156,6 @@ describe('app event handlers', () => {
     expect(app.startSession).toBeTypeOf('function');
     expect(app.stopSession).toBeTypeOf('function');
     expect(app.togglePause).toBeTypeOf('function');
-    expect(app.saveSession).toBeTypeOf('function');
     expect(app.confirmDeleteSession).toBeTypeOf('function');
     expect(app.editSession).toBeTypeOf('function');
     expect(app.handleSessionFormSubmit).toBeTypeOf('function');
@@ -909,47 +907,6 @@ describe('app event handlers', () => {
     expect(display.textContent).toMatch(/\d{2}:\d{2}:\d{2}/);
     expect(display.textContent).not.toContain('NaN');
     expect(display.textContent).toBe('00:00:05');
-
-    vi.useRealTimers();
-  });
-
-  it('saveSession after stopSession updates existing segment not duplicate', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
-
-    app.startSession();
-    vi.advanceTimersByTime(10000);
-    app.stopSession();
-
-    const s1 = store.getState();
-    expect(s1.sessions.length).toBe(1);
-    expect(s1.sessions[0].durationSec).toBeGreaterThanOrEqual(10);
-
-    const notesInput = document.getElementById('notes');
-    if (notesInput) notesInput.value = 'edited note';
-
-    app.saveSession();
-
-    const s2 = store.getState();
-    expect(s2.sessions.length).toBe(1);
-    expect(s2.sessions[0].notes).toBe('edited note');
-    expect(s2.tracker.startTime).toBeNull();
-
-    vi.useRealTimers();
-  });
-
-  it('saveSession while running does nothing', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
-
-    app.startSession();
-    const s1 = store.getState();
-    expect(s1.sessions.length).toBe(0);
-
-    app.saveSession();
-    const s2 = store.getState();
-    expect(s2.sessions.length).toBe(0);
-    expect(s2.tracker.startTime).not.toBeNull();
 
     vi.useRealTimers();
   });

@@ -56,7 +56,6 @@ const DATA_VERSION = "1.1";
         const todayTotalEl = document.getElementById('today-total');
         const sessionNotes = document.getElementById('session-notes');
         const notesInput = document.getElementById('notes');
-        const saveSessionBtn = document.getElementById('save-session');
         const recentSessionsEl = document.getElementById('recent-sessions');
         const allSessionsList = document.getElementById('all-sessions-list');
         const addSessionBtn = document.getElementById('add-session-btn');
@@ -184,8 +183,7 @@ const DATA_VERSION = "1.1";
             startBtn.addEventListener('click', startSession);
             stopBtn.addEventListener('click', stopSession);
             pauseBtn.addEventListener('click', togglePause);
-            saveSessionBtn.addEventListener('click', saveSession);
-            
+
             // Session management
             addSessionBtn.addEventListener('click', showAddSessionModal);
             closeModalBtn.addEventListener('click', hideSessionModal);
