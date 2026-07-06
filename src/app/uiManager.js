@@ -57,7 +57,7 @@ export function createUIManager(store) {
     return chip;
   }
 
-  function showStartPicker(onSelect) {
+  function showStartPicker(onSelect, x, y) {
     hideStartPicker();
     const picker = document.createElement('div');
     picker.id = 'start-picker';
@@ -80,15 +80,27 @@ export function createUIManager(store) {
 
     document.body.appendChild(picker);
 
-    const btn = document.getElementById('start-btn');
-    if (btn) {
-      const rect = btn.getBoundingClientRect();
-      picker.style.left = Math.max(4, rect.left) + 'px';
-      picker.style.top = (rect.bottom + 4) + 'px';
+    if (x != null && y != null) {
+      picker.style.left = Math.max(4, x) + 'px';
+      picker.style.top = Math.max(4, y) + 'px';
+      const rect = picker.getBoundingClientRect();
+      if (rect.bottom > window.innerHeight) {
+        picker.style.top = Math.max(4, y - rect.height - 4) + 'px';
+      }
+      if (rect.right > window.innerWidth) {
+        picker.style.left = Math.max(4, window.innerWidth - rect.width - 8) + 'px';
+      }
     } else {
-      picker.style.left = '50%';
-      picker.style.top = '50%';
-      picker.style.transform = 'translate(-50%, -50%)';
+      const btn = document.getElementById('start-btn');
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        picker.style.left = Math.max(4, rect.left) + 'px';
+        picker.style.top = (rect.bottom + 4) + 'px';
+      } else {
+        picker.style.left = '50%';
+        picker.style.top = '50%';
+        picker.style.transform = 'translate(-50%, -50%)';
+      }
     }
   }
 

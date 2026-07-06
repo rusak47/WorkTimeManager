@@ -786,14 +786,17 @@ export function createEventHandlers(deps) {
 
     const startBtn = document.getElementById('start-btn');
     if (startBtn) {
-      startBtn.addEventListener('mousedown', () => {
+      let pressX, pressY;
+      startBtn.addEventListener('mousedown', (e) => {
         ui.hideStartPicker();
+        pressX = e.clientX;
+        pressY = e.clientY;
         startLongPress = false;
         startPressTimer = setTimeout(() => {
           startLongPress = true;
           ui.showStartPicker((bucket) => {
             startSession(bucket);
-          });
+          }, pressX, pressY);
         }, 500);
       });
       startBtn.addEventListener('mouseup', () => {
@@ -810,14 +813,16 @@ export function createEventHandlers(deps) {
         clearTimeout(startPressTimer);
         startPressTimer = null;
       });
-      startBtn.addEventListener('touchstart', () => {
+      startBtn.addEventListener('touchstart', (e) => {
         ui.hideStartPicker();
+        pressX = e.touches[0].clientX;
+        pressY = e.touches[0].clientY;
         startLongPress = false;
         startPressTimer = setTimeout(() => {
           startLongPress = true;
           ui.showStartPicker((bucket) => {
             startSession(bucket);
-          });
+          }, pressX, pressY);
         }, 500);
       }, { passive: true });
       startBtn.addEventListener('touchend', () => {
