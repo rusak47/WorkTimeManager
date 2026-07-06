@@ -1,5 +1,6 @@
 import { Chart } from 'chart.js/auto';
 import * as utils from '../js/utils.js';
+import { DEFAULT_TAGS, SECONDS_PER_HOUR } from './constants.js';
 import { moveSubtagBetweenBuckets, removeTagFromBucket } from './tagManager.js';
 
 export function createUIManager(store) {
@@ -1585,6 +1586,7 @@ export function createUIManager(store) {
         if (incomeContainer) incomeContainer.classList.add('hidden');
       }
     }
+    renderBucketStats(filteredSessions);
     const timeCtx = document.getElementById('timeChart');
     if (timeChart) { timeChart.destroy(); timeChart = null; }
     if (timeCtx) {
@@ -1654,6 +1656,114 @@ export function createUIManager(store) {
             }
           }
         });
+    }
+  }
+
+  function renderBucketStats(sessions) {
+    const container = document.getElementById('bucket-stats');
+    if (!container) return;
+
+    if (!sessions) {
+      sessions = store.getState().sessions || [];
+    }
+
+    if (sessions.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    const bucketsData = {};
+    for (const key of DEFAULT_TAGS) {
+      bucketsData[key] = { totalSec: 0, subtags: {} };
+    }
+
+    for (const session of sessions) {
+      const bucketName = resolveBucket(session);
+      const dur = session.durationSec || 0;
+      if (!bucketsData[bucketName]) continue;
+      bucketsData[bucketName].totalSec += dur;
+      if (session.tags) {
+        for (const tag of session.tags) {
+          if (!DEFAULT_TAGS.includes(tag)) {
+            bucketsData[bucketName].subtags[tag] = (bucketsData[bucketName].subtags[tag] || 0) + dur;
+          }
+        }
+      }
+    }
+
+    container.innerHTML = '<h3 class="text-lg font-medium mb-4">Time by Bucket</h3>';
+
+    for (const bucketName of DEFAULT_TAGS) {
+      const data = bucketsData[bucketName];
+      if (data.totalSec === 0) continue;
+
+      const row = document.createElement('div');
+      const borderColor = getBucketBorderColor(bucketName);
+      row.className = `bucket-stat-row mb-2 pl-3 border-l-4 ${borderColor}`;
+
+      const headerRow = document.createElement('div');
+      headerRow.className = 'flex items-center justify-between';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = `inline-block px-2 py-0.5 rounded-full text-sm font-medium ${getTagBadgeClass(bucketName, true)}`;
+      nameSpan.textContent = bucketName;
+      headerRow.appendChild(nameSpan);
+
+      const durationSpan = document.createElement('span');
+      durationSpan.className = 'text-sm font-medium text-gray-700 dark:text-gray-300';
+      durationSpan.textContent = utils.formatDuration(data.totalSec);
+      headerRow.appendChild(durationSpan);
+
+      row.appendChild(headerRow);
+
+      const subtagNames = Object.keys(data.subtags);
+      if (subtagNames.length > 0) {
+        const expandBtn = document.createElement('button');
+        expandBtn.className = 'bucket-expand-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 mt-1';
+        expandBtn.textContent = `▼ ${subtagNames.length} subtags`;
+        expandBtn.addEventListener('click', () => {
+          const isExpanded = subtagsContainer.classList.toggle('hidden');
+          expandBtn.textContent = isExpanded
+            ? `▶ ${subtagNames.length} subtags`
+            : `▼ ${subtagNames.length} subtags`;
+        });
+        row.appendChild(expandBtn);
+
+        const subtagsContainer = document.createElement('div');
+        subtagsContainer.className = 'ml-3 mt-1 space-y-0.5 hidden';
+        for (const subtag of subtagNames.sort()) {
+          const stRow = document.createElement('div');
+          stRow.className = 'bucket-subtag-row flex items-center justify-between text-xs text-gray-600 dark:text-gray-400';
+          const stName = document.createElement('span');
+          stName.textContent = subtag;
+          const stDur = document.createElement('span');
+          stDur.textContent = utils.formatDuration(data.subtags[subtag]);
+          stRow.appendChild(stName);
+          stRow.appendChild(stDur);
+          subtagsContainer.appendChild(stRow);
+        }
+        row.appendChild(subtagsContainer);
+      }
+
+      container.appendChild(row);
+    }
+  }
+
+  function resolveBucket(session) {
+    if (session.bucket && DEFAULT_TAGS.includes(session.bucket)) {
+      return session.bucket;
+    }
+    const found = DEFAULT_TAGS.find(t => session.tags && session.tags.includes(t));
+    return found || DEFAULT_TAGS[DEFAULT_TAGS.length - 1];
+  }
+
+  function getBucketBorderColor(bucketName) {
+    switch (bucketName) {
+      case 'work': return 'border-l-blue-500';
+      case 'rest': return 'border-l-purple-500';
+      case 'study': return 'border-l-orange-500';
+      case 'sport': return 'border-l-green-500';
+      default: return 'border-l-gray-500';
     }
   }
 
@@ -1832,6 +1942,7 @@ export function createUIManager(store) {
     hideCrashRecoveryBanner,
     applyLatestConfig,
     updateStatistics,
+    renderBucketStats,
     updateYearlyStatsTable,
     updateIncomeChart,
     getWorkDaysInMonth,

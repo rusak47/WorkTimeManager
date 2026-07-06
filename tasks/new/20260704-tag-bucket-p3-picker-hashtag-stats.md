@@ -62,7 +62,7 @@ Deliver the visible user-facing changes: a two-level tag picker during session c
 - Dismiss on esc/backspace/blur
 - **Files:** `src/app/uiManager.js`, `src/app/app.js`, `src/css/styles.css`
 
-### P3-G: Bucketed statistics (spec 3.4)
+### ✅ P3-G: Bucketed statistics (spec 3.4) *(done 2026-07-06)*
 
 - New rendered section below existing stats charts
 - Group sessions by bucket (`resolveSessionBucket()`), sum `durationSec`
