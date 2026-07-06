@@ -16,7 +16,7 @@
 - **Keyboard navigation for hashtag dropdown** — ArrowDown/ArrowUp to navigate, Enter to select highlighted item, single-item auto-select on ArrowDown. `.hashtag-highlighted` CSS class with dark-mode support.
 
 ### Added
-- **Tag Bucket System — Phase 3: Two-Row Tag Picker & Hashtag Autocomplete** — Ongoing. See `tasks/new/20260704-tag-bucket-p3-picker-hashtag-stats.md`.
+- **Tag Bucket System — Phase 3: Two-Row Tag Picker & Hashtag Autocomplete** — Ongoing. See `tasks/done/2026-07-06-tag-bucket-p3-picker-hashtag-stats.md`.
   - P3-B: **Store bucket on session save** — `stopTracking()` now passes `meta.bucket` through to the session object. `handleSessionFormSubmit` reads bucket from selected row-1 default tag and includes it in `addSession()`.
   - P3-C: **Two-row tag picker in tracker tab** — `initializeCurrentSessionTags()` rendered as two-row picker: row 1 (5 defaults, radio-style), row 2 (subtags from `tagBuckets`, max 6 visible, `+N more` expander). Click handlers for default switching and subtag toggle. Legacy fallback for sessions without `tagBuckets`.
   - P3-D: **Two-row tag picker in session modal** — `initializeSessionModalTags()` rewritten with two-row layout; `editSession()` refactored to call shared picker; `handleSessionFormSubmit` reads `.tag-chip.selected` and passes `bucket`; warning for multiple default tags in edit. `renderRow2` accepts `selectedSubtags` param for pre-selection.
@@ -33,7 +33,7 @@
 - **`ui is not defined` error in createUIManager** — `setOnDeleteCustomTag` was incorrectly assigned to `ui` variable (non-existent in return-object pattern), changed to standalone function.
 
 ### Added
-- **Tag Bucket System — Phase 2: Settings Tree View & Drag-and-Drop** — Interactive tag bucket management in settings tab. See `tasks/pending/20260704-tag-bucket-p2-settings-dnd.md`.
+- **Tag Bucket System — Phase 2: Settings Tree View & Drag-and-Drop** — Interactive tag bucket management in settings tab. See `tasks/done/2026-07-06-tag-bucket-p2-settings-dnd.md`.
   - Tree view: buckets displayed as collapsible groups with ▼/▶ expand/collapse toggle
   - Native HTML5 DnD: drag subtags between buckets with dashed highlight on drag-over
   - Ctrl+drag: duplicate subtag into another bucket (keeps source copy); green outline visual indicator

@@ -21,12 +21,10 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 - [ ] [low priority - maybe] Support multiple notes per session (store as array).
 
 ## Tags
-- [x] **#tag dropdown in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. (P3-F done, 297 tests)
-- [x] [normal++ - blocking - must have] **#tag auto-add on session save** — new tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save. Also appends new tags to session tags array, strips `#tag` mentions from saved notes, and calls `renderTagSettings()` immediately so settings tab is never stale. (297 tests)
-- [ ] [normal+ - must have] Filter statistics by subtags — tags stored with `#` prefix in sessions should be filterable. All configured tags (custom + default) should appear as filter options.
-- [ ] [low - maybe] Early tagging — tag picker on the "Start Session" button so sessions are tagged from the beginning.
+- [x] **#tag dropdown in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. (P3-F done, 306 tests)
+- [x] [normal++ - blocking - must have] **#tag auto-add on session save** — new tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save. Also appends new tags to session tags array, strips `#tag` mentions from saved notes, and calls `renderTagSettings()` immediately so settings tab is never stale. (306 tests)
+- [ ] [normal+ - must have] Filter statistics by subtags — tags stored with `#` prefix in sessions should be filterable. All configured tags (custom + default) should appear as filter options. (see Statistics section)
 - [x] **P3-G**: bucketed statistics section in stats tab — shows time grouped by default buckets with subtag drill-down. (306 tests)
-- [ ] [duplicate — covered by #tag parsing above] Allow entering custom tags on the fly.
 
 ## Statistics
 - [ ] [low+ - must have] Generate work stats by subtags — render tag filter similarly to session-save tag picker; all tags including custom should appear for filtering.
@@ -36,7 +34,7 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 ## UI/UX
 - [x] **P3-E**: long press on start shows a tooltip to select default tag for this session (eg rest/study/sports/other, work is enabled by default so its placed at the end of selection)
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
-- [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `tasks/new/tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
+- [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `tasks/new/20260626-tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
 - [ ] [high] - when in grid mode and session description is hidden add a tooltip with session description
 - [ ] [low - tech debt] Replace Font Awesome CDN with npm import (`@fortawesome/fontawesome-free`) — still loaded from `cdnjs.cloudflare.com` in `index.html:7`. Impact: removes external dependency, enables offline use, aligns with Phase 7 CDN-removal goal.
 - [ ] [low - tech debt] Add `src/js/utils.js` unit tests — utility functions (date/number formatting) lack coverage. Medium priority in refactoring plan Phase 8, never written.
