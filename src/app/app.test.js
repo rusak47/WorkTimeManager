@@ -38,7 +38,8 @@ function setupDOM() {
     <input id="new-tag-input" />
     <input id="import-file" type="file" />
     <select id="year-selector"></select>
-    <select id="tag-filter"><option value="work">Work</option></select>
+    <select id="tag-filter"><option value="all">All Tags</option></select>
+    <select id="subtag-filter"><option value="all" selected>All Subtags</option></select>
     <select id="mood-threshold"><option value="1">1</option></select>
     <input id="date-filter" />
     <select id="month-filter"><option value="">All</option><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select>
@@ -337,6 +338,36 @@ describe('app event handlers', () => {
     const updated = store.getState().sessions[0];
     expect(updated.durationSec).toBe(18000);
     expect(updated.duration).toBe('05:00:00');
+  });
+
+  it('handleSessionFormSubmit preserves legacy tags from edit session', () => {
+    const e = { preventDefault: vi.fn() };
+    store.setState({
+      sessions: [{
+        id: 200, date: '2026-06-28', startTime: '2026-06-28T10:00:00.000Z',
+        endTime: '2026-06-28T12:00:00.000Z', duration: '02:00:00', durationSec: 7200,
+        dayType: 'Workday', notes: 'Legacy', tags: ['work', 'coding', 'legacyTag'], mood: 5,
+        bucket: 'work',
+      }],
+      tags: [
+        { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+        { name: 'coding', isDefault: false, isEnabled: true, isCustom: false },
+      ],
+      tagBuckets: { work: ['coding', 'meeting', 'email'], rest: [], study: [], sport: [], other: [] },
+    });
+    app.editSession(200);
+    const legacyChip = document.querySelector('#tags-container .tag-chip.selected.readonly');
+    expect(legacyChip).toBeTruthy();
+    expect(legacyChip.dataset.tag).toBe('legacyTag');
+    document.getElementById('start-time').value = '2026-06-28T10:00';
+    document.getElementById('end-time').value = '2026-06-28T12:00';
+    document.getElementById('modal-notes').value = 'Legacy';
+    document.getElementById('session-mood').value = '5';
+    app.handleSessionFormSubmit(e);
+    const updated = store.getState().sessions[0];
+    expect(updated.tags).toContain('work');
+    expect(updated.tags).toContain('coding');
+    expect(updated.tags).toContain('legacyTag');
   });
 
   it('handleSessionFormSubmit creates new session', () => {

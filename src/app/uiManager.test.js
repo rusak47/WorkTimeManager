@@ -99,6 +99,7 @@ function setupDOM() {
     <div id="stats-content" class="hidden"></div>
     <div id="config-content" class="hidden"></div>
     <select id="tag-filter"><option value="all">All Tags</option></select>
+    <select id="subtag-filter"><option value="all" selected>All Subtags</option></select>
     <select id="mood-threshold"><option value="1">1</option></select>
     <div id="tag-bucket-settings"></div>
     <div id="current-session-start-time-input"></div>
@@ -866,6 +867,27 @@ describe('uiManager', () => {
       const row2Chips = document.querySelectorAll('#tags-container .picker-row-2 .tag-chip.selected');
       const selectedSubtagNames = Array.from(row2Chips).map(el => el.dataset.tag);
       expect(selectedSubtagNames).toContain('coding');
+    });
+
+    it('renders legacy subtags not in any bucket as selected read-only chips', () => {
+      store.setState({ tags: mockTags, tagBuckets: modalBuckets });
+      ui.initializeSessionModalTags('work', ['work', 'coding', 'legacyTag']);
+      const row2Chips = document.querySelectorAll('#tags-container .picker-row-2 .tag-chip');
+      const chipTags = Array.from(row2Chips).map(el => el.dataset.tag);
+      expect(chipTags).toContain('legacyTag');
+      const legacyChip = Array.from(row2Chips).find(el => el.dataset.tag === 'legacyTag');
+      expect(legacyChip.classList.contains('selected')).toBe(true);
+      expect(legacyChip.classList.contains('readonly')).toBe(true);
+    });
+
+    it('renders legacy subtags when bucket subtag list is empty', () => {
+      store.setState({ tags: mockTags, tagBuckets: { work: [], rest: [], study: [], sport: [], other: [] } });
+      ui.initializeSessionModalTags('work', ['work', 'legacyTag']);
+      const row2Chips = document.querySelectorAll('#tags-container .picker-row-2 .tag-chip');
+      expect(row2Chips.length).toBe(1);
+      expect(row2Chips[0].dataset.tag).toBe('legacyTag');
+      expect(row2Chips[0].classList.contains('selected')).toBe(true);
+      expect(row2Chips[0].classList.contains('readonly')).toBe(true);
     });
 
     it('falls back to legacy picker when no tagBuckets', () => {

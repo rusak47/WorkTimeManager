@@ -1,5 +1,6 @@
 // Import necessary modules
 import * as utils from './js/utils.js';
+import { DEFAULT_TAGS } from './app/constants.js';
 
 const DATA_VERSION = "1.1"; 
 
@@ -36,6 +37,7 @@ const DATA_VERSION = "1.1";
         const moodValueEl = document.getElementById('mood-value');
         const sessionMoodInput = document.getElementById('session-mood');
         const tagFilter = document.getElementById('tag-filter');
+        const subtagFilter = document.getElementById('subtag-filter');
         const moodThreshold = document.getElementById('mood-threshold');
 
         const trackerTab = document.getElementById('tracker-tab');
@@ -151,10 +153,13 @@ const DATA_VERSION = "1.1";
             // Populate tag filter
             const enabledTags = tags.filter(t => t.isEnabled);
             tagFilter.innerHTML = `
-                <option value="work" selected>Work</option>
                 <option value="all">All Tags</option>
+                ${DEFAULT_TAGS.map(t => `<option value="${t}"${t === 'work' ? ' selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('')}
+            `;
+            subtagFilter.innerHTML = `
+                <option value="all" selected>All Subtags</option>
                 ${enabledTags
-                    .filter(t => t.name !== 'work')
+                    .filter(t => !DEFAULT_TAGS.includes(t.name))
                     .map(t => `<option value="${t.name}">${t.name}</option>`)
                     .join('')}
             `;
@@ -1141,6 +1146,7 @@ const DATA_VERSION = "1.1";
             }
 
             const selectedTags = Array.from(tagFilter.selectedOptions).map(opt => opt.value);
+            const selectedSubtags = Array.from(subtagFilter.selectedOptions).map(opt => opt.value);
             const selectedMoods = Array.from(moodThreshold.selectedOptions).map(opt => parseInt(opt.value));
             
             let filteredSessions = [...sessions];
@@ -1153,10 +1159,13 @@ const DATA_VERSION = "1.1";
                 });
             }
 
-            // Apply tag filter
-            if (selectedTags.length > 0 && !selectedTags.includes('all')) {
+            // Apply tag + subtag filter (union)
+            const activeTags = selectedTags.filter(t => t !== 'all');
+            const activeSubtags = selectedSubtags.filter(t => t !== 'all');
+            const allSelected = [...activeTags, ...activeSubtags];
+            if (allSelected.length > 0) {
                 filteredSessions = filteredSessions.filter(s => {
-                    return selectedTags.some(tag => s.tags && s.tags.includes(tag));
+                    return allSelected.some(tag => s.tags && s.tags.includes(tag));
                 });
             }
             

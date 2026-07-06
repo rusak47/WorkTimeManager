@@ -986,40 +986,52 @@ export function createUIManager(store) {
     row2.innerHTML = '';
     const selectedSet = new Set(selectedSubtags);
     const subtags = tagBuckets[defaultName] || [];
-    if (subtags.length === 0) return;
 
-    const maxVisible = 6;
-    const hasMore = subtags.length > maxVisible;
-    const visible = hasMore ? subtags.slice(0, maxVisible) : subtags;
-    const hidden = hasMore ? subtags.slice(maxVisible) : [];
+    if (subtags.length > 0) {
+      const maxVisible = 6;
+      const hasMore = subtags.length > maxVisible;
+      const visible = hasMore ? subtags.slice(0, maxVisible) : subtags;
+      const hidden = hasMore ? subtags.slice(maxVisible) : [];
 
-    for (const subtag of visible) {
-      const isSelected = selectedSet.has(subtag);
-      const chip = createPickerTagChip(subtag, isSelected);
-      chip.addEventListener('click', () => {
-        const nowSelected = chip.classList.toggle('selected');
-        chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${nowSelected ? 'selected' : ''} ${getTagBadgeClass(chip.dataset.tag, nowSelected)}`;
-      });
-      row2.appendChild(chip);
+      for (const subtag of visible) {
+        const isSelected = selectedSet.has(subtag);
+        const chip = createPickerTagChip(subtag, isSelected);
+        chip.addEventListener('click', () => {
+          const nowSelected = chip.classList.toggle('selected');
+          chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${nowSelected ? 'selected' : ''} ${getTagBadgeClass(chip.dataset.tag, nowSelected)}`;
+        });
+        row2.appendChild(chip);
+      }
+
+      if (hasMore) {
+        const moreBtn = document.createElement('button');
+        moreBtn.className = 'tag-more-btn inline-block px-2 py-1 rounded-full text-sm cursor-pointer text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 bg-transparent border border-dashed border-gray-300 dark:border-gray-600';
+        moreBtn.textContent = `+${hidden.length} more`;
+        moreBtn.addEventListener('click', () => {
+          moreBtn.remove();
+          for (const subtag of hidden) {
+            const isSelected = selectedSet.has(subtag);
+            const chip = createPickerTagChip(subtag, isSelected);
+            chip.addEventListener('click', () => {
+              const nowSelected = chip.classList.toggle('selected');
+              chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${nowSelected ? 'selected' : ''} ${getTagBadgeClass(chip.dataset.tag, nowSelected)}`;
+            });
+            row2.appendChild(chip);
+          }
+        });
+        row2.appendChild(moreBtn);
+      }
     }
 
-    if (hasMore) {
-      const moreBtn = document.createElement('button');
-      moreBtn.className = 'tag-more-btn inline-block px-2 py-1 rounded-full text-sm cursor-pointer text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 bg-transparent border border-dashed border-gray-300 dark:border-gray-600';
-      moreBtn.textContent = `+${hidden.length} more`;
-      moreBtn.addEventListener('click', () => {
-        moreBtn.remove();
-        for (const subtag of hidden) {
-          const isSelected = selectedSet.has(subtag);
-          const chip = createPickerTagChip(subtag, isSelected);
-          chip.addEventListener('click', () => {
-            const nowSelected = chip.classList.toggle('selected');
-            chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${nowSelected ? 'selected' : ''} ${getTagBadgeClass(chip.dataset.tag, nowSelected)}`;
-          });
-          row2.appendChild(chip);
-        }
-      });
-      row2.appendChild(moreBtn);
+    const subtagSet = new Set(subtags);
+    for (const legacySubtag of selectedSubtags) {
+      if (subtagSet.has(legacySubtag)) continue;
+      const chip = createPickerTagChip(legacySubtag, true);
+      chip.classList.add('readonly');
+      chip.classList.remove('cursor-pointer');
+      chip.classList.add('cursor-default');
+      chip.title = `${legacySubtag} (legacy tag, read-only)`;
+      row2.appendChild(chip);
     }
   }
 
@@ -1077,7 +1089,7 @@ export function createUIManager(store) {
         chip.classList.add('selected');
         chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none selected ${getTagBadgeClass(tagName, true)}`;
         selectedDefault = tagName;
-        renderRow2(container, row2, tagBuckets, selectedDefault);
+        renderRow2(container, row2, tagBuckets, selectedDefault, subtagNames);
       });
       row1.appendChild(chip);
     }
@@ -1494,8 +1506,10 @@ export function createUIManager(store) {
       return;
     }
     const tagFilter = document.getElementById('tag-filter');
+    const subtagFilter = document.getElementById('subtag-filter');
     const moodThreshold = document.getElementById('mood-threshold');
     const selectedTags = tagFilter ? Array.from(tagFilter.selectedOptions).map(opt => opt.value) : [];
+    const selectedSubtags = subtagFilter ? Array.from(subtagFilter.selectedOptions).map(opt => opt.value) : [];
     const selectedMoods = moodThreshold ? Array.from(moodThreshold.selectedOptions).map(opt => parseInt(opt.value)) : [];
     let filteredSessions = [...s.sessions];
     if (s.currentStatsPeriod === 'yearly') {
@@ -1505,8 +1519,11 @@ export function createUIManager(store) {
         filteredSessions = filteredSessions.filter(sess => new Date(sess.startTime).getFullYear() === selectedYear);
       }
     }
-    if (selectedTags.length > 0 && !selectedTags.includes('all')) {
-      filteredSessions = filteredSessions.filter(sess => selectedTags.some(tag => sess.tags && sess.tags.includes(tag)));
+    const activeTags = selectedTags.filter(t => t !== 'all');
+    const activeSubtags = selectedSubtags.filter(t => t !== 'all');
+    const allSelectedTags = [...activeTags, ...activeSubtags];
+    if (allSelectedTags.length > 0) {
+      filteredSessions = filteredSessions.filter(sess => allSelectedTags.some(tag => sess.tags && sess.tags.includes(tag)));
     }
     if (selectedMoods.length > 0) {
       filteredSessions = filteredSessions.filter(sess => selectedMoods.includes(Math.floor(sess.mood || 0)));
@@ -1521,7 +1538,9 @@ export function createUIManager(store) {
     const backgroundColors = [];
     const now = new Date();
     const colors = ['#3b82f6', '#10b981', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+    const subtagColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#e11d48', '#a855f7', '#22c55e', '#eab308'];
     const currentStatsPeriod = s.currentStatsPeriod;
+    let stackedDatasets = null;
     if (currentStatsPeriod === 'daily') {
       for (let i = 6; i >= 0; i--) {
         const date = new Date(now);
@@ -1532,6 +1551,76 @@ export function createUIManager(store) {
         labels.push(date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }));
         data.push(dayTotal / 3600);
         backgroundColors.push(colors[i % colors.length]);
+      }
+      const topSelected = selectedTags.filter(t => t !== 'all');
+      const childSelected = selectedSubtags.filter(t => t !== 'all');
+      if (topSelected.length === 1 && childSelected.length === 0) {
+        const bucketName = topSelected[0];
+        const subtagsInBucket = new Set();
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now);
+          date.setDate(date.getDate() - i);
+          const dateStr = utils.formatDate(date);
+          const daySessions = filteredSessions.filter(sess => sess.date === dateStr);
+          for (const sess of daySessions) {
+            if (sess.tags) {
+              for (const tag of sess.tags) {
+                if (tag !== bucketName && !tag.startsWith('#')) {
+                  subtagsInBucket.add(tag);
+                }
+              }
+            }
+          }
+        }
+        if (subtagsInBucket.size > 0) {
+          const subtagHours = {};
+          for (const subtag of subtagsInBucket) subtagHours[subtag] = new Array(7).fill(0);
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date(now);
+            date.setDate(date.getDate() - i);
+            const dateStr = utils.formatDate(date);
+            const daySessions = filteredSessions.filter(sess => sess.date === dateStr);
+            for (const sess of daySessions) {
+              if (sess.tags) {
+                for (const tag of sess.tags) {
+                  if (subtagsInBucket.has(tag)) {
+                    subtagHours[tag][6 - i] += (sess.durationSec || 0) / 3600;
+                  }
+                }
+              }
+            }
+          }
+          stackedDatasets = Object.entries(subtagHours).map(([name, hours], idx) => ({
+            label: name,
+            data: hours,
+            backgroundColor: subtagColors[idx % subtagColors.length],
+            borderWidth: 1,
+          }));
+        }
+      } else if (topSelected.length === 0 && childSelected.length >= 2) {
+        const subtagHours = {};
+        for (const subtag of childSelected) subtagHours[subtag] = new Array(7).fill(0);
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now);
+          date.setDate(date.getDate() - i);
+          const dateStr = utils.formatDate(date);
+          const daySessions = filteredSessions.filter(sess => sess.date === dateStr);
+          for (const sess of daySessions) {
+            if (sess.tags) {
+              for (const tag of sess.tags) {
+                if (childSelected.includes(tag)) {
+                  subtagHours[tag][6 - i] += (sess.durationSec || 0) / 3600;
+                }
+              }
+            }
+          }
+        }
+        stackedDatasets = Object.entries(subtagHours).map(([name, hours], idx) => ({
+          label: name,
+          data: hours,
+          backgroundColor: subtagColors[idx % subtagColors.length],
+          borderWidth: 1,
+        }));
       }
     } else if (currentStatsPeriod === 'weekly') {
       const weekStartDay = s.configs.length > 0 ? s.configs[0].weekStart : 1;
@@ -1586,11 +1675,53 @@ export function createUIManager(store) {
         if (incomeContainer) incomeContainer.classList.add('hidden');
       }
     }
-    renderBucketStats(filteredSessions);
+    let periodSessions = filteredSessions;
+    if (currentStatsPeriod === 'daily') {
+      const periodStart = new Date(now);
+      periodStart.setDate(periodStart.getDate() - 6);
+      periodStart.setHours(0, 0, 0, 0);
+      periodSessions = filteredSessions.filter(s => new Date(s.startTime) >= periodStart);
+    } else if (currentStatsPeriod === 'weekly') {
+      const weekStartDay = s.configs.length > 0 ? s.configs[0].weekStart : 1;
+      const periodStart = new Date(now);
+      const dayDiff = (periodStart.getDay() - weekStartDay + 7) % 7;
+      periodStart.setDate(periodStart.getDate() - dayDiff - (7 * 7));
+      periodStart.setHours(0, 0, 0, 0);
+      periodSessions = filteredSessions.filter(s => new Date(s.startTime) >= periodStart);
+    } else if (currentStatsPeriod === 'monthly') {
+      const periodStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      periodSessions = filteredSessions.filter(s => new Date(s.startTime) >= periodStart);
+    }
+    renderBucketStats(periodSessions);
     const timeCtx = document.getElementById('timeChart');
     if (timeChart) { timeChart.destroy(); timeChart = null; }
     if (timeCtx) {
-      timeChart = new Chart(timeCtx.getContext('2d'), {
+      if (stackedDatasets) {
+        timeChart = new Chart(timeCtx.getContext('2d'), {
+          type: 'bar',
+          data: { labels, datasets: stackedDatasets },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: true, position: 'bottom' },
+              tooltip: {
+                callbacks: {
+                  label(context) {
+                    const hours = context.raw;
+                    const mins = Math.round((hours % 1) * 60);
+                    return `${context.dataset.label}: ${Math.floor(hours)}h ${mins}m`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { stacked: true },
+              y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Hours' } }
+            }
+          }
+        });
+      } else {
+        timeChart = new Chart(timeCtx.getContext('2d'), {
           type: 'bar',
           data: {
             labels,
@@ -1621,6 +1752,7 @@ export function createUIManager(store) {
             }
           }
         });
+      }
     }
     const distributionCtx = document.getElementById('distributionChart');
     if (distributionChart) { distributionChart.destroy(); distributionChart = null; }

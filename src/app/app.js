@@ -976,11 +976,17 @@ export function createEventHandlers(deps) {
     if (markDateInput) markDateInput.value = utils.formatDate(new Date());
     const tagFilter = document.getElementById('tag-filter');
     if (tagFilter) {
-      const enabledTags = s.tags.filter(t => t.isEnabled);
       tagFilter.innerHTML = `
-        <option value="work" selected>Work</option>
         <option value="all">All Tags</option>
-        ${enabledTags.filter(t => t.name !== 'work').map(t => `<option value="${t.name}">${t.name}</option>`).join('')}
+        ${DEFAULT_TAGS.map(t => `<option value="${t}"${t === 'work' ? ' selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('')}
+      `;
+    }
+    const subtagFilter = document.getElementById('subtag-filter');
+    if (subtagFilter) {
+      const enabledSubtags = s.tags.filter(t => t.isEnabled && !DEFAULT_TAGS.includes(t.name));
+      subtagFilter.innerHTML = `
+        <option value="all" selected>All Subtags</option>
+        ${enabledSubtags.map(t => `<option value="${t.name}">${t.name}</option>`).join('')}
       `;
     }
     setupEventListeners();
