@@ -25,6 +25,19 @@
 - Break sessions (`isBreak: true`) are stored in `state.sessions` alongside work sessions. Any `durationSec` aggregate (tracked hours, calendar totals, chart data) must filter `!s.isBreak`.
 - **Today's Work on tracker tab** filters by `tags.includes('work')`, not by `!isBreak`, so only sessions explicitly tagged "work" count toward the work total. `uiManager.js:94` follows this pattern.
 
+## Session tags structure
+- `session.tags` is a flat string array (e.g. `['work', '4203', 'plais']`). Subtags are identified by exclusion from `DEFAULT_TAGS` — there is no nesting or hierarchy in the stored data. `tagBuckets` config defines the hierarchy, not the session data.
+
+## Stacked chart subtag computation (uiManager.js:1575-1630)
+- When computing per-subtag hours for the stacked bar chart, a session with multiple matching subtags (e.g. `4203+plais`) must contribute its full duration to **one** unique subtag-combination key, not once per subtag. Adding `durationSec` to each matching subtag individually inflates daily totals — the session is counted N times.
+- **Filter gap guard**: if `subtagsInBucket` is empty (session subtags from tags that aren't the bucket name or `#`-prefixed), the stacking block is skipped entirely. This is correct — no subtags to stack by.
+
+## renderRow2 guard order (uiManager.js:985-1050)
+- Legacy subtag rendering must run **unconditionally** after the toggleable bucket subtag block. Early returns (`if (subtags.length === 0) return;`) before legacy code silently drop non-bucket tags when `tagBuckets[bucket]` is empty. Fix: wrap the toggleable block in `if (subtags.length > 0)`, keep fallthrough code outside.
+
+## Multi-select default filter trap
+- A `<select multiple>` with `selected` on any `<option>` silently activates that filter on first page load. The statistics mood filter was filtering to 5-star sessions only because `<option value="5" selected>` pre-selected it. No option should be pre-selected unless the user explicitly wants that filter active by default.
+
 ## Testing
 - Date-dependent tests: `vi.useFakeTimers()` + `vi.setSystemTime()` in `beforeEach`, restore with `vi.useRealTimers()` in `afterEach`.
 - `setupDOM` must include elements under test in `innerHTML` string (e.g. `#today-status` for today-status tests).

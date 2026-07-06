@@ -50,6 +50,12 @@ All dependencies (Chart.js, TailwindCSS, Font Awesome) are npm imports, not CDN 
 - Tailwind v4 has no config file or `darkMode` option. To scope `dark:` classes to a custom class (like `.dark-mode`) instead of `prefers-color-scheme`, add `@variant dark (&:where(.your-class, .your-class *));` to the CSS entry point after `@import "tailwindcss"`.
 - Without this, `dark:` classes follow OS theme preference and cannot be overridden by the app's toggle — a problem in Electron where there's no DevTools `prefers-color-scheme` override.
 
+## Debugging with Chrome DevTools + Vite HMR
+- **Vite HMR kills debug state**: saving any source file triggers a full page reload. Any open modal, selected tab, filter state, or breakpoint is lost. Capture all needed snapshots/screenshots before editing code.
+- **Snapshot uids are ephemeral**: element uid values change on every page load. Never hardcode or cache them across debug sessions.
+- **Modal content not in initial snapshot**: the page snapshot is taken before dynamic modal content renders. Click the modal trigger, then take a second snapshot to see modal elements.
+- **Chart.js instance not inspectable from console**: because Chart.js is imported as an ESM module (not a CDN script tag), `Chart` is never a global. `Chart.getChart('id')`, `canvas.__chart`, and `window.Chart` all fail. To inspect chart data, expose the instance from module scope (e.g. assign to `window.__chart`) or dump data through a `console.log` in the module.
+
 ## Commands
 ```bash
 npm test           # vitest run --coverage
