@@ -11,6 +11,7 @@
 - **Exact-match guard hiding continuation matches** — `#re` with tags `re`, `rea`, `read` now shows all three instead of hiding the dropdown when `re` is an exact match.
 - **Single color dot in hashtag dropdown** — Tags in multiple buckets now render one dot (first bucket's color) instead of one per parent bucket.
 - **Start picker not dismissed on short press** — `ui.hideStartPicker()` called on mousedown/touchstart and mouseup/touchend; added click-outside dismissal.
+- **Existing `#tags` not stripped from notes or added to session** — `syncHashtagTags` now always strips ALL `#tag` mentions (existing and new) from notes and returns `foundTags` (all found) in addition to `addedTags`; callers add all found tags to `selectedTags` so existing tags from notes are switched on for the session.
 
 ### Added
 - **Tag Bucket System — Phase 3: Two-Row Tag Picker & Hashtag Autocomplete** — Ongoing. See `tasks/new/20260704-tag-bucket-p3-picker-hashtag-stats.md`.

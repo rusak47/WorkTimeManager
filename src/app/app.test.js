@@ -539,17 +539,22 @@ describe('app event handlers', () => {
     const result = app.syncHashtagTags('Working on #design and #work', 'work');
     expect(result).toEqual({
       addedTags: ['design'],
-      cleanedNotes: 'Working on and #work',
+      foundTags: ['design', 'work'],
+      cleanedNotes: 'Working on and',
     });
   });
 
-  it('syncHashtagTags returns undefined when no new tags', () => {
+  it('syncHashtagTags returns cleaned notes and empty addedTags when no new tags', () => {
     store.setState({
       tags: [{ name: 'work', isDefault: true, isEnabled: true }],
       tagBuckets: { work: [], other: [] },
     });
     const result = app.syncHashtagTags('Working on #work', 'work');
-    expect(result).toBeUndefined();
+    expect(result).toEqual({
+      addedTags: [],
+      foundTags: ['work'],
+      cleanedNotes: 'Working on',
+    });
   });
 
   it('syncHashtagTags cleans multiple new tag mentions from notes', () => {
@@ -559,7 +564,8 @@ describe('app event handlers', () => {
     });
     const result = app.syncHashtagTags('#design and #review for #work', 'work');
     expect(result.addedTags).toEqual(['design', 'review']);
-    expect(result.cleanedNotes).toBe('and for #work');
+    expect(result.foundTags).toEqual(['design', 'review', 'work']);
+    expect(result.cleanedNotes).toBe('and for');
   });
 
   it('syncHashtagTags + renderTagSettings shows new subtag in settings', () => {

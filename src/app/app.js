@@ -243,7 +243,7 @@ export function createEventHandlers(deps) {
     if (selectedTags.length === 0) selectedTags.push('work');
     const syncResult = syncHashtagTags(notesValue, bucket);
     if (syncResult) {
-      syncResult.addedTags.forEach(t => { if (!selectedTags.includes(t)) selectedTags.push(t); });
+      syncResult.foundTags.forEach(t => { if (!selectedTags.includes(t)) selectedTags.push(t); });
       notesValue = syncResult.cleanedNotes;
     }
     const startTimeMs = parseInt(trackerStartInput ? trackerStartInput.value : '0', 10);
@@ -340,7 +340,7 @@ export function createEventHandlers(deps) {
     if (!isBreak && selectedTags.length === 0) selectedTags.unshift('work');
     const syncResult = syncHashtagTags(notes, bucket);
     if (syncResult) {
-      syncResult.addedTags.forEach(t => { if (!selectedTags.includes(t)) selectedTags.push(t); });
+      syncResult.foundTags.forEach(t => { if (!selectedTags.includes(t)) selectedTags.push(t); });
       notes = syncResult.cleanedNotes;
     }
     const mood = moodInput ? parseFloat(moodInput.value) : 5;
@@ -719,31 +719,41 @@ export function createEventHandlers(deps) {
   }
 
   function syncHashtagTags(notes, bucket) {
-    if (!notes) return;
+    if (!notes) return { addedTags: [], foundTags: [], cleanedNotes: notes };
     const s = store.getState();
     const existing = new Set(s.tags.map(t => t.name));
+    const allTagNames = new Set(existing);
+    for (const b of Object.keys(s.tagBuckets || {})) {
+      allTagNames.add(b);
+      for (const st of (s.tagBuckets[b] || [])) allTagNames.add(st);
+    }
     const hashtagRegex = /#(\w+)/g;
     const toAdd = [];
+    const found = [];
     let match;
     while ((match = hashtagRegex.exec(notes)) !== null) {
       const name = match[1];
-      if (!existing.has(name) && !toAdd.includes(name)) {
+      if (!found.includes(name)) found.push(name);
+      if (!allTagNames.has(name) && !toAdd.includes(name)) {
         toAdd.push(name);
       }
     }
-    if (toAdd.length === 0) return;
-    const tagBuckets = { ...s.tagBuckets };
-    const targetBucket = bucket && tagBuckets[bucket] ? bucket : 'other';
-    if (!tagBuckets[targetBucket]) tagBuckets[targetBucket] = [];
-    tagBuckets[targetBucket] = [...tagBuckets[targetBucket], ...toAdd];
-    store.setState({
-      tags: [...s.tags, ...toAdd.map(name => ({ name, isDefault: false, isEnabled: true, isCustom: true }))],
-      tagBuckets,
-    });
-    ui.renderTagSettings();
-    const removePattern = new RegExp(`#(${toAdd.join('|')})\\b`, 'g');
-    const cleanedNotes = notes.replace(removePattern, '').replace(/\s{2,}/g, ' ').trim();
-    return { addedTags: toAdd, cleanedNotes };
+    if (found.length > 0) {
+      const removePattern = new RegExp(`#(${found.join('|')})\\b`, 'g');
+      notes = notes.replace(removePattern, '').replace(/\s{2,}/g, ' ').trim();
+    }
+    if (toAdd.length > 0) {
+      const tagBuckets = { ...s.tagBuckets };
+      const targetBucket = bucket && tagBuckets[bucket] ? bucket : 'other';
+      if (!tagBuckets[targetBucket]) tagBuckets[targetBucket] = [];
+      tagBuckets[targetBucket] = [...tagBuckets[targetBucket], ...toAdd];
+      store.setState({
+        tags: [...s.tags, ...toAdd.map(name => ({ name, isDefault: false, isEnabled: true, isCustom: true }))],
+        tagBuckets,
+      });
+      ui.renderTagSettings();
+    }
+    return { addedTags: toAdd, foundTags: found, cleanedNotes: notes };
   }
 
   function showMarkDayModal(dayType) {
