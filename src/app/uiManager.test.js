@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createStore } from './state.js';
 import { createUIManager } from './uiManager.js';
 import { createCalendarService } from './calendarService.js';
@@ -33,7 +33,7 @@ function setupDOM() {
     <div id="recent-sessions"></div>
     <div id="all-sessions-list"></div>
     <div class="duration-display">
-      <span id="duration-label">Session Duration</span>
+      <span id="duration-label">Current Duration</span>
       <span id="active-duration">00:00:00</span>
     </div>
     <div id="today-total">00:00:00</div>
@@ -990,13 +990,49 @@ describe('uiManager', () => {
     it('updateTimerDisplayEl shows correct duration and label', () => {
       ui.updateTimerDisplayEl(3661, false);
       expect(document.getElementById('active-duration').textContent).toBe('01:01:01');
-      expect(document.getElementById('duration-label').textContent).toBe('Session Duration');
+      expect(document.getElementById('duration-label').textContent).toBe('Current Duration');
     });
 
     it('updateTimerDisplayEl switches label for break', () => {
       ui.updateTimerDisplayEl(600, true);
       expect(document.getElementById('duration-label').textContent).toBe('Break Duration');
       expect(document.querySelector('.duration-display').classList.contains('break-mode')).toBe(true);
+    });
+
+    it('clicking active-duration during running toggles segment-only vs total duration', () => {
+      vi.useFakeTimers();
+      const now = Date.now();
+      vi.setSystemTime(now);
+
+      store.setState({
+        tracker: {
+          startTime: now - 900000,
+          isPaused: false,
+          pauseStart: null,
+          segmentStartTime: now - 600000,
+          totalSavedDurationMs: 300000,
+          workBlockId: 'test',
+          isBreak: false,
+        },
+      });
+
+      ui = createUIManager(store);
+
+      const display = document.getElementById('active-duration');
+
+      ui.updateTimerDisplay();
+      expect(display.textContent).toBe('00:10:00');
+      expect(document.getElementById('duration-label').textContent).toBe('Current Duration');
+
+      display.click();
+      expect(display.textContent).toBe('00:15:00');
+      expect(document.getElementById('duration-label').textContent).toBe('Segment Duration');
+
+      display.click();
+      expect(display.textContent).toBe('00:10:00');
+      expect(document.getElementById('duration-label').textContent).toBe('Current Duration');
+
+      vi.useRealTimers();
     });
   });
 

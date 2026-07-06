@@ -5,6 +5,7 @@ import { moveSubtagBetweenBuckets, removeTagFromBucket } from './tagManager.js';
 
 export function createUIManager(store) {
   let _showCurrentRest = true;
+  let _showSegmentOnly = true;
   let _onTagBucketsChange = null;
   let _onDeleteCustomTag = null;
   let _showTodayWorkOnly = true;
@@ -18,10 +19,13 @@ export function createUIManager(store) {
     display.style.cursor = 'pointer';
     display.addEventListener('click', () => {
       const s = store.getState();
-      if (s.tracker && s.tracker.isPaused) {
+      if (!s.tracker || !s.tracker.startTime) return;
+      if (s.tracker.isPaused) {
         _showCurrentRest = !_showCurrentRest;
-        updateTimerDisplay();
+      } else {
+        _showSegmentOnly = !_showSegmentOnly;
       }
+      updateTimerDisplay();
     });
   }
 
@@ -374,9 +378,10 @@ export function createUIManager(store) {
       elapsedSeconds = _showCurrentRest ? currentRestSec : totalRestSec;
       updateTimerDisplayEl(elapsedSeconds, tracker.isBreak, _showCurrentRest);
     } else {
-      const rawMs = now - tracker.startTime;
-      const accPause = tracker.accumulatedPauseTime || 0;
-      elapsedSeconds = Math.max(0, Math.floor((rawMs - accPause) / 1000));
+      const rawMs = now - (tracker.segmentStartTime || tracker.startTime);
+      const segSec = Math.floor(rawMs / 1000);
+      const savedMs = tracker.totalSavedDurationMs || 0;
+      elapsedSeconds = _showSegmentOnly ? segSec : segSec + Math.floor(savedMs / 1000);
       updateTimerDisplayEl(elapsedSeconds, tracker.isBreak);
     }
   }
@@ -397,7 +402,7 @@ export function createUIManager(store) {
       label.textContent = 'Break Duration';
     } else {
       if (container) container.classList.remove('break-mode');
-      label.textContent = 'Session Duration';
+      label.textContent = _showSegmentOnly ? 'Current Duration' : 'Segment Duration';
     }
   }
 

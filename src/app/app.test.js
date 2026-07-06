@@ -29,7 +29,7 @@ function setupDOM() {
     <div id="tracker-session-id"></div>
     <div id="session-notes" class="hidden"></div>
     <div class="duration-display">
-      <span id="duration-label">Session Duration</span>
+      <span id="duration-label">Current Duration</span>
       <span id="active-duration">00:00:00</span>
     </div>
     <div id="mood-rating" data-rating="5"></div>
