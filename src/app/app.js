@@ -52,7 +52,17 @@ export function createEventHandlers(deps) {
     try {
       const saved = await storage.loadState();
       if (saved) {
-        loadStateFromStorage(saved);
+        if (!saved._migrationVersion) {
+          const { migrateSessionTags } = await import('../../migration/v1.0.0-to-v1.1.0.js');
+          const migrated = { ...saved, _migrationVersion: '1.1.0' };
+          if (migrated.sessions) {
+            migrated.sessions = migrateSessionTags(migrated.sessions);
+          }
+          await storage.saveState(migrated);
+          loadStateFromStorage(migrated);
+        } else {
+          loadStateFromStorage(saved);
+        }
       } else {
         const s = store.getState();
         if (s.configs.length === 0) {
@@ -966,11 +976,17 @@ export function createEventHandlers(deps) {
     if (markDateInput) markDateInput.value = utils.formatDate(new Date());
     const tagFilter = document.getElementById('tag-filter');
     if (tagFilter) {
-      const enabledTags = s.tags.filter(t => t.isEnabled);
       tagFilter.innerHTML = `
-        <option value="work" selected>Work</option>
         <option value="all">All Tags</option>
-        ${enabledTags.filter(t => t.name !== 'work').map(t => `<option value="${t.name}">${t.name}</option>`).join('')}
+        ${DEFAULT_TAGS.map(t => `<option value="${t}"${t === 'work' ? ' selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('')}
+      `;
+    }
+    const subtagFilter = document.getElementById('subtag-filter');
+    if (subtagFilter) {
+      const enabledSubtags = s.tags.filter(t => t.isEnabled && !DEFAULT_TAGS.includes(t.name));
+      subtagFilter.innerHTML = `
+        <option value="all" selected>All Subtags</option>
+        ${enabledSubtags.map(t => `<option value="${t.name}">${t.name}</option>`).join('')}
       `;
     }
     setupEventListeners();

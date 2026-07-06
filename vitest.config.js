@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.test.js', 'src/**/*.spec.js'],
+    include: ['src/**/*.test.js', 'src/**/*.spec.js', 'migration/**/*.test.js'],
     environmentMatchGlobs: [
       ['src/storage/**', 'jsdom'],
     ],

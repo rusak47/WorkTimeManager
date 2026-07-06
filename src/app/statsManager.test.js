@@ -78,6 +78,47 @@ describe('statsManager', () => {
     expect(income.every((v) => v === 0)).toBe(true);
   });
 
+  it('computeBucketStats groups sessions by bucket', () => {
+    store.setState({
+      sessions: [
+        { id: 1, date: '2026-06-24', durationSec: 3600, bucket: 'work', tags: ['work'] },
+        { id: 2, date: '2026-06-24', durationSec: 1800, bucket: 'rest', tags: ['rest'] },
+        { id: 3, date: '2026-06-23', durationSec: 7200, bucket: 'work', tags: ['work', 'coding'] },
+        { id: 4, date: '2026-06-22', durationSec: 900, bucket: 'study', tags: ['study'] },
+      ],
+    });
+    const result = stats.computeBucketStats(store.getState().sessions);
+    expect(result.work.totalSec).toBe(10800);
+    expect(result.rest.totalSec).toBe(1800);
+    expect(result.study.totalSec).toBe(900);
+    expect(result.other.totalSec).toBe(0);
+  });
+
+  it('computeBucketStats resolves bucket from tags when no bucket field', () => {
+    store.setState({
+      sessions: [
+        { id: 1, date: '2026-06-24', durationSec: 3600, tags: ['work'] },
+        { id: 2, date: '2026-06-24', durationSec: 1800, tags: ['rest', 'sleep'] },
+      ],
+    });
+    const result = stats.computeBucketStats(store.getState().sessions);
+    expect(result.work.totalSec).toBe(3600);
+    expect(result.rest.totalSec).toBe(1800);
+  });
+
+  it('computeBucketStats groups subtags within each bucket', () => {
+    store.setState({
+      sessions: [
+        { id: 1, date: '2026-06-24', durationSec: 3600, bucket: 'work', tags: ['work', 'coding'] },
+        { id: 2, date: '2026-06-24', durationSec: 1800, bucket: 'work', tags: ['work', 'meeting'] },
+        { id: 3, date: '2026-06-23', durationSec: 900, bucket: 'work', tags: ['work', 'coding'] },
+      ],
+    });
+    const result = stats.computeBucketStats(store.getState().sessions);
+    expect(result.work.subtags.coding).toBe(4500);
+    expect(result.work.subtags.meeting).toBe(1800);
+  });
+
   it('computePeriodStats filters sessions by tag', () => {
     store.setState({
       sessions: [

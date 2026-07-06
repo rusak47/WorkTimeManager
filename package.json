@@ -1,7 +1,7 @@
 {
   "name": "org.rusak.worktimemanager",
-  "version": "1.0.0",
-  "description": "My Electron application with web project",
+  "version": "1.1.0",
+  "description": "Desktop time tracker with tag buckets, session management, and calendar analytics",
   "main": "main.js",
   "scripts": {
     "dev": "vite",

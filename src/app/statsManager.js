@@ -1,5 +1,13 @@
 import * as utils from '../js/utils.js';
-import { SECONDS_PER_HOUR } from './constants.js';
+import { SECONDS_PER_HOUR, DEFAULT_TAGS } from './constants.js';
+
+function resolveSessionBucket(session) {
+  if (session.bucket && DEFAULT_TAGS.includes(session.bucket)) {
+    return session.bucket;
+  }
+  const found = DEFAULT_TAGS.find(t => session.tags && session.tags.includes(t));
+  return found || DEFAULT_TAGS[DEFAULT_TAGS.length - 1];
+}
 
 function getSessionDateObj(s) {
   if (s.date) return new Date(s.date + 'T12:00:00');
@@ -199,6 +207,29 @@ export function createStatsManager(store) {
         if (date.getDay() !== 0 && date.getDay() !== 6) count++;
       }
       return count;
+    },
+
+    computeBucketStats(sessions) {
+      const buckets = {};
+      for (const key of DEFAULT_TAGS) {
+        buckets[key] = { totalSec: 0, subtags: {} };
+      }
+
+      for (const session of sessions) {
+        const bucketName = resolveSessionBucket(session);
+        const dur = session.durationSec || 0;
+        buckets[bucketName].totalSec += dur;
+
+        if (session.tags) {
+          for (const tag of session.tags) {
+            if (!DEFAULT_TAGS.includes(tag)) {
+              buckets[bucketName].subtags[tag] = (buckets[bucketName].subtags[tag] || 0) + dur;
+            }
+          }
+        }
+      }
+
+      return buckets;
     },
   };
 }

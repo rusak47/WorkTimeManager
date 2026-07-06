@@ -1,6 +1,20 @@
 # Changelog
 
-## Unreleased (2026-07-06)
+## Unreleased
+
+### Added
+- **Legacy session tag migration** — one-time `migration/v1.0.0-to-v1.1.0.js` script normalizes legacy sessions on first load: extracts `#hashtags` from notes into structured `tags` array, strips them from notes. Runs once, persisted via `_migrationVersion` flag. Does not touch tagBuckets or settings. 313 tests.
+- **Subtag-stacked daily bar chart + split tag filters** — Tag filter split into two multi-selects (top-level + subtag). Daily bar chart shows stacked-by-subtag segments when drilling into one bucket or comparing multiple selected subtags. Weekly/monthly/yearly + fallback combos keep simple bars. See `tasks/done/2026-07-06-subtag-stacked-chart.md`.
+
+### Fixed
+- **Time by Bucket ignores period filter** — `renderBucketStats()` now receives period-scoped sessions matching the chart's visible window (daily/weekly/monthly/yearly). Previously showed all-time data regardless of selected period. See `tasks/done/2026-07-06-bucket-stats-period-scope.md`.
+- **Subtag filter "All Subtags" bypassed entire tag filter** — The `includes('all')` guard was false when `all` was in the combined tag+subtag array, causing the entire filter block to be skipped. Now filters out `all` meta-values before building the active filter list. Fixes: total time showing unfiltered aggregate, wrong tags appearing on chart.
+- **Default tag filter selection lost** — `app.js` tag-filter rewrite removed `selected` from the Work option. Now restored so Work + All Subtags is the default filter, not "no filter".
+- **Edit session drops legacy subtags not in tagBuckets** — Two bugs: (1) `renderRow2()` had `if (subtags.length === 0) return;` before legacy tag rendering code, so when `tagBuckets[defaultName]` was empty (e.g. `work: []`) the function exited without rendering any legacy subtags. (2) Bucket-switch click handler didn't pass `subtagNames` to `renderRow2`, losing preselected subtags on bucket change. Fix: wrap toggleable subtag rendering in `if (subtags.length > 0)` and run legacy subtag rendering unconditionally. Legacy tags render as `.tag-chip.selected.readonly` so `handleSessionFormSubmit()` preserves them on save. (316 tests)
+- **Stacked bar chart double-counts multi-subtag sessions** — sessions with multiple subtags (e.g. `4203+plais`) added full duration to each subtag's series separately, inflating daily totals. Now grouped by unique subtag combination so each session contributes to exactly one stack segment.
+- **Mood rating filter pre-selected by default** — removed `selected` from the 5 Stars `<option>` so no mood filter is applied unless user explicitly picks one. All sessions show regardless of mood on initial load.
+
+## 1.1.0 (2026-07-06)
 
 ### Fixed
 - **P3-E: Long-press bucket lost on stop** — `initializeCurrentSessionTags()` now accepts optional `bucket` parameter and uses it instead of hardcoding `'work'`.
@@ -16,13 +30,14 @@
 - **Keyboard navigation for hashtag dropdown** — ArrowDown/ArrowUp to navigate, Enter to select highlighted item, single-item auto-select on ArrowDown. `.hashtag-highlighted` CSS class with dark-mode support.
 
 ### Added
-- **Tag Bucket System — Phase 3: Two-Row Tag Picker & Hashtag Autocomplete** — Ongoing. See `tasks/new/20260704-tag-bucket-p3-picker-hashtag-stats.md`.
+- **Tag Bucket System — Phase 3: Two-Row Tag Picker & Hashtag Autocomplete** — Ongoing. See `tasks/done/2026-07-06-tag-bucket-p3-picker-hashtag-stats.md`.
   - P3-B: **Store bucket on session save** — `stopTracking()` now passes `meta.bucket` through to the session object. `handleSessionFormSubmit` reads bucket from selected row-1 default tag and includes it in `addSession()`.
   - P3-C: **Two-row tag picker in tracker tab** — `initializeCurrentSessionTags()` rendered as two-row picker: row 1 (5 defaults, radio-style), row 2 (subtags from `tagBuckets`, max 6 visible, `+N more` expander). Click handlers for default switching and subtag toggle. Legacy fallback for sessions without `tagBuckets`.
   - P3-D: **Two-row tag picker in session modal** — `initializeSessionModalTags()` rewritten with two-row layout; `editSession()` refactored to call shared picker; `handleSessionFormSubmit` reads `.tag-chip.selected` and passes `bucket`; warning for multiple default tags in edit. `renderRow2` accepts `selectedSubtags` param for pre-selection.
   - **Visual fix: selected tags color + outline** — Saved session views pass `selected=true` to `getTagBadgeClass` so tags show bucket colors; `renderRow2` click handlers swap `getTagBadgeClass` on toggle so subtags show/hide background; CSS `.tag-chip.selected` adds outline instead of inline ring classes.
   - P3-E: **Long-press on Start button** — ~500ms hold on Start shows floating picker (`rest`/`study`/`sport`/`other`/`work`), short press starts with `work` as before. `startSession(bucket)` accepts optional bucket param; picker positioned below the button with backdrop-neutral styling.
   - P3-F: **Inline hashtag autocomplete + auto-add on session save** — `#`-prefix matching in `#notes` and `#modal-notes` textareas with colored bucket-dot badges via `getBucketColorClass()`. Dropdown positioned above/below cursor, dismiss on Escape/blur. `getAllTagNames()` collects all bucket keys + subtags from `tagBuckets`. `syncHashtagTags(notes, bucket)` extracts `#`-prefixed words from notes and adds unknown ones as custom subtags under the selected parent bucket, wired into both `saveSession()` and `handleSessionFormSubmit()`. Returns `{ addedTags, cleanedNotes }` — new tags auto-appended to session tags array and `#tag` mentions stripped from saved notes. `ui.renderTagSettings()` called immediately after adding tags so settings tab is never stale. 297 tests.
+  - P3-G: **Bucketed statistics section in stats tab** — `statsManager.computeBucketStats()` groups sessions by default bucket with subtag accumulation. `uiManager.renderBucketStats()` renders bucket rows with colored borders, duration, and expandable subtag drill-down. Wired into `updateStatistics()`. Container `#bucket-stats` added below income chart. 306 tests.
 
 ## Unreleased (2026-07-04)
 
@@ -32,7 +47,7 @@
 - **`ui is not defined` error in createUIManager** — `setOnDeleteCustomTag` was incorrectly assigned to `ui` variable (non-existent in return-object pattern), changed to standalone function.
 
 ### Added
-- **Tag Bucket System — Phase 2: Settings Tree View & Drag-and-Drop** — Interactive tag bucket management in settings tab. See `tasks/pending/20260704-tag-bucket-p2-settings-dnd.md`.
+- **Tag Bucket System — Phase 2: Settings Tree View & Drag-and-Drop** — Interactive tag bucket management in settings tab. See `tasks/done/2026-07-06-tag-bucket-p2-settings-dnd.md`.
   - Tree view: buckets displayed as collapsible groups with ▼/▶ expand/collapse toggle
   - Native HTML5 DnD: drag subtags between buckets with dashed highlight on drag-over
   - Ctrl+drag: duplicate subtag into another bucket (keeps source copy); green outline visual indicator

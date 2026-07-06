@@ -99,12 +99,14 @@ function setupDOM() {
     <div id="stats-content" class="hidden"></div>
     <div id="config-content" class="hidden"></div>
     <select id="tag-filter"><option value="all">All Tags</option></select>
+    <select id="subtag-filter"><option value="all" selected>All Subtags</option></select>
     <select id="mood-threshold"><option value="1">1</option></select>
     <div id="tag-bucket-settings"></div>
     <div id="current-session-start-time-input"></div>
     <div id="current-session-end-time-input"></div>
     <div id="current-session-accumulated-rest-duration-input"></div>
     <button id="recent-sessions-grid-toggle"></button>
+    <div id="bucket-stats"></div>
   `;
 }
 
@@ -867,6 +869,27 @@ describe('uiManager', () => {
       expect(selectedSubtagNames).toContain('coding');
     });
 
+    it('renders legacy subtags not in any bucket as selected read-only chips', () => {
+      store.setState({ tags: mockTags, tagBuckets: modalBuckets });
+      ui.initializeSessionModalTags('work', ['work', 'coding', 'legacyTag']);
+      const row2Chips = document.querySelectorAll('#tags-container .picker-row-2 .tag-chip');
+      const chipTags = Array.from(row2Chips).map(el => el.dataset.tag);
+      expect(chipTags).toContain('legacyTag');
+      const legacyChip = Array.from(row2Chips).find(el => el.dataset.tag === 'legacyTag');
+      expect(legacyChip.classList.contains('selected')).toBe(true);
+      expect(legacyChip.classList.contains('readonly')).toBe(true);
+    });
+
+    it('renders legacy subtags when bucket subtag list is empty', () => {
+      store.setState({ tags: mockTags, tagBuckets: { work: [], rest: [], study: [], sport: [], other: [] } });
+      ui.initializeSessionModalTags('work', ['work', 'legacyTag']);
+      const row2Chips = document.querySelectorAll('#tags-container .picker-row-2 .tag-chip');
+      expect(row2Chips.length).toBe(1);
+      expect(row2Chips[0].dataset.tag).toBe('legacyTag');
+      expect(row2Chips[0].classList.contains('selected')).toBe(true);
+      expect(row2Chips[0].classList.contains('readonly')).toBe(true);
+    });
+
     it('falls back to legacy picker when no tagBuckets', () => {
       store.setState({ tags: mockTags });
       ui.initializeSessionModalTags();
@@ -879,6 +902,80 @@ describe('uiManager', () => {
         expect(el.classList.contains('selected')).toBe(false);
         expect(el.textContent).toBeTruthy();
       }
+    });
+  });
+
+  describe('renderBucketStats', () => {
+    it('renders nothing when no sessions', () => {
+      ui.renderBucketStats();
+      const container = document.getElementById('bucket-stats');
+      expect(container.innerHTML).toBeFalsy();
+    });
+
+    it('renders bucket rows for sessions', () => {
+      store.setState({
+        sessions: [
+          { id: 1, date: '2026-06-24', durationSec: 3600, bucket: 'work', tags: ['work', 'coding'] },
+          { id: 2, date: '2026-06-24', durationSec: 1800, bucket: 'rest', tags: ['rest'] },
+          { id: 3, date: '2026-06-23', durationSec: 7200, bucket: 'work', tags: ['work'] },
+        ],
+      });
+      ui.renderBucketStats();
+      const container = document.getElementById('bucket-stats');
+      const rows = container.querySelectorAll('.bucket-stat-row');
+      expect(rows.length).toBeGreaterThanOrEqual(2);
+      expect(container.innerHTML).toContain('work');
+      expect(container.innerHTML).toContain('rest');
+    });
+
+    it('each bucket row shows bucket name and duration', () => {
+      store.setState({
+        sessions: [
+          { id: 1, date: '2026-06-24', durationSec: 3600, bucket: 'work', tags: ['work'] },
+        ],
+      });
+      ui.renderBucketStats();
+      const container = document.getElementById('bucket-stats');
+      expect(container.textContent).toContain('work');
+      expect(container.textContent).toContain('01:00:00');
+    });
+
+    it('subtag drill-down expandable within bucket row', () => {
+      store.setState({
+        sessions: [
+          { id: 1, date: '2026-06-24', durationSec: 3600, bucket: 'work', tags: ['work', 'coding'] },
+          { id: 2, date: '2026-06-24', durationSec: 1800, bucket: 'work', tags: ['work', 'meeting'] },
+        ],
+      });
+      ui.renderBucketStats();
+      const container = document.getElementById('bucket-stats');
+      const expandBtn = container.querySelector('.bucket-expand-btn');
+      expect(expandBtn).toBeTruthy();
+      expandBtn.click();
+      const subtags = container.querySelectorAll('.bucket-subtag-row');
+      expect(subtags.length).toBe(2);
+    });
+
+    it('no expand button when no subtags', () => {
+      store.setState({
+        sessions: [
+          { id: 1, date: '2026-06-24', durationSec: 3600, bucket: 'work', tags: ['work'] },
+        ],
+      });
+      ui.renderBucketStats();
+      const container = document.getElementById('bucket-stats');
+      expect(container.querySelector('.bucket-expand-btn')).toBeFalsy();
+    });
+
+    it('shows work bucket with correct color class', () => {
+      store.setState({
+        sessions: [
+          { id: 1, date: '2026-06-24', durationSec: 3600, bucket: 'work', tags: ['work'] },
+        ],
+      });
+      ui.renderBucketStats();
+      const row = document.querySelector('.bucket-stat-row');
+      expect(row.className).toContain('border-l-blue-500');
     });
   });
 
