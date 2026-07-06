@@ -369,12 +369,14 @@ export function createUIManager(store) {
     if (tracker.isPaused) {
       const rawMs = now - tracker.pauseStart;
       const currentRestSec = Math.floor(rawMs / 1000);
-      const totalRestSec = currentRestSec + Math.floor(tracker.accumulatedPauseTime / 1000);
+      const accPause = tracker.accumulatedPauseTime || 0;
+      const totalRestSec = currentRestSec + Math.floor(accPause / 1000);
       elapsedSeconds = _showCurrentRest ? currentRestSec : totalRestSec;
       updateTimerDisplayEl(elapsedSeconds, tracker.isBreak, _showCurrentRest);
     } else {
       const rawMs = now - tracker.startTime;
-      elapsedSeconds = Math.max(0, Math.floor((rawMs - tracker.accumulatedPauseTime) / 1000));
+      const accPause = tracker.accumulatedPauseTime || 0;
+      elapsedSeconds = Math.max(0, Math.floor((rawMs - accPause) / 1000));
       updateTimerDisplayEl(elapsedSeconds, tracker.isBreak);
     }
   }

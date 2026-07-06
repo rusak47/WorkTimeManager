@@ -51,7 +51,9 @@ export const CURRENT_SESSION_INIT = {
   startTime: null,
   isPaused: false,
   pauseStart: null,
-  accumulatedPauseTime: 0,
+  segmentStartTime: null,
+  workBlockId: null,
+  totalSavedDurationMs: 0,
   isBreak: false,
 };
 

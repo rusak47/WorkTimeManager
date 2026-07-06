@@ -1,6 +1,10 @@
 import { CURRENT_SESSION_INIT } from './constants.js';
 import * as utils from '../js/utils.js';
 
+function generateWorkBlockId() {
+  return Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);
+}
+
 export function createSessionManager(store) {
   function getSessions() {
     return store.getState().sessions || [];
@@ -44,6 +48,15 @@ export function createSessionManager(store) {
       return true;
     },
 
+    deleteSessionsByWorkBlockId(workBlockId) {
+      const sessions = getSessions();
+      const next = sessions.filter((s) => s.workBlockId !== workBlockId);
+      if (next.length === sessions.length) return 0;
+      const removed = sessions.length - next.length;
+      store.setState({ sessions: next });
+      return removed;
+    },
+
     resetSessions() {
       store.setState({ sessions: [] });
     },
@@ -67,11 +80,14 @@ export function createSessionManager(store) {
     getTracker,
 
     startTracking(options = {}) {
+      const now = Date.now();
       const tracker = {
-        startTime: Date.now(),
+        startTime: now,
         isPaused: false,
         pauseStart: null,
-        accumulatedPauseTime: 0,
+        segmentStartTime: now,
+        workBlockId: generateWorkBlockId(),
+        totalSavedDurationMs: 0,
         isBreak: options.isBreak || false,
       };
       store.setState({ tracker });
@@ -90,12 +106,11 @@ export function createSessionManager(store) {
       const tracker = getTracker();
       if (!tracker.startTime) return tracker;
       const now = Date.now();
-      const pausedDuration = tracker.pauseStart ? now - tracker.pauseStart : 0;
       const updated = {
         ...tracker,
         isPaused: false,
         pauseStart: null,
-        accumulatedPauseTime: tracker.accumulatedPauseTime + pausedDuration,
+        segmentStartTime: now,
       };
       store.setState({ tracker: updated });
       return updated;
@@ -105,13 +120,13 @@ export function createSessionManager(store) {
       const tracker = getTracker();
       if (!tracker.startTime) return null;
       const now = Date.now();
-      const rawDuration = now - tracker.startTime;
-      const durationSec = Math.max(0, Math.floor((rawDuration - tracker.accumulatedPauseTime) / 1000));
+      const segmentStart = tracker.segmentStartTime || tracker.startTime;
+      const durationSec = Math.max(0, Math.floor((now - segmentStart) / 1000));
 
       const session = {
         id: Date.now(),
         date: meta.date || utils.formatDate(new Date()),
-        startTime: new Date(tracker.startTime).toISOString(),
+        startTime: new Date(segmentStart).toISOString(),
         endTime: new Date(now).toISOString(),
         duration: utils.formatDuration(durationSec),
         durationSec,
@@ -120,7 +135,7 @@ export function createSessionManager(store) {
         tags: meta.tags || (tracker.isBreak ? ['rest'] : ['work']),
         mood: meta.mood !== undefined ? meta.mood : 5,
         bucket: meta.bucket,
-        accumulatedPauseTimeSec: Math.floor(tracker.accumulatedPauseTime / 1000),
+        workBlockId: tracker.workBlockId,
         isBreak: tracker.isBreak,
       };
 

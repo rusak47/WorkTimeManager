@@ -26,6 +26,7 @@ function setupDOM() {
     <div id="current-session-start-time-input"></div>
     <div id="current-session-end-time-input"></div>
     <div id="current-session-accumulated-rest-duration-input"></div>
+    <div id="tracker-session-id"></div>
     <div id="session-notes" class="hidden"></div>
     <div class="duration-display">
       <span id="duration-label">Session Duration</span>
@@ -137,7 +138,7 @@ describe('app event handlers', () => {
       currentStatsPeriod: 'daily',
       darkMode: false,
       backupIntervalMs: 300000,
-      tracker: { startTime: null, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
+      tracker: { startTime: null, isPaused: false, pauseStart: null, segmentStartTime: null, workBlockId: null, totalSavedDurationMs: 0, isBreak: false },
     });
     ui = createUIManager(store);
     a11y = createAccessibility();
@@ -208,12 +209,60 @@ describe('app event handlers', () => {
     const s = store.getState();
     expect(s.tracker.startTime).toBeNull();
     expect(s.tracker.isPaused).toBe(false);
-    expect(s.sessions.length).toBe(1);
+    expect(s.sessions.length).toBe(2);
     expect(s.sessions[0].isBreak).toBe(true);
     expect(s.sessions[0].tags).toContain('rest');
     expect(s.sessions[0].durationSec).toBeGreaterThanOrEqual(5);
 
     vi.useRealTimers();
+  });
+
+  it('togglePause saves work segment on pause and break on resume', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
+
+    app.startSession();
+    const blockId = store.getState().tracker.workBlockId;
+    expect(blockId).toBeTypeOf('string');
+
+    vi.advanceTimersByTime(10000); // work 10s
+    app.togglePause(); // pause = save work segment
+
+    const s1 = store.getState();
+    expect(s1.sessions.length).toBe(1);
+    expect(s1.sessions[0].isBreak).toBe(false);
+    expect(s1.sessions[0].workBlockId).toBe(blockId);
+    expect(s1.sessions[0].durationSec).toBeGreaterThanOrEqual(10);
+    expect(s1.tracker.totalSavedDurationMs).toBeGreaterThanOrEqual(10000);
+
+    vi.advanceTimersByTime(5000); // break 5s
+    app.togglePause(); // resume = save break segment
+
+    const s2 = store.getState();
+    expect(s2.sessions.length).toBe(2);
+    expect(s2.sessions[0].isBreak).toBe(true);
+    expect(s2.sessions[0].workBlockId).toBe(blockId);
+    expect(s2.sessions[0].durationSec).toBeGreaterThanOrEqual(5);
+    expect(s2.sessions[0].tags).toContain('rest');
+
+    vi.useRealTimers();
+  });
+
+  it('stopSession while running saves final work segment', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
+
+    app.startSession();
+    const blockId = store.getState().tracker.workBlockId;
+    vi.advanceTimersByTime(15000);
+    app.stopSession();
+
+    const s = store.getState();
+    expect(s.sessions.length).toBe(1);
+    expect(s.sessions[0].isBreak).toBe(false);
+    expect(s.sessions[0].workBlockId).toBe(blockId);
+    expect(s.sessions[0].durationSec).toBeGreaterThanOrEqual(15);
+    expect(s.tracker.startTime).toBeNull();
   });
 
   it('switchTab delegates to ui and updates store', () => {
@@ -680,7 +729,7 @@ describe('app event handlers', () => {
     const now = Date.now();
     store.setState({
       sessions: [],
-      tracker: { startTime: now, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
+      tracker: { startTime: now, isPaused: false, pauseStart: null, segmentStartTime: now, workBlockId: 'test-block', totalSavedDurationMs: 0, isBreak: false },
       backupIntervalMs: 600000,
     });
     storage.saveState.mockClear();
@@ -699,7 +748,7 @@ describe('app event handlers', () => {
       markedDays: [],
       tags: [],
       darkMode: false,
-      tracker: { startTime: now, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
+      tracker: { startTime: now, isPaused: false, pauseStart: null, segmentStartTime: now, workBlockId: 'test-block', totalSavedDurationMs: 0, isBreak: false },
       backupIntervalMs: 600000,
     });
     await app.loadData();
@@ -846,5 +895,97 @@ describe('app event handlers', () => {
     const saved = storage.saveState.mock.calls[0][0];
     expect(saved.tracker.startTime).toBeNull();
     expect(saved.backupIntervalMs).toBe(300000);
+  });
+
+  it('timer shows valid duration after start with new tracker', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
+
+    app.startSession();
+    vi.advanceTimersByTime(5000);
+    ui.updateTimerDisplay();
+
+    const display = document.getElementById('active-duration');
+    expect(display.textContent).toMatch(/\d{2}:\d{2}:\d{2}/);
+    expect(display.textContent).not.toContain('NaN');
+    expect(display.textContent).toBe('00:00:05');
+
+    vi.useRealTimers();
+  });
+
+  it('saveSession after stopSession updates existing segment not duplicate', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
+
+    app.startSession();
+    vi.advanceTimersByTime(10000);
+    app.stopSession();
+
+    const s1 = store.getState();
+    expect(s1.sessions.length).toBe(1);
+    expect(s1.sessions[0].durationSec).toBeGreaterThanOrEqual(10);
+
+    const notesInput = document.getElementById('notes');
+    if (notesInput) notesInput.value = 'edited note';
+
+    app.saveSession();
+
+    const s2 = store.getState();
+    expect(s2.sessions.length).toBe(1);
+    expect(s2.sessions[0].notes).toBe('edited note');
+    expect(s2.tracker.startTime).toBeNull();
+
+    vi.useRealTimers();
+  });
+
+  it('saveSession while running does nothing', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
+
+    app.startSession();
+    const s1 = store.getState();
+    expect(s1.sessions.length).toBe(0);
+
+    app.saveSession();
+    const s2 = store.getState();
+    expect(s2.sessions.length).toBe(0);
+    expect(s2.tracker.startTime).not.toBeNull();
+
+    vi.useRealTimers();
+  });
+
+  it('startSession reveals session-notes', () => {
+    const notes = document.getElementById('session-notes');
+    expect(notes.classList.contains('hidden')).toBe(true);
+
+    app.startSession();
+    expect(notes.classList.contains('hidden')).toBe(false);
+
+    app.stopSession();
+  });
+
+  it('stopSession while paused picks newest work segment for edit form', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
+
+    app.startSession();
+    const blockId = store.getState().tracker.workBlockId;
+    vi.advanceTimersByTime(10000);
+    app.togglePause();
+    vi.advanceTimersByTime(5000);
+    app.togglePause();
+    vi.advanceTimersByTime(20000);
+    app.togglePause();
+    vi.advanceTimersByTime(5000);
+    app.stopSession();
+
+    const s = store.getState();
+    const workSegments = s.sessions.filter(ses => !ses.isBreak && ses.workBlockId === blockId);
+    expect(workSegments.length).toBe(2);
+
+    const trackerSid = document.getElementById('tracker-session-id');
+    expect(trackerSid.value).toBe(workSegments[0].id.toString());
+
+    vi.useRealTimers();
   });
 });

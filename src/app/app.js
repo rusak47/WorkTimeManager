@@ -131,6 +131,20 @@ export function createEventHandlers(deps) {
   ui.setOnTagBucketsChange(saveState);
   ui.setOnDeleteCustomTag(deleteCustomTag);
 
+  function readTrackerFormValues() {
+    const notesInput = document.getElementById('notes');
+    const moodInput = document.getElementById('current-session-mood-input');
+    const selectedTags = [];
+    document.querySelectorAll('#current-session-tags .tag-chip.selected').forEach(el => {
+      selectedTags.push(el.dataset.tag);
+    });
+    return {
+      notes: notesInput ? notesInput.value.trim() : '',
+      tags: selectedTags.length > 0 ? selectedTags : ['work'],
+      mood: moodInput ? parseFloat(moodInput.value) : 5,
+    };
+  }
+
   function startSession(bucket) {
     if (bucket) {
       ui.initializeCurrentSessionTags(bucket);
@@ -143,6 +157,8 @@ export function createEventHandlers(deps) {
     const s = store.getState();
     const intervalMs = s.backupIntervalMs || DEFAULT_BACKUP_INTERVAL_MS;
     backupInterval = setInterval(saveState, intervalMs);
+    const notes = document.getElementById('session-notes');
+    if (notes) notes.classList.remove('hidden');
   }
 
   function stopSession() {
@@ -152,6 +168,8 @@ export function createEventHandlers(deps) {
     clearInterval(timerInterval);
     clearInterval(backupInterval);
     backupInterval = null;
+
+    let lastSegment = null;
 
     if (tracker.isPaused) {
       const breakDuration = Math.floor((Date.now() - tracker.pauseStart) / 1000);
@@ -168,19 +186,40 @@ export function createEventHandlers(deps) {
           dayType: getDayType(utils.formatDate(d), s),
           tags: ['rest'],
           mood: 5,
+          workBlockId: tracker.workBlockId,
           isBreak: true,
         };
         sessionManager.addSession(breakSession);
       }
-      const pausedDuration = tracker.pauseStart ? Date.now() - tracker.pauseStart : 0;
       store.setState({
         tracker: {
           ...tracker,
           isPaused: false,
           pauseStart: null,
-          accumulatedPauseTime: tracker.accumulatedPauseTime + pausedDuration,
         },
       });
+      const sessions = store.getState().sessions;
+      const prevWork = [...sessions].find(ses => !ses.isBreak && ses.workBlockId === tracker.workBlockId);
+      if (prevWork) lastSegment = prevWork;
+    } else {
+      const now = Date.now();
+      const segmentDuration = Math.floor((now - tracker.segmentStartTime) / 1000);
+      const d = new Date(tracker.segmentStartTime);
+      const formValues = readTrackerFormValues();
+      const workSegment = {
+        id: Date.now(),
+        date: utils.formatDate(d),
+        startTime: d.toISOString(),
+        endTime: new Date(now).toISOString(),
+        duration: utils.formatDuration(segmentDuration),
+        durationSec: segmentDuration,
+        dayType: getDayType(utils.formatDate(d), s),
+        workBlockId: tracker.workBlockId,
+        isBreak: false,
+        ...formValues,
+      };
+      sessionManager.addSession(workSegment);
+      lastSegment = workSegment;
     }
 
     const durEl = document.getElementById('active-duration');
@@ -188,11 +227,11 @@ export function createEventHandlers(deps) {
     const startTimeInput = document.getElementById('current-session-start-time-input');
     const endTimeInput = document.getElementById('current-session-end-time-input');
     const restDurationInput = document.getElementById('current-session-accumulated-rest-duration-input');
-    if (startTimeInput) startTimeInput.value = tracker.startTime;
-    if (endTimeInput) endTimeInput.value = Date.now();
-
-    const updatedTracker = store.getState().tracker;
-    if (restDurationInput) restDurationInput.value = updatedTracker.accumulatedPauseTime;
+    const trackerSessionIdInput = document.getElementById('tracker-session-id');
+    if (startTimeInput && lastSegment) startTimeInput.value = new Date(lastSegment.startTime).getTime().toString();
+    if (endTimeInput && lastSegment) endTimeInput.value = new Date(lastSegment.endTime).getTime().toString();
+    if (restDurationInput) restDurationInput.value = '0';
+    if (trackerSessionIdInput && lastSegment) trackerSessionIdInput.value = lastSegment.id.toString();
     ui.updateTimerDisplay();
     sessionManager.resetTracker();
     ui.updateButtonStates(false);
@@ -220,6 +259,7 @@ export function createEventHandlers(deps) {
           dayType: getDayType(utils.formatDate(d), s),
           tags: ['rest'],
           mood: 5,
+          workBlockId: tracker.workBlockId,
           isBreak: true,
         };
         sessionManager.addSession(breakSession);
@@ -228,7 +268,34 @@ export function createEventHandlers(deps) {
       const pauseBtn = document.getElementById('pause-btn');
       if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-pause sm:mr-2"></i> <span class="hidden sm:inline">Pause</span>';
     } else {
-      sessionManager.pauseTracking();
+      const now = Date.now();
+      const segmentDuration = Math.floor((now - tracker.segmentStartTime) / 1000);
+      if (segmentDuration >= 2) {
+        const d = new Date(tracker.segmentStartTime);
+        const formValues = readTrackerFormValues();
+        const workSegment = {
+          id: Date.now(),
+          date: utils.formatDate(d),
+          startTime: d.toISOString(),
+          endTime: new Date(now).toISOString(),
+          duration: utils.formatDuration(segmentDuration),
+          durationSec: segmentDuration,
+          dayType: getDayType(utils.formatDate(d), s),
+          workBlockId: tracker.workBlockId,
+          isBreak: false,
+          ...formValues,
+        };
+        sessionManager.addSession(workSegment);
+      }
+      const elapsed = now - tracker.segmentStartTime;
+      store.setState({
+        tracker: {
+          ...tracker,
+          isPaused: true,
+          pauseStart: now,
+          totalSavedDurationMs: tracker.totalSavedDurationMs + Math.max(0, elapsed),
+        },
+      });
       const pauseBtn = document.getElementById('pause-btn');
       if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-play sm:mr-2"></i> <span class="hidden sm:inline">Resume</span>';
     }
@@ -238,10 +305,12 @@ export function createEventHandlers(deps) {
 
   async function saveSession() {
     const s = store.getState();
+    if (s.tracker.startTime) return;
     const trackerStartInput = document.getElementById('current-session-start-time-input');
     const trackerEndInput = document.getElementById('current-session-end-time-input');
     const restInput = document.getElementById('current-session-accumulated-rest-duration-input');
     const notesInput = document.getElementById('notes');
+    const trackerSessionIdInput = document.getElementById('tracker-session-id');
     let notesValue = notesInput ? notesInput.value.trim() : '';
     const selectedTags = [];
     let bucket;
@@ -266,20 +335,37 @@ export function createEventHandlers(deps) {
     const date = utils.formatDate(startDate);
     const dayType = getDayType(date, s);
     const moodInput = document.getElementById('current-session-mood-input');
-    sessionManager.addSession({
-      id: Date.now(),
-      date,
-      startTime: startDate.toISOString(),
-      endTime: endDate.toISOString(),
-      duration: utils.formatDuration(duration),
-      durationSec: duration,
-      accumulatedPauseTimeSec,
-      notes: notesValue,
-      dayType,
-      tags: selectedTags,
-      mood: moodInput ? parseFloat(moodInput.value) : 5,
-      bucket,
-    });
+    const existingId = trackerSessionIdInput ? parseInt(trackerSessionIdInput.value, 10) : null;
+    if (existingId) {
+      sessionManager.updateSession(existingId, {
+        date,
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
+        duration: utils.formatDuration(duration),
+        durationSec: duration,
+        accumulatedPauseTimeSec,
+        notes: notesValue,
+        dayType,
+        tags: selectedTags,
+        mood: moodInput ? parseFloat(moodInput.value) : 5,
+        bucket,
+      });
+    } else {
+      sessionManager.addSession({
+        id: Date.now(),
+        date,
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
+        duration: utils.formatDuration(duration),
+        durationSec: duration,
+        accumulatedPauseTimeSec,
+        notes: notesValue,
+        dayType,
+        tags: selectedTags,
+        mood: moodInput ? parseFloat(moodInput.value) : 5,
+        bucket,
+      });
+    }
     if (notesInput) notesInput.value = '';
     const durEl = document.getElementById('active-duration');
     if (durEl) durEl.textContent = '00:00:00';
@@ -292,6 +378,7 @@ export function createEventHandlers(deps) {
     if (trackerStartInput) trackerStartInput.value = '0';
     if (trackerEndInput) trackerEndInput.value = '0';
     if (restInput) restInput.value = '0';
+    if (trackerSessionIdInput) trackerSessionIdInput.value = '';
     document.querySelectorAll('#current-session-mood .star').forEach(star => { star.innerHTML = '\u2605'; });
     ui.initializeCurrentSessionTags();
     ui.initializeCurrentSessionMood();

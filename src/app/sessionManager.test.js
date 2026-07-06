@@ -109,12 +109,15 @@ describe('sessionManager', () => {
     expect(sm.getSessionsByFilter({})).toHaveLength(2);
   });
 
-  it('startTracking sets tracker state', () => {
+  it('startTracking sets tracker state without accumulatedPauseTime', () => {
     const tracker = sm.startTracking();
     expect(tracker.startTime).toBeTypeOf('number');
     expect(tracker.isPaused).toBe(false);
-    expect(tracker.accumulatedPauseTime).toBe(0);
     expect(tracker.isBreak).toBe(false);
+    expect(tracker.workBlockId).toBeTypeOf('string');
+    expect(tracker.segmentStartTime).toBeTypeOf('number');
+    expect(tracker.totalSavedDurationMs).toBe(0);
+    expect(tracker).not.toHaveProperty('accumulatedPauseTime');
   });
 
   it('startTracking with isBreak true sets break mode', () => {
@@ -122,42 +125,56 @@ describe('sessionManager', () => {
     expect(tracker.isBreak).toBe(true);
   });
 
+  it('startTracking workBlockId is a UUID-like string', () => {
+    const t1 = sm.startTracking();
+    const id1 = t1.workBlockId;
+    sm.resetTracker();
+    const t2 = sm.startTracking();
+    expect(t2.workBlockId).not.toBe(id1);
+    expect(t2.workBlockId.length).toBeGreaterThan(8);
+  });
+
   it('getTracker returns current tracker state', () => {
     sm.startTracking();
     const tracker = sm.getTracker();
     expect(tracker.startTime).toBeTypeOf('number');
+    expect(tracker.workBlockId).toBeTypeOf('string');
   });
 
-  it('pauseTracking sets paused state with timestamp', () => {
+  it('pauseTracking sets paused state with timestamp, no accumulatedPauseTime', () => {
     sm.startTracking();
     const tracker = sm.pauseTracking();
     expect(tracker.isPaused).toBe(true);
     expect(tracker.pauseStart).toBeTypeOf('number');
+    expect(tracker).not.toHaveProperty('accumulatedPauseTime');
   });
 
-  it('resumeTracking accumulates pause time', () => {
+  it('resumeTracking clears pause but does not track accumulatedPauseTime', () => {
     sm.startTracking();
     sm.pauseTracking();
     const tracker = sm.resumeTracking();
     expect(tracker.isPaused).toBe(false);
     expect(tracker.pauseStart).toBeNull();
-    expect(tracker.accumulatedPauseTime).toBeGreaterThanOrEqual(0);
+    expect(tracker).not.toHaveProperty('accumulatedPauseTime');
   });
 
-  it('stopTracking finalises and returns a session from tracker', () => {
+  it('stopTracking returns session with workBlockId and no accumulatedPauseTimeSec', () => {
     sm.startTracking();
     const session = sm.stopTracking({ date: '2026-06-24', dayType: 'Workday' });
     expect(session.date).toBe('2026-06-24');
     expect(session.dayType).toBe('Workday');
     expect(session.startTime).toBeTypeOf('string');
     expect(session.durationSec).toBeGreaterThanOrEqual(0);
+    expect(session.workBlockId).toBeTypeOf('string');
+    expect(session).not.toHaveProperty('accumulatedPauseTimeSec');
     expect(sm.getTracker().startTime).toBeNull();
   });
 
-  it('stopTracking stores bucket from meta', () => {
+  it('stopTracking stores bucket and workBlockId from meta', () => {
     sm.startTracking();
     const session = sm.stopTracking({ date: '2026-06-24', bucket: 'sport' });
     expect(session.bucket).toBe('sport');
+    expect(session.workBlockId).toBeTypeOf('string');
   });
 
   it('stopTracking without active tracker returns null', () => {
@@ -171,5 +188,8 @@ describe('sessionManager', () => {
     const tracker = sm.getTracker();
     expect(tracker.startTime).toBeNull();
     expect(tracker.isPaused).toBe(false);
+    expect(tracker.workBlockId).toBeNull();
+    expect(tracker.segmentStartTime).toBeNull();
+    expect(tracker.totalSavedDurationMs).toBe(0);
   });
 });
