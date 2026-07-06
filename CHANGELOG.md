@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- **Save work segment on pause** — work segment saved with notes/tags/mood from form fields when Pause is pressed. Break segment saved on Resume. Final work segment saved on Stop. `stopSession` reads form values, calls `syncHashtags()`, creates segment, then resets timer to `00:00:00` and persists with re-render. 322 tests. (branch `save-on-pause`, spec at `tasks/new/20260629-save-on-pause-spec.md`)
 - **Legacy session tag migration** — one-time `migration/v1.0.0-to-v1.1.0.js` script normalizes legacy sessions on first load: extracts `#hashtags` from notes into structured `tags` array, strips them from notes. Runs once, persisted via `_migrationVersion` flag. Does not touch tagBuckets or settings. 313 tests.
 - **Subtag-stacked daily bar chart + split tag filters** — Tag filter split into two multi-selects (top-level + subtag). Daily bar chart shows stacked-by-subtag segments when drilling into one bucket or comparing multiple selected subtags. Weekly/monthly/yearly + fallback combos keep simple bars. See `tasks/done/2026-07-06-subtag-stacked-chart.md`.
 
