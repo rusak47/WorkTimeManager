@@ -7,58 +7,118 @@
 
 Deliver the visible user-facing changes: a two-level tag picker during session creation, inline hashtag autocomplete in notes, and bucketed statistics roll-up.
 
-## Checkpoints
+## Sub-task breakdown
 
-### 3.1 — Bucket-aware session tag picker
+### ✅ P3-A: Foundation — Color expansion + shared chip helper *(done)*
 
-Redesign both `#current-session-tags` (tracker tab) and `#tags-container` (edit modal):
+- **Colors:** `getTagBadgeClass()` expanded to 5 colors: work→blue, rest→purple, study→orange, sport→green, other→gray
+- **Chip helper:** `createPickerTagChip(tagName, selected)` exported
+- **Files:** `src/app/uiManager.js`, `src/app/uiManager.test.js`
+- **Precedes:** P3-C, P3-D, P3-G
+- Tests: 255/255 passing
 
-- **Row 1:** default tags as selectable pills — work/rest/study/sport/other
-  - Work pre-selected by default
-  - Only one allowed (clicking another deselects the current)
-- **Row 2:** subtags of the selected default appear
-  - Limited to N items visible (e.g. 6); excess hidden under `+N more` expander
-- If "other" selected, show its subtags
+### ✅ P3-B: Store bucket on session save *(done)*
 
-**Files:** `src/app/uiManager.js`, `src/css/styles.css`, `src/index.html`
+- `stopTracking()` passes `meta.bucket` through to session object
+- `handleSessionFormSubmit()` reads bucket from row-1 selected default, passes to `addSession()`
+- **Files:** `src/app/sessionManager.js`, `src/app/app.js`, `src/app/sessionManager.test.js`
+- Tests: 267/267 passing
 
-### 3.2 — Store bucket on session save
+### ✅ P3-C: Two-row picker — Tracker tab *(done)*
 
-- Add `bucket` field to new sessions at save time (both current session form and edit modal)
-- Resolve from the selected default tag in the picker
-- On edit: pre-select the stored bucket in the picker
-- Old sessions without `bucket` continue using `resolveSessionBucket()` from Phase 1
+- `initializeCurrentSessionTags()` rewritten:
+  - Row 1: 5 defaults, radio-style, `work` pre-selected
+  - Row 2: subtags from `tagBuckets`, max 6 visible, `+N more` expander
+- `handleSessionFormSubmit()` reads `.tag-chip.selected`, detects bucket from row-1
+- Legacy fallback (`renderLegacyTagPicker`) for sessions without `tagBuckets`
+- **Files:** `src/app/uiManager.js`, `src/app/app.js`, `src/app/uiManager.test.js`
+- Tests: 267/267 passing (10 new tests)
 
-**Files:** `src/app/app.js`, `src/app/sessionManager.js`
+### ✅ P3-D: Two-row picker — Edit modal + refactor `editSession()` *(done)*
 
-### 3.3 — Inline hashtag autocomplete
+- Rewrite `initializeSessionModalTags()` with same two-row layout
+- Pre-select from `session.bucket` (from P3-B)
+- Refactor `editSession()` — remove inline tag rendering, call shared picker function
+- Warning when session has multiple default tags (e.g. `work` + `rest`)
+- `renderRow2()`: add optional `selectedSubtags` parameter for pre-selection state
+- Cleanup `multiple-defaults-warning` on modal open/close
+- **Files:** `src/app/uiManager.js`, `src/app/app.js`, `src/app/uiManager.test.js`, `src/app/app.test.js`
 
-- Listen for `#` + alphanumeric (`#[a-zA-Z0-9]`) input in the notes textarea
-- Show autocomplete dropdown with matching tags from ALL buckets
-- Each suggestion shows its bucket membership (color-coded badge)
-- Clicking a suggestion inserts the tag name and adds it to session tags
-- If the typed tag doesn't exist, offer "Create new tag" option
-- New tags created this way auto-assign as subtags of the current session's bucket
-- Edge: `#` with no alphanumeric after → ignored
-- Edge: backspace after `#` → dismiss dropdown
+### P3-E: Long-press on Start button (spec 3.1)
 
-**Files:** `src/app/uiManager.js`, `src/app/app.js`, `src/css/styles.css`
+- `mousedown`/`touchstart` timer on `#start-session` (~500ms threshold)
+- Short press: current behavior (start with `work`)
+- Long press: floating tooltip/picker to select bucket, then start
+- CSS for tooltip overlay
+- **Files:** `src/app/uiManager.js`, `src/app/app.js`, `src/css/styles.css`
 
-### 3.4 — Bucketed statistics
+### ✅ P3-F: Inline hashtag autocomplete *(done 2026-07-05)*
 
-- New bucketed roll-up view in the Statistics tab
-- Top-level rows per bucket with total duration: work / rest / study / sport / other
-- Expandable drill-down into subtag breakdown within each bucket
-- Existing flat tag filter preserved alongside (Phase 1+2 of statistics as-is)
-- Color-coding: work=blue, rest=purple, study=green, sport=orange, other=gray
-- Uses `resolveSessionBucket()` for old sessions
+- `input` event on `#notes` + `#modal-notes`
+- Prefix match on `#[a-zA-Z0-9]`
+- Positioned dropdown with color-coded bucket badges (via `getParentBuckets()`)
+- Selection → insert tag text + add to session tags
+- New tag creation → auto-assign to current session's bucket subtags
+- Dismiss on esc/backspace/blur
+- **Files:** `src/app/uiManager.js`, `src/app/app.js`, `src/css/styles.css`
 
-**Files:** `src/app/statsManager.js`, `src/app/uiManager.js`, `src/css/styles.css`
+### P3-G: Bucketed statistics (spec 3.4)
+
+- New rendered section below existing stats charts
+- Group sessions by bucket (`resolveSessionBucket()`), sum `durationSec`
+- Bucket rows: colored name + total duration, expand/collapse toggle
+- Subtag drill-down within each bucket
+- Existing flat tag filter left untouched
+- **Files:** `src/app/statsManager.js`, `src/app/uiManager.js`, `src/css/styles.css`
+
+### Long press decision
+
+- Short press → current behaviour (start with `work`)
+- Long press (~500ms) → tag selection + start
+
+### `+N more` behavior
+
+- Expands inline (not dropdown)
+
+### Edit modal: multiple default tags (e.g. `work` + `rest`)
+
+- Show warning, let user decide which bucket to select
+
+### Hashtag match scope
+
+- Prefix match only (`#re` → `read`, `rest`; not `write`, `horse`)
+
+### Bucketed stats location
+
+- Rendered below existing stats charts (not a separate section/tab)
+
+---
+
+## Dependency graph
+
+```
+P3-A → P3-C, P3-D, P3-G
+P3-B → P3-D
+P3-C, P3-D → P3-E  (start button picker reuses same picker pattern)
+P3-F, P3-G → independent of each other
+```
+
+**Implementation order:** P3-A → P3-B → P3-C → P3-D → P3-E → P3-F → P3-G
+
+---
 
 ## Edge cases (Phase 3 scope)
 
 - **Notes `#` with no following text** → ignored, no dropdown
-- **Hashtag autocomplete with 0 matches** → show "No matching tags" + "Create new" option
+- **Hashtag autocomplete with 0 matches** → show nothing + auto-assign as subtags of the current session's bucket
 - **Picker: all subtags hidden under `+N`** → expander reveals them inline
 - **Edit modal: session has bucket that no longer exists** → default to 'other'
 - **Bucketed stats: empty bucket (0 sessions)** → show "0h 0min" or hide
+
+## Files changed (cumulative)
+
+- `src/app/uiManager.js` — tag picker rendering, hashtag autocomplete, bucketed stats rendering
+- `src/app/app.js` — event wiring, bucket save, editSession refactor, long-press handler
+- `src/app/sessionManager.js` — bucket field in session defaults + stopTracking
+- `src/app/statsManager.js` — bucket-aware aggregation functions
+- `src/css/styles.css` — new color classes, picker layout, dropdown, stats tree

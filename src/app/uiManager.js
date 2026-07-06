@@ -1,8 +1,11 @@
 import { Chart } from 'chart.js/auto';
 import * as utils from '../js/utils.js';
+import { moveSubtagBetweenBuckets, removeTagFromBucket } from './tagManager.js';
 
 export function createUIManager(store) {
   let _showCurrentRest = true;
+  let _onTagBucketsChange = null;
+  let _onDeleteCustomTag = null;
   let _showTodayWorkOnly = true;
   let _isGridMode = false;
   let timeChart = null;
@@ -37,9 +40,276 @@ export function createUIManager(store) {
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
       case 'rest':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 'study':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+      case 'sport':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
+  }
+
+  function createPickerTagChip(tagName, selected = false) {
+    const chip = document.createElement('div');
+    chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${selected ? 'selected' : ''} ${getTagBadgeClass(tagName, selected)}`;
+    chip.dataset.tag = tagName;
+    chip.textContent = tagName;
+    return chip;
+  }
+
+  function showStartPicker(onSelect, x, y) {
+    hideStartPicker();
+    const picker = document.createElement('div');
+    picker.id = 'start-picker';
+    picker.className = 'start-picker fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-1';
+    const title = document.createElement('div');
+    title.className = 'text-xs text-gray-500 dark:text-gray-400 px-2 pb-1 border-b border-gray-100 dark:border-gray-700 mb-1';
+    title.textContent = 'Start with:';
+    picker.appendChild(title);
+
+    const buckets = ['rest', 'study', 'sport', 'other', 'work'];
+    for (const bucket of buckets) {
+      const chip = createPickerTagChip(bucket, false);
+      chip.classList.add('start-picker-chip');
+      chip.addEventListener('click', () => {
+        onSelect(bucket);
+        hideStartPicker();
+      });
+      picker.appendChild(chip);
+    }
+
+    document.body.appendChild(picker);
+
+    if (x != null && y != null) {
+      picker.style.left = Math.max(4, x) + 'px';
+      picker.style.top = Math.max(4, y) + 'px';
+      const rect = picker.getBoundingClientRect();
+      if (rect.bottom > window.innerHeight) {
+        picker.style.top = Math.max(4, y - rect.height - 4) + 'px';
+      }
+      if (rect.right > window.innerWidth) {
+        picker.style.left = Math.max(4, window.innerWidth - rect.width - 8) + 'px';
+      }
+    } else {
+      const btn = document.getElementById('start-btn');
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        picker.style.left = Math.max(4, rect.left) + 'px';
+        picker.style.top = (rect.bottom + 4) + 'px';
+      } else {
+        picker.style.left = '50%';
+        picker.style.top = '50%';
+        picker.style.transform = 'translate(-50%, -50%)';
+      }
+    }
+  }
+
+  function hideStartPicker() {
+    const existing = document.getElementById('start-picker');
+    if (existing) existing.remove();
+  }
+
+  function getAllTagNames() {
+    const s = store.getState();
+    const tagBuckets = s.tagBuckets || {};
+    const names = new Set();
+    for (const bucket of Object.keys(tagBuckets)) {
+      names.add(bucket);
+      for (const subtag of (tagBuckets[bucket] || [])) {
+        names.add(subtag);
+      }
+    }
+    return Array.from(names);
+  }
+
+  function getBucketColorClass(tagName) {
+    const s = store.getState();
+    const tagBuckets = s.tagBuckets || {};
+    const parents = [];
+    for (const [bucket, subtags] of Object.entries(tagBuckets)) {
+      if (subtags.includes(tagName)) parents.push(bucket);
+    }
+    if (parents.length === 0 && tagBuckets[tagName] !== undefined) parents.push(tagName);
+    return parents.map(b => {
+      const cls = getTagBadgeClass(b, true);
+      const match = cls.match(/bg-\w+-\d+/);
+      return match ? match[0] : 'bg-gray-500';
+    });
+  }
+
+  let activeDropdown = null;
+  let dismissedHash = null;
+
+  function getCursorCoords(textarea, charIndex) {
+    const mirror = document.createElement('div');
+    const style = window.getComputedStyle(textarea);
+    const tr = textarea.getBoundingClientRect();
+    const props = [
+      ['position', 'fixed'],
+      ['top', tr.top + 'px'],
+      ['left', tr.left + 'px'],
+      ['opacity', '0'],
+      ['pointerEvents', 'none'],
+      ['zIndex', '-1'],
+      ['white-space', 'pre-wrap'],
+      ['word-wrap', 'break-word'],
+      ['overflow-wrap', 'break-word'],
+      ['font-family', style.fontFamily],
+      ['font-size', style.fontSize],
+      ['font-weight', style.fontWeight],
+      ['font-style', style.fontStyle],
+      ['line-height', style.lineHeight],
+      ['letter-spacing', style.letterSpacing],
+      ['padding-top', style.paddingTop],
+      ['padding-right', style.paddingRight],
+      ['padding-bottom', style.paddingBottom],
+      ['padding-left', style.paddingLeft],
+      ['border-top-width', style.borderTopWidth],
+      ['border-right-width', style.borderRightWidth],
+      ['border-bottom-width', style.borderBottomWidth],
+      ['border-left-width', style.borderLeftWidth],
+      ['box-sizing', style.boxSizing],
+      ['width', textarea.offsetWidth + 'px'],
+    ];
+    props.forEach(([k, v]) => { mirror.style[k] = v; });
+
+    const textBefore = textarea.value.substring(0, charIndex);
+    const textAfter = textarea.value.substring(charIndex);
+    mirror.textContent = textBefore;
+    const marker = document.createElement('span');
+    marker.textContent = '\u200B';
+    mirror.appendChild(marker);
+    mirror.appendChild(document.createTextNode(textAfter));
+    document.body.appendChild(mirror);
+
+    const markerRect = marker.getBoundingClientRect();
+    document.body.removeChild(mirror);
+
+    return {
+      left: markerRect.left,
+      top: markerRect.top - textarea.scrollTop,
+      bottom: markerRect.top - textarea.scrollTop + markerRect.height,
+      height: markerRect.height,
+    };
+  }
+
+  function showHashtagDropdown(textarea, tags, startPos) {
+    hideHashtagDropdown();
+    const dd = document.createElement('div');
+    dd.id = 'hashtag-dropdown';
+    dd.className = 'fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-1 min-w-[100px] max-h-[200px] overflow-y-auto';
+
+    for (const tag of tags) {
+      const item = document.createElement('div');
+      item.className = 'hashtag-item px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-1.5';
+      const colors = getBucketColorClass(tag);
+      const dot = document.createElement('span');
+      dot.className = `inline-block w-2 h-2 rounded-full ${colors[0] || 'bg-gray-500'}`;
+      item.appendChild(dot);
+      const label = document.createElement('span');
+      label.textContent = tag;
+      item.appendChild(label);
+
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const before = textarea.value.substring(0, startPos);
+        const afterHash = textarea.value.substring(startPos + 1);
+        const endOfWord = afterHash.search(/[\s\W]|$/);
+        const endPos = endOfWord >= 0 ? startPos + 1 + endOfWord : textarea.value.length;
+        const newVal = textarea.value.substring(0, startPos) + '#' + tag + ' ' + textarea.value.substring(endPos);
+        textarea.value = newVal;
+        const newCursor = startPos + 1 + tag.length + 1;
+        textarea.selectionStart = textarea.selectionEnd = newCursor;
+        dismissedHash = null;
+        hideHashtagDropdown();
+        textarea.focus();
+      });
+
+      dd.appendChild(item);
+    }
+
+    document.body.appendChild(dd);
+
+    const cursorPos = textarea.selectionStart;
+    const coords = getCursorCoords(textarea, cursorPos);
+    dd.style.left = Math.max(4, coords.left) + 'px';
+    dd.style.top = (coords.bottom + 4) + 'px';
+
+    const ddRect = dd.getBoundingClientRect();
+    if (ddRect.bottom > window.innerHeight) {
+      dd.style.top = Math.max(4, coords.top - ddRect.height - 4) + 'px';
+    }
+    if (ddRect.right > window.innerWidth) {
+      dd.style.left = Math.max(4, window.innerWidth - ddRect.width - 8) + 'px';
+    }
+
+    activeDropdown = dd;
+  }
+
+  function hideHashtagDropdown() {
+    const existing = document.getElementById('hashtag-dropdown');
+    if (existing) existing.remove();
+    activeDropdown = null;
+  }
+
+  function initHashtagAutocomplete(textareaId) {
+    const textarea = document.getElementById(textareaId);
+    if (!textarea) return;
+
+    const onInput = () => {
+      const hashIdx = textarea.value.lastIndexOf('#');
+      if (hashIdx === -1) {
+        hideHashtagDropdown();
+        dismissedHash = null;
+        return;
+      }
+      const rest = textarea.value.substring(hashIdx + 1);
+      const endOfWord = rest.search(/[\s\W]|$/);
+      const query = endOfWord >= 0 ? rest.substring(0, endOfWord) : rest;
+      if (!query) {
+        hideHashtagDropdown();
+        dismissedHash = null;
+        return;
+      }
+
+      if (dismissedHash && dismissedHash.hashIdx === hashIdx && dismissedHash.query === query) {
+        hideHashtagDropdown();
+        return;
+      }
+
+      const allTags = getAllTagNames();
+      const exact = allTags.includes(query);
+      const matches = allTags.filter(t => t.startsWith(query));
+      const hasContinuations = matches.some(t => t.length > query.length);
+      if (matches.length === 0 || (exact && !hasContinuations)) {
+        hideHashtagDropdown();
+        dismissedHash = null;
+        return;
+      }
+
+      dismissedHash = null;
+      showHashtagDropdown(textarea, matches, hashIdx);
+    };
+
+    textarea.addEventListener('input', onInput);
+
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') {
+        if (activeDropdown) {
+          const hashIdx = textarea.value.lastIndexOf('#');
+          if (hashIdx >= 0) {
+            const rest = textarea.value.substring(hashIdx + 1);
+            const endOfWord = rest.search(/[\s\W]|$/);
+            dismissedHash = { hashIdx, query: endOfWord >= 0 ? rest.substring(0, endOfWord) : rest };
+          }
+          hideHashtagDropdown();
+        }
+      }
+    });
+
+    textarea.addEventListener('blur', () => {
+      setTimeout(hideHashtagDropdown, 150);
+    });
   }
 
   function updateCurrentTime() {
@@ -259,6 +529,7 @@ export function createUIManager(store) {
     if (target) target.classList.remove('hidden');
     const activeBtn = document.querySelector(`[data-settings-tab="${tab}"]`);
     if (activeBtn) activeBtn.classList.add('settings-tab-active');
+    if (tab === 'tags') renderTagSettings();
   }
 
   function switchStatsPeriod(period) {
@@ -348,7 +619,7 @@ export function createUIManager(store) {
         <div class="flex justify-between items-center">
           <div class="flex flex-wrap gap-1">
             ${session.tags ? session.tags.map(tag => `
-              <span class="text-xs px-1.5 py-0.5 rounded-full ${getTagBadgeClass(tag)}">${tag}</span>
+              <span class="text-xs px-1.5 py-0.5 rounded-full ${getTagBadgeClass(tag, true)}">${tag}</span>
             `).join('') : ''}
           </div>
           <div class="flex space-x-2">
@@ -388,7 +659,7 @@ export function createUIManager(store) {
         <div class="flex justify-between items-center mt-3">
           <div class="flex flex-wrap gap-1">
             ${session.tags ? session.tags.map(tag => `
-              <span class="text-xs px-2 py-1 rounded-full ${getTagBadgeClass(tag)}">
+              <span class="text-xs px-2 py-1 rounded-full ${getTagBadgeClass(tag, true)}">
                 ${tag}
               </span>
             `).join('') : ''}
@@ -504,6 +775,8 @@ export function createUIManager(store) {
     if (dayTypeInput) dayTypeInput.value = 'Workday';
     if (modalNotes) modalNotes.value = '';
     initializeSessionModalTags();
+    const existingWarning = document.getElementById('multiple-defaults-warning');
+    if (existingWarning) existingWarning.remove();
     const moodRating = document.getElementById('mood-rating');
     const moodInput = document.getElementById('session-mood');
     const moodValue = document.getElementById('mood-value');
@@ -517,6 +790,8 @@ export function createUIManager(store) {
   function hideSessionModal() {
     const modal = document.getElementById('session-modal');
     if (modal) modal.classList.add('hidden');
+    const existingWarning = document.getElementById('multiple-defaults-warning');
+    if (existingWarning) existingWarning.remove();
   }
 
   function showMarkDayModal(dayType) {
@@ -615,11 +890,97 @@ export function createUIManager(store) {
       `Inflation Rate: ${config.inflationRate}%`);
   }
 
-  function initializeCurrentSessionTags() {
+  const DEFAULT_BUCKET_KEYS = ['work', 'rest', 'study', 'sport', 'other'];
+
+  function initializeCurrentSessionTags(bucket = 'work') {
     const container = document.getElementById('current-session-tags');
     const s = store.getState();
     if (!container) return;
     container.innerHTML = '';
+
+    const tagBuckets = s.tagBuckets || {};
+    const hasBuckets = DEFAULT_BUCKET_KEYS.every(k => Array.isArray(tagBuckets[k]));
+
+    if (!hasBuckets) {
+      renderLegacyTagPicker(container, s);
+      return;
+    }
+
+    let selectedDefault = bucket;
+
+    const row1 = document.createElement('div');
+    row1.className = 'picker-row-1 flex flex-wrap gap-1.5 mb-2';
+
+    for (const tagName of DEFAULT_BUCKET_KEYS) {
+      const isSelected = tagName === selectedDefault;
+      const chip = createPickerTagChip(tagName, isSelected);
+      chip.addEventListener('click', () => {
+        if (chip.classList.contains('selected')) return;
+        row1.querySelectorAll('.tag-chip.selected').forEach(el => {
+          el.classList.remove('selected');
+          el.className = el.className.replace(/selected\s*/, '');
+          const tn = el.dataset.tag;
+          el.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${getTagBadgeClass(tn, false)}`;
+        });
+        chip.classList.add('selected');
+        chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none selected ${getTagBadgeClass(tagName, true)}`;
+        selectedDefault = tagName;
+        renderRow2(container, row2, tagBuckets, selectedDefault);
+      });
+      row1.appendChild(chip);
+    }
+
+    const row2 = document.createElement('div');
+    row2.className = 'picker-row-2 flex flex-wrap gap-1.5';
+
+    container.appendChild(row1);
+    container.appendChild(row2);
+
+    renderRow2(container, row2, tagBuckets, selectedDefault);
+  }
+
+  function renderRow2(container, row2, tagBuckets, defaultName, selectedSubtags = []) {
+    row2.innerHTML = '';
+    const selectedSet = new Set(selectedSubtags);
+    const subtags = tagBuckets[defaultName] || [];
+    if (subtags.length === 0) return;
+
+    const maxVisible = 6;
+    const hasMore = subtags.length > maxVisible;
+    const visible = hasMore ? subtags.slice(0, maxVisible) : subtags;
+    const hidden = hasMore ? subtags.slice(maxVisible) : [];
+
+    for (const subtag of visible) {
+      const isSelected = selectedSet.has(subtag);
+      const chip = createPickerTagChip(subtag, isSelected);
+      chip.addEventListener('click', () => {
+        const nowSelected = chip.classList.toggle('selected');
+        chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${nowSelected ? 'selected' : ''} ${getTagBadgeClass(chip.dataset.tag, nowSelected)}`;
+      });
+      row2.appendChild(chip);
+    }
+
+    if (hasMore) {
+      const moreBtn = document.createElement('button');
+      moreBtn.className = 'tag-more-btn inline-block px-2 py-1 rounded-full text-sm cursor-pointer text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 bg-transparent border border-dashed border-gray-300 dark:border-gray-600';
+      moreBtn.textContent = `+${hidden.length} more`;
+      moreBtn.addEventListener('click', () => {
+        moreBtn.remove();
+        for (const subtag of hidden) {
+          const isSelected = selectedSet.has(subtag);
+          const chip = createPickerTagChip(subtag, isSelected);
+          chip.addEventListener('click', () => {
+            const nowSelected = chip.classList.toggle('selected');
+            chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${nowSelected ? 'selected' : ''} ${getTagBadgeClass(chip.dataset.tag, nowSelected)}`;
+          });
+          row2.appendChild(chip);
+        }
+      });
+      row2.appendChild(moreBtn);
+    }
+  }
+
+  function renderLegacyTagPicker(container, s) {
     const enabledTags = s.tags.filter(t => t.isEnabled);
     for (const tag of enabledTags) {
       const tagEl = document.createElement('div');
@@ -640,11 +1001,55 @@ export function createUIManager(store) {
     }
   }
 
-  function initializeSessionModalTags() {
+  function initializeSessionModalTags(bucket = 'work', subtags = []) {
     const container = document.getElementById('tags-container');
     const s = store.getState();
     if (!container) return;
     container.innerHTML = '';
+
+    const tagBuckets = s.tagBuckets || {};
+    const hasBuckets = DEFAULT_BUCKET_KEYS.every(k => Array.isArray(tagBuckets[k]));
+
+    if (!hasBuckets) {
+      renderLegacyModalTagPicker(container, s);
+      return;
+    }
+
+    let selectedDefault = bucket;
+
+    const row1 = document.createElement('div');
+    row1.className = 'picker-row-1 flex flex-wrap gap-1.5 mb-2';
+
+    for (const tagName of DEFAULT_BUCKET_KEYS) {
+      const isSelected = tagName === selectedDefault;
+      const chip = createPickerTagChip(tagName, isSelected);
+      chip.addEventListener('click', () => {
+        if (chip.classList.contains('selected')) return;
+        row1.querySelectorAll('.tag-chip.selected').forEach(el => {
+          el.classList.remove('selected');
+          el.className = el.className.replace(/selected\s*/, '');
+          const tn = el.dataset.tag;
+          el.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${getTagBadgeClass(tn, false)}`;
+        });
+        chip.classList.add('selected');
+        chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none selected ${getTagBadgeClass(tagName, true)}`;
+        selectedDefault = tagName;
+        renderRow2(container, row2, tagBuckets, selectedDefault);
+      });
+      row1.appendChild(chip);
+    }
+
+    const row2 = document.createElement('div');
+    row2.className = 'picker-row-2 flex flex-wrap gap-1.5';
+
+    container.appendChild(row1);
+    container.appendChild(row2);
+
+    const subtagNames = subtags.filter(t => !DEFAULT_BUCKET_KEYS.includes(t));
+    renderRow2(container, row2, tagBuckets, selectedDefault, subtagNames);
+  }
+
+  function renderLegacyModalTagPicker(container, s) {
     const enabledTags = s.tags.filter(t => t.isEnabled);
     for (const tag of enabledTags) {
       const tagEl = document.createElement('div');
@@ -665,41 +1070,202 @@ export function createUIManager(store) {
     }
   }
 
+  function setOnTagBucketsChange(cb) {
+    _onTagBucketsChange = cb;
+  }
+
+  function setOnDeleteCustomTag(cb) {
+    _onDeleteCustomTag = cb;
+  }
+
+  function setupDropZone(container, bucketName) {
+    container.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      container.classList.add('drag-over');
+      if (e.ctrlKey || e.metaKey) {
+        container.classList.add('drag-over-ctrl');
+      } else {
+        container.classList.remove('drag-over-ctrl');
+      }
+    });
+
+    container.addEventListener('dragleave', () => {
+      container.classList.remove('drag-over');
+      container.classList.remove('drag-over-ctrl');
+    });
+
+    container.addEventListener('drop', (e) => {
+      e.preventDefault();
+      container.classList.remove('drag-over');
+      container.classList.remove('drag-over-ctrl');
+      const tagName = e.dataTransfer.getData('text/plain');
+      const sourceBucket = e.dataTransfer.getData('application/x-source-bucket');
+      if (!tagName || !sourceBucket || sourceBucket === bucketName) return;
+      const s = store.getState();
+      let newBuckets;
+      const isCopy = e.ctrlKey || e.metaKey;
+      const isUnassignedSrc = sourceBucket === 'unassigned' || !s.tagBuckets[sourceBucket];
+      if (isCopy || isUnassignedSrc) {
+        if (s.tagBuckets[bucketName] && s.tagBuckets[bucketName].includes(tagName)) return;
+        newBuckets = {};
+        for (const [bucket, subtags] of Object.entries(s.tagBuckets)) {
+          newBuckets[bucket] = [...subtags];
+        }
+        if (newBuckets[bucketName]) {
+          newBuckets[bucketName] = [...newBuckets[bucketName], tagName];
+        } else {
+          newBuckets[bucketName] = [tagName];
+        }
+      } else {
+        newBuckets = moveSubtagBetweenBuckets(tagName, sourceBucket, bucketName, s.tagBuckets);
+      }
+      store.setState({ tagBuckets: newBuckets });
+      renderTagSettings();
+      if (_onTagBucketsChange) _onTagBucketsChange();
+    });
+  }
+
   function renderTagSettings() {
-    const defaultContainer = document.getElementById('default-tags');
-    const presetContainer = document.getElementById('preset-tags');
-    const customContainer = document.getElementById('custom-tags');
+    const container = document.getElementById('tag-bucket-settings');
     const s = store.getState();
-    if (!defaultContainer || !presetContainer || !customContainer) return;
-    defaultContainer.innerHTML = '';
-    presetContainer.innerHTML = '';
-    customContainer.innerHTML = '';
-    for (const tag of s.tags) {
-      const tagEl = document.createElement('div');
-      tagEl.className = `tag-item flex items-center px-3 py-1 rounded-full text-sm ${getTagBadgeClass(tag.name, tag.isEnabled)}`;
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = tag.isEnabled;
-      checkbox.className = 'mr-2';
-      checkbox.disabled = tag.isDefault;
-      checkbox.addEventListener('change', () => {
-        const updated = s.tags.map(t => t.name === tag.name ? { ...t, isEnabled: checkbox.checked } : t);
-        store.setState({ tags: updated });
+    if (!container) return;
+    container.innerHTML = '';
+
+    const allSubtags = new Set(Object.values(s.tagBuckets).flat());
+    const unassignedTags = s.tags.filter(t => !t.isDefault && !allSubtags.has(t.name) && !s.tagBuckets[t.name]);
+
+    for (const [bucketName, subtagNames] of Object.entries(s.tagBuckets)) {
+      const bucketTag = s.tags.find(t => t.name === bucketName && t.isDefault);
+      const bucketSubtags = subtagNames
+        .map(name => s.tags.find(t => t.name === name) || { name, isEnabled: true, isDefault: false })
+        .filter(Boolean);
+
+      const group = document.createElement('div');
+      group.className = 'tag-bucket-group';
+      group.dataset.bucket = bucketName;
+
+      const header = document.createElement('button');
+      header.className = 'tag-bucket-header text-sm font-semibold text-gray-700 dark:text-gray-300 capitalize flex items-center gap-2 w-full text-left';
+      header.type = 'button';
+
+      const arrow = document.createElement('span');
+      arrow.className = 'collapse-arrow';
+      arrow.textContent = '▼';
+      header.appendChild(arrow);
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = bucketName;
+      header.appendChild(nameSpan);
+
+      const subtagsContainer = document.createElement('div');
+      subtagsContainer.className = 'tag-bucket-subtags flex flex-wrap gap-2 ml-4 mt-1';
+
+      if (bucketSubtags.length === 0) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'text-xs text-gray-400 italic';
+        placeholder.textContent = '(no subtags)';
+        subtagsContainer.appendChild(placeholder);
+      }
+
+      for (const tag of bucketSubtags) {
+        const chip = createTagChip(tag, false);
+        chip.dataset.sourceBucket = bucketName;
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'ml-2 text-gray-400 hover:text-red-500 tag-remove-btn';
+        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const s = store.getState();
+          const newBuckets = removeTagFromBucket(tag.name, bucketName, s.tagBuckets);
+          store.setState({ tagBuckets: newBuckets });
+          renderTagSettings();
+          if (_onTagBucketsChange) _onTagBucketsChange();
+        });
+        chip.appendChild(removeBtn);
+        subtagsContainer.appendChild(chip);
+      }
+
+      header.addEventListener('click', () => {
+        subtagsContainer.classList.toggle('collapsed');
+        arrow.textContent = subtagsContainer.classList.contains('collapsed') ? '▶' : '▼';
       });
-      tagEl.appendChild(checkbox);
-      tagEl.appendChild(document.createTextNode(tag.name));
-      if (tag.isCustom) {
+
+      setupDropZone(subtagsContainer, bucketName);
+
+      group.appendChild(header);
+      group.appendChild(subtagsContainer);
+      container.appendChild(group);
+    }
+
+    if (unassignedTags.length > 0) {
+      const group = document.createElement('div');
+      group.className = 'tag-bucket-group';
+      group.dataset.bucket = 'unassigned';
+
+      const header = document.createElement('button');
+      header.className = 'tag-bucket-header text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 w-full text-left';
+      header.type = 'button';
+
+      const arrow = document.createElement('span');
+      arrow.className = 'collapse-arrow';
+      arrow.textContent = '▼';
+      header.appendChild(arrow);
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = 'Unassigned';
+      header.appendChild(nameSpan);
+
+      const subtagsContainer = document.createElement('div');
+      subtagsContainer.className = 'tag-bucket-subtags flex flex-wrap gap-2 ml-4 mt-1';
+
+      for (const tag of unassignedTags) {
+        const chip = createTagChip(tag, false);
+        chip.dataset.sourceBucket = 'unassigned';
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'ml-2 text-gray-500 hover:text-red-500';
         deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
-        tagEl.appendChild(deleteBtn);
-        customContainer.appendChild(tagEl);
-      } else if (tag.isDefault) {
-        defaultContainer.appendChild(tagEl);
-      } else {
-        presetContainer.appendChild(tagEl);
+        deleteBtn.addEventListener('click', () => {
+          if (_onDeleteCustomTag) _onDeleteCustomTag(tag.name);
+        });
+        chip.appendChild(deleteBtn);
+        subtagsContainer.appendChild(chip);
       }
+
+      header.addEventListener('click', () => {
+        subtagsContainer.classList.toggle('collapsed');
+        arrow.textContent = subtagsContainer.classList.contains('collapsed') ? '▶' : '▼';
+      });
+
+      setupDropZone(subtagsContainer, 'unassigned');
+
+      group.appendChild(header);
+      group.appendChild(subtagsContainer);
+      container.appendChild(group);
     }
+  }
+
+  function createTagChip(tag, isDefault) {
+    const chip = document.createElement('div');
+    chip.className = `tag-item flex items-center px-3 py-1 rounded-full text-sm ${getTagBadgeClass(tag.name, tag.isEnabled)}`;
+    if (isDefault) chip.dataset.default = 'true';
+    chip.draggable = !isDefault;
+    chip.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', tag.name);
+      e.dataTransfer.setData('application/x-source-bucket', chip.dataset.sourceBucket || '');
+    });
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = tag.isEnabled;
+    checkbox.className = 'mr-2';
+    checkbox.disabled = isDefault;
+    checkbox.addEventListener('change', () => {
+      const s = store.getState();
+      const updated = s.tags.map(t => t.name === tag.name ? { ...t, isEnabled: checkbox.checked } : t);
+      store.setState({ tags: updated });
+    });
+    chip.appendChild(checkbox);
+    chip.appendChild(document.createTextNode(tag.name));
+    return chip;
   }
 
   function createStars() {
@@ -1210,7 +1776,13 @@ export function createUIManager(store) {
     initializeCurrentSessionMood,
     createStarsForCurrentSession,
     renderTagSettings,
+    setOnTagBucketsChange,
+    setOnDeleteCustomTag,
     getTagBadgeClass,
+    createPickerTagChip,
+    showStartPicker,
+    hideStartPicker,
+    initHashtagAutocomplete,
     enableDarkMode,
     disableDarkMode,
     toggleDarkMode,

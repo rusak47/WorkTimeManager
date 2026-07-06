@@ -104,9 +104,7 @@ function setupDOM() {
     <button id="reset-marked-days"></button>
     <div id="config-history-list"></div>
     <div id="config-history-modal" class="hidden"></div>
-    <div id="default-tags"></div>
-    <div id="preset-tags"></div>
-    <div id="custom-tags"></div>
+    <div id="tag-bucket-settings"></div>
     <div id="stats-period-title"></div>
     <div id="tracker-tab"></div>
     <div id="sessions-tab"></div>
@@ -133,6 +131,7 @@ describe('app event handlers', () => {
       configs: [],
       markedDays: [],
       tags: [{ name: 'work', isDefault: true, isEnabled: true, isCustom: false }],
+      tagBuckets: {},
       currentTab: 'tracker',
       currentStatsPeriod: 'daily',
       darkMode: false,
@@ -248,10 +247,13 @@ describe('app event handlers', () => {
     expect(storage.saveState).toHaveBeenCalled();
   });
 
-  it('addCustomTag adds tag', () => {
+  it('addCustomTag adds tag and assigns to tagBuckets.other', () => {
+    store.setState({ tagBuckets: { other: [] } });
     document.getElementById('new-tag-input').value = 'design';
     app.addCustomTag();
-    expect(store.getState().tags.some(t => t.name === 'design')).toBe(true);
+    const s = store.getState();
+    expect(s.tags.some(t => t.name === 'design')).toBe(true);
+    expect(s.tagBuckets.other).toContain('design');
   });
 
   it('saveConfig creates config via configManager', () => {
@@ -286,6 +288,26 @@ describe('app event handlers', () => {
     app.editSession(42);
     expect(document.getElementById('modal-title').textContent).toBe('Edit Session');
     expect(document.getElementById('session-id').value).toBe('42');
+  });
+
+  it('editSession shows warning for multiple default tags', () => {
+    store.setState({
+      sessions: [{
+        id: 43, date: '2026-06-25', startTime: '2026-06-25T08:00:00',
+        endTime: '2026-06-25T09:00:00', duration: '01:00:00', durationSec: 3600,
+        dayType: 'Workday', tags: ['work', 'rest'], mood: 4,
+      }],
+      tags: [
+        { name: 'work', isDefault: true, isEnabled: true },
+        { name: 'rest', isDefault: true, isEnabled: true },
+      ],
+      tagBuckets: { work: [], rest: [], study: [], sport: [], other: [] },
+    });
+    app.editSession(43);
+    const warning = document.getElementById('multiple-defaults-warning');
+    expect(warning).toBeTruthy();
+    expect(warning.textContent).toContain('work');
+    expect(warning.textContent).toContain('rest');
   });
 
   it('handleSessionFormSubmit updates session duration with accumulatedPauseTimeSec', () => {
@@ -330,6 +352,35 @@ describe('app event handlers', () => {
     app.handleSessionFormSubmit(e);
     expect(store.getState().sessions.length).toBe(1);
     expect(e.preventDefault).toHaveBeenCalled();
+  });
+
+  it('handleSessionFormSubmit auto-adds #tags from notes to tagBuckets.other', () => {
+    const e = { preventDefault: vi.fn() };
+    const now = new Date();
+    const later = new Date(now.getTime() + 3600000);
+    document.getElementById('start-time').value = now.toISOString().slice(0, 16);
+    document.getElementById('end-time').value = later.toISOString().slice(0, 16);
+    document.getElementById('modal-notes').value = 'Worked on #design and #review';
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    const tagEl = document.createElement('div');
+    tagEl.className = 'tag selected';
+    tagEl.dataset.tag = 'work';
+    document.getElementById('tags-container').appendChild(tagEl);
+    app.handleSessionFormSubmit(e);
+    const s = store.getState();
+    expect(s.tags.some(t => t.name === 'design')).toBe(true);
+    expect(s.tags.some(t => t.name === 'review')).toBe(true);
+    expect(s.tagBuckets.other).toContain('design');
+    expect(s.tagBuckets.other).toContain('review');
+    const session = s.sessions[0];
+    expect(session.tags).toContain('work');
+    expect(session.tags).toContain('design');
+    expect(session.tags).toContain('review');
+    expect(session.notes).not.toContain('#design');
+    expect(session.notes).not.toContain('#review');
   });
 
   it('persistAndRender calls saveState and renders', async () => {
@@ -431,12 +482,109 @@ describe('app event handlers', () => {
     expect(workTags.length).toBe(1);
   });
 
-  it('deleteCustomTag removes tag after confirm', () => {
-    store.setState({ tags: [{ name: 'custom1', isDefault: false, isEnabled: true, isCustom: true }] });
+  it('deleteCustomTag removes tag and clears from tagBuckets', () => {
+    store.setState({
+      tags: [{ name: 'custom1', isDefault: false, isEnabled: true, isCustom: true }],
+      tagBuckets: { other: ['custom1'] },
+    });
     window.confirm = vi.fn(() => true);
     app.deleteCustomTag('custom1');
-    expect(store.getState().tags.some(t => t.name === 'custom1')).toBe(false);
+    const s = store.getState();
+    expect(s.tags.some(t => t.name === 'custom1')).toBe(false);
+    expect(s.tagBuckets.other).not.toContain('custom1');
     expect(storage.saveState).toHaveBeenCalled();
+  });
+
+  it('syncHashtagTags extracts #tags from notes and adds unknown ones', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    app.syncHashtagTags('Working on #design and #review with #work');
+    const s = store.getState();
+    expect(s.tags.some(t => t.name === 'design')).toBe(true);
+    expect(s.tags.some(t => t.name === 'review')).toBe(true);
+    expect(s.tagBuckets.other).toContain('design');
+    expect(s.tagBuckets.other).toContain('review');
+    expect(s.tagBuckets.other).not.toContain('work');
+  });
+
+  it('syncHashtagTags adds to given bucket when passed', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], study: [], other: [] },
+    });
+    app.syncHashtagTags('#deepfocus and #coding', 'work');
+    const s = store.getState();
+    expect(s.tagBuckets.work).toContain('deepfocus');
+    expect(s.tagBuckets.work).toContain('coding');
+    expect(s.tagBuckets.other).toEqual([]);
+  });
+
+  it('syncHashtagTags falls back to other when bucket does not exist in tagBuckets', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    app.syncHashtagTags('#design', 'nonexistent');
+    const s = store.getState();
+    expect(s.tagBuckets.other).toContain('design');
+  });
+
+  it('syncHashtagTags returns added tags and cleaned notes', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    const result = app.syncHashtagTags('Working on #design and #work', 'work');
+    expect(result).toEqual({
+      addedTags: ['design'],
+      foundTags: ['design', 'work'],
+      cleanedNotes: 'Working on and',
+    });
+  });
+
+  it('syncHashtagTags returns cleaned notes and empty addedTags when no new tags', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    const result = app.syncHashtagTags('Working on #work', 'work');
+    expect(result).toEqual({
+      addedTags: [],
+      foundTags: ['work'],
+      cleanedNotes: 'Working on',
+    });
+  });
+
+  it('syncHashtagTags cleans multiple new tag mentions from notes', () => {
+    store.setState({
+      tags: [{ name: 'work', isDefault: true, isEnabled: true }],
+      tagBuckets: { work: [], other: [] },
+    });
+    const result = app.syncHashtagTags('#design and #review for #work', 'work');
+    expect(result.addedTags).toEqual(['design', 'review']);
+    expect(result.foundTags).toEqual(['design', 'review', 'work']);
+    expect(result.cleanedNotes).toBe('and for');
+  });
+
+  it('syncHashtagTags + renderTagSettings shows new subtag in settings', () => {
+    store.setState({
+      tags: [
+        { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+        { name: 'study', isDefault: true, isEnabled: true, isCustom: false },
+      ],
+      tagBuckets: { work: ['dev'], study: [], other: [] },
+    });
+    app.syncHashtagTags('Working on #design and #coding', 'work');
+    ui.renderTagSettings();
+    const workBucket = document.querySelector('[data-bucket="work"]');
+    expect(workBucket).not.toBeNull();
+    const chips = workBucket.querySelectorAll('.tag-item');
+    const texts = Array.from(chips).map(c => c.textContent.trim());
+    expect(texts).toContain('design');
+    expect(texts).toContain('coding');
+    expect(texts).toContain('dev');
   });
 
   it('exportAllData creates and triggers download', () => {
@@ -554,6 +702,66 @@ describe('app event handlers', () => {
     await app.loadData();
     const s = store.getState();
     expect(s.tracker.startTime).toBeNull();
+  });
+
+  it('loadStateFromStorage restores tagBuckets from saved state', async () => {
+    storage.loadState.mockResolvedValue({
+      tagBuckets: { work: [], rest: ['sleep'], study: [], sport: [], other: [] },
+    });
+    await app.loadData();
+    expect(store.getState().tagBuckets).toEqual({ work: [], rest: ['sleep'], study: [], sport: [], other: [] });
+  });
+
+  it('saveState includes tagBuckets in persisted state', () => {
+    storage.saveState.mockClear();
+    store.setState({ tagBuckets: { work: [], rest: ['sleep'], study: [], sport: [], other: [] } });
+    app.persistAndRender();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tagBuckets).toEqual({ work: [], rest: ['sleep'], study: [], sport: [], other: [] });
+  });
+
+  it('loadData seeds tagBuckets from DEFAULT_BUCKET_MAP when empty or partial', async () => {
+    storage.loadState.mockResolvedValue(null);
+    store.setState({ tags: [], tagBuckets: {} });
+    await app.loadData();
+    const s = store.getState();
+    expect(s.tagBuckets).toBeDefined();
+    const bucketKeys = Object.keys(s.tagBuckets);
+    expect(bucketKeys).toContain('work');
+    expect(bucketKeys).toContain('rest');
+    expect(bucketKeys).toContain('study');
+    expect(bucketKeys).toContain('sport');
+    expect(bucketKeys).toContain('other');
+    expect(s.tagBuckets.rest).toContain('sleep');
+  });
+
+  it('loadData replaces incomplete tagBuckets with full DEFAULT_BUCKET_MAP', async () => {
+    storage.loadState.mockResolvedValue({
+      tagBuckets: { other: ['custom'] },
+    });
+    store.setState({ tags: [{ name: 'work', isDefault: true, isEnabled: true, isCustom: false }] });
+    await app.loadData();
+    const s = store.getState();
+    expect(Object.keys(s.tagBuckets)).toEqual(expect.arrayContaining(['work', 'rest', 'study', 'sport', 'other']));
+    expect(s.tagBuckets.work).toEqual([]);
+    expect(s.tagBuckets.rest).toContain('sleep');
+  });
+
+  it('loadData bootstraps tags from DEFAULT_TAGS and DEFAULT_BUCKET_MAP when no saved state', async () => {
+    storage.loadState.mockResolvedValue(null);
+    store.setState({ tags: [] });
+    await app.loadData();
+    const tags = store.getState().tags;
+    const defaults = tags.filter(t => t.isDefault).map(t => t.name);
+    expect(defaults).toContain('work');
+    expect(defaults).toContain('rest');
+    expect(defaults).toContain('study');
+    expect(defaults).toContain('sport');
+    expect(defaults).toContain('other');
+    const presets = tags.filter(t => !t.isDefault && !t.isCustom);
+    expect(presets.length).toBeGreaterThan(0);
+    expect(presets.every(t => t.isEnabled === true)).toBe(true);
+    expect(presets.every(t => t.isCustom === false)).toBe(true);
   });
 
   it('saveConfig reads backup interval from input', () => {

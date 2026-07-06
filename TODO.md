@@ -1,7 +1,8 @@
 # TODO
 
 ## Bugs
-- [low] — year selector dropdown in session view doesn't filter sessions when changed
+- [ ] [low] — year selector dropdown in session view doesn't filter sessions when changed
+- [x] [high] [P3-E: Long-press on Start button] - when stopping session selected tag on long press is not applied and default one (work) is choosen (2026-07-06)
 
 ## Sessions
 - [ ] [normal++ - benefits?] - currently work session is not saved on pause, but accumulates brake time and is calculated afterwards. isnt it better to save work each time pause is pressed? what are the benefits - easier to calculate work time, no dependency on internal brake time accumulation, no sessions possible spanning over multiple days; possible cons - no behindhand work sessions possible (manual edit only or add shortcuts like move back -24h), one task sessions shattered in more pieces, e.g. 15min breaks. other ideas? (design spec: `tasks/new/20260629-save-on-pause-spec.md`)
@@ -20,7 +21,8 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 - [ ] [low priority - maybe] Support multiple notes per session (store as array).
 
 ## Tags
-- [ ] [normal++ - blocking - must have] **#tag parsing in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. New tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save.
+- [x] **#tag dropdown in notes** — when `#` is typed in notes textbox, show suggestion dropdown of matching tags from all tag lists. (P3-F done, 297 tests)
+- [x] [normal++ - blocking - must have] **#tag auto-add on session save** — new tags (e.g. `#newtag`) that don't exist in custom/default lists auto-add to custom tags on session save. Also appends new tags to session tags array, strips `#tag` mentions from saved notes, and calls `renderTagSettings()` immediately so settings tab is never stale. (297 tests)
 - [ ] [normal+ - must have] Filter statistics by subtags — tags stored with `#` prefix in sessions should be filterable. All configured tags (custom + default) should appear as filter options.
 - [ ] [low - maybe] Early tagging — tag picker on the "Start Session" button so sessions are tagged from the beginning.
 - [ ] [duplicate — covered by #tag parsing above] Allow entering custom tags on the fly.
@@ -30,8 +32,8 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
     - Daily statistics - each bar is a subset of core tags per each session it consists of. 
 - [ ] [low - must have] Add refresh button in statistics tab (auto-refresh on tab switch is insufficient).
 
-## Calendar
 ## UI/UX
+- [x] **P3-E**: long press on start shows a tooltip to select default tag for this session (eg rest/study/sports/other, work is enabled by default so its placed at the end of selection)
 - [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
 - [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `tasks/new/tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
 - [ ] [high] - when in grid mode and session description is hidden add a tooltip with session description

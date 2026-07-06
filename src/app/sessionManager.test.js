@@ -34,6 +34,16 @@ describe('sessionManager', () => {
     expect(sm.getSessions()).toHaveLength(1);
   });
 
+  it('addSession stores bucket from data', () => {
+    const session = sm.addSession({ ...sampleSession, bucket: 'study' });
+    expect(session.bucket).toBe('study');
+  });
+
+  it('addSession does not set bucket when absent', () => {
+    const session = sm.addSession(sampleSession);
+    expect(session.bucket).toBeUndefined();
+  });
+
   it('getSessions returns sessions sorted newest first', () => {
     const s1 = sm.addSession({ ...sampleSession, id: 1, date: '2026-06-23' });
     const s2 = sm.addSession({ ...sampleSession, id: 2, date: '2026-06-24' });
@@ -142,6 +152,12 @@ describe('sessionManager', () => {
     expect(session.startTime).toBeTypeOf('string');
     expect(session.durationSec).toBeGreaterThanOrEqual(0);
     expect(sm.getTracker().startTime).toBeNull();
+  });
+
+  it('stopTracking stores bucket from meta', () => {
+    sm.startTracking();
+    const session = sm.stopTracking({ date: '2026-06-24', bucket: 'sport' });
+    expect(session.bucket).toBe('sport');
   });
 
   it('stopTracking without active tracker returns null', () => {

@@ -1,5 +1,55 @@
 # Changelog
 
+## Unreleased (2026-07-06)
+
+### Fixed
+- **P3-E: Long-press bucket lost on stop** — `initializeCurrentSessionTags()` now accepts optional `bucket` parameter and uses it instead of hardcoding `'work'`.
+- **Settings tag view stale after new tags added** — `syncHashtagTags()` now calls `ui.renderTagSettings()` immediately after updating the store, ensuring new subtags are always rendered regardless of when the user navigates to settings.
+- **Duplicate `[data-settings-tab="tags"]` event handler removed** — The tags tab was registered twice (once in the `forEach` loop, once standalone), causing redundant `renderTagSettings()` calls.
+- **Hashtag dropdown below cursor** — `getCursorCoords()` helper places dropdown at cursor position (mirror div overlay); flips above on viewport overflow, shifts left if off-screen right.
+- **Hashtag dropdown re-show on subsequent keystrokes** — Removed redundant `input` dispatch from click handler; added `dismissedHash` tracker so Esc/Space/Enter permanently suppress re-show for the same `#` query at the same position.
+- **Exact-match guard hiding continuation matches** — `#re` with tags `re`, `rea`, `read` now shows all three instead of hiding the dropdown when `re` is an exact match.
+- **Single color dot in hashtag dropdown** — Tags in multiple buckets now render one dot (first bucket's color) instead of one per parent bucket.
+- **Start picker not dismissed on short press** — `ui.hideStartPicker()` called on mousedown/touchstart and mouseup/touchend; added click-outside dismissal.
+- **Existing `#tags` not stripped from notes or added to session** — `syncHashtagTags` now always strips ALL `#tag` mentions (existing and new) from notes and returns `foundTags` (all found) in addition to `addedTags`; callers add all found tags to `selectedTags` so existing tags from notes are switched on for the session.
+- **Start picker positioned at cursor** — `showStartPicker` accepts optional `x, y` coords; app.js captures `clientX/clientY` from mousedown/touchstart and passes them so the picker appears at the press location with overflow flip/shift.
+
+### Added
+- **Tag Bucket System — Phase 3: Two-Row Tag Picker & Hashtag Autocomplete** — Ongoing. See `tasks/new/20260704-tag-bucket-p3-picker-hashtag-stats.md`.
+  - P3-B: **Store bucket on session save** — `stopTracking()` now passes `meta.bucket` through to the session object. `handleSessionFormSubmit` reads bucket from selected row-1 default tag and includes it in `addSession()`.
+  - P3-C: **Two-row tag picker in tracker tab** — `initializeCurrentSessionTags()` rendered as two-row picker: row 1 (5 defaults, radio-style), row 2 (subtags from `tagBuckets`, max 6 visible, `+N more` expander). Click handlers for default switching and subtag toggle. Legacy fallback for sessions without `tagBuckets`.
+  - P3-D: **Two-row tag picker in session modal** — `initializeSessionModalTags()` rewritten with two-row layout; `editSession()` refactored to call shared picker; `handleSessionFormSubmit` reads `.tag-chip.selected` and passes `bucket`; warning for multiple default tags in edit. `renderRow2` accepts `selectedSubtags` param for pre-selection.
+  - **Visual fix: selected tags color + outline** — Saved session views pass `selected=true` to `getTagBadgeClass` so tags show bucket colors; `renderRow2` click handlers swap `getTagBadgeClass` on toggle so subtags show/hide background; CSS `.tag-chip.selected` adds outline instead of inline ring classes.
+  - P3-E: **Long-press on Start button** — ~500ms hold on Start shows floating picker (`rest`/`study`/`sport`/`other`/`work`), short press starts with `work` as before. `startSession(bucket)` accepts optional bucket param; picker positioned below the button with backdrop-neutral styling.
+  - P3-F: **Inline hashtag autocomplete + auto-add on session save** — `#`-prefix matching in `#notes` and `#modal-notes` textareas with colored bucket-dot badges via `getBucketColorClass()`. Dropdown positioned above/below cursor, dismiss on Escape/blur. `getAllTagNames()` collects all bucket keys + subtags from `tagBuckets`. `syncHashtagTags(notes, bucket)` extracts `#`-prefixed words from notes and adds unknown ones as custom subtags under the selected parent bucket, wired into both `saveSession()` and `handleSessionFormSubmit()`. Returns `{ addedTags, cleanedNotes }` — new tags auto-appended to session tags array and `#tag` mentions stripped from saved notes. `ui.renderTagSettings()` called immediately after adding tags so settings tab is never stale. 297 tests.
+
+## Unreleased (2026-07-04)
+
+### Fixed
+- **Default tag chips no longer render as subtags in own bucket** — Removed `renderTagSettings` block that inserted the bucket's own default tag (e.g. `work` inside Work) as a subtag chip, causing visual duplication.
+- **Unassigned tags delete button now wired** — `setOnDeleteCustomTag` callback and function added; delete button in unassigned section calls `deleteCustomTag` in app.js.
+- **`ui is not defined` error in createUIManager** — `setOnDeleteCustomTag` was incorrectly assigned to `ui` variable (non-existent in return-object pattern), changed to standalone function.
+
+### Added
+- **Tag Bucket System — Phase 2: Settings Tree View & Drag-and-Drop** — Interactive tag bucket management in settings tab. See `tasks/pending/20260704-tag-bucket-p2-settings-dnd.md`.
+  - Tree view: buckets displayed as collapsible groups with ▼/▶ expand/collapse toggle
+  - Native HTML5 DnD: drag subtags between buckets with dashed highlight on drag-over
+  - Ctrl+drag: duplicate subtag into another bucket (keeps source copy); green outline visual indicator
+  - Remove (X) button: removes subtag from individual bucket without affecting other buckets
+  - Empty bucket placeholder: shows "(no subtags)" when bucket has no assigned subtags
+  - New `tagManager.js` functions: `moveSubtagBetweenBuckets()`, `removeTagFromBucket()`
+  - `setOnTagBucketsChange()` callback wired to `saveState()` for persistence
+- **Tag Bucket System — Phase 1: Data Model & Backward Compatibility** — Introduced tag hierarchy where default tags act as top-level buckets with assigned subtags. See `tasks/done/2026-07-04-tag-bucket-p1-data-model.md`.
+  - `DEFAULT_TAGS` expanded from `[work, rest]` to `[work, rest, study, sport, other]`
+  - `DEFAULT_BUCKET_MAP` replaces `PRESET_TAGS` with 5 buckets and their subtag arrays
+  - `PRESET_TAGS` removed; bootstrapping derives from `DEFAULT_BUCKET_MAP` via deduped `Set` of all subtag names
+  - `tagBuckets` in `INITIAL_STATE`, persisted to storage, restored on load, seeded from `DEFAULT_BUCKET_MAP` when empty
+  - `resolveSessionBucket()` infers bucket from `session.tags` for legacy sessions with no stored bucket
+  - New `tagManager.js` with `getSubtagsForBucket`, `getAvailableBuckets`, `getParentBuckets`, `getUnassignedTags`
+  - Tags settings UI grouped by bucket (`#tag-bucket-settings`) replacing 3 separate containers
+  - Custom tags auto-assigned to `tagBuckets.other`; delete removes from all bucket arrays
+  - Full test coverage — `tagManager.js` and `constants.js` at 100%
+
 ## Unreleased (2026-06-27)
 
 ### Fixed

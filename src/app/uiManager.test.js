@@ -4,6 +4,26 @@ import { createStore } from './state.js';
 import { createUIManager } from './uiManager.js';
 import { createCalendarService } from './calendarService.js';
 
+class MockDataTransfer {
+  constructor() {
+    this._data = {};
+  }
+  setData(type, value) { this._data[type] = value; }
+  getData(type) { return this._data[type] || ''; }
+}
+
+function createDragEvent(type, dt, opts = {}) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  event.dataTransfer = dt || new MockDataTransfer();
+  if (opts.ctrlKey) event.ctrlKey = true;
+  if (opts.metaKey) event.metaKey = true;
+  return event;
+}
+
+function containerQSA(sel) {
+  return document.getElementById('current-session-tags').querySelectorAll(sel);
+}
+
 function setupDOM() {
   document.body.innerHTML = `
     <div id="current-time"></div>
@@ -36,6 +56,7 @@ function setupDOM() {
     <input id="end-time" />
     <input id="day-type" />
     <textarea id="modal-notes"></textarea>
+    <textarea id="notes"></textarea>
     <input id="session-mood" />
     <div id="mood-value"></div>
     <div id="mood-rating" data-rating="5"></div>
@@ -79,9 +100,7 @@ function setupDOM() {
     <div id="config-content" class="hidden"></div>
     <select id="tag-filter"><option value="all">All Tags</option></select>
     <select id="mood-threshold"><option value="1">1</option></select>
-    <div id="default-tags"></div>
-    <div id="preset-tags"></div>
-    <div id="custom-tags"></div>
+    <div id="tag-bucket-settings"></div>
     <div id="current-session-start-time-input"></div>
     <div id="current-session-end-time-input"></div>
     <div id="current-session-accumulated-rest-duration-input"></div>
@@ -500,33 +519,355 @@ describe('uiManager', () => {
       expect(cls).toContain('bg-blue-100');
     });
 
+    it('returns correct class for rest tag when selected', () => {
+      const cls = ui.getTagBadgeClass('rest', true);
+      expect(cls).toContain('bg-purple-100');
+    });
+
+    it('returns correct class for study tag when selected', () => {
+      const cls = ui.getTagBadgeClass('study', true);
+      expect(cls).toContain('bg-orange-100');
+    });
+
+    it('returns correct class for sport tag when selected', () => {
+      const cls = ui.getTagBadgeClass('sport', true);
+      expect(cls).toContain('bg-green-100');
+    });
+
+    it('returns correct class for other tag when selected', () => {
+      const cls = ui.getTagBadgeClass('other', true);
+      expect(cls).toContain('bg-gray-100');
+    });
+
     it('returns unselected class when not selected', () => {
       const cls = ui.getTagBadgeClass('work', false);
       expect(cls).toContain('text-gray-800');
     });
+
+    it('returns gray for unknown tag when selected', () => {
+      const cls = ui.getTagBadgeClass('unknown', true);
+      expect(cls).toContain('bg-gray-100');
+    });
+  });
+
+  describe('createPickerTagChip', () => {
+    it('creates a chip element with tag name', () => {
+      const chip = ui.createPickerTagChip('study');
+      expect(chip.tagName).toBe('DIV');
+      expect(chip.textContent).toBe('study');
+      expect(chip.classList.contains('tag-chip')).toBe(true);
+    });
+
+    it('applies bucket color and selected class when selected', () => {
+      const chip = ui.createPickerTagChip('study', true);
+      expect(chip.classList.contains('selected')).toBe(true);
+      expect(chip.className).toContain('bg-orange-100');
+    });
+
+    it('applies gray when not selected', () => {
+      const chip = ui.createPickerTagChip('study', false);
+      expect(chip.classList.contains('selected')).toBe(false);
+      expect(chip.className).toContain('text-gray-800');
+    });
+
+    it('sets dataset.tag to tag name', () => {
+      const chip = ui.createPickerTagChip('rest');
+      expect(chip.dataset.tag).toBe('rest');
+    });
+  });
+
+  describe('showStartPicker / hideStartPicker', () => {
+    it('creates a floating picker with 5 bucket chips', () => {
+      ui.showStartPicker(() => {});
+      const picker = document.getElementById('start-picker');
+      expect(picker).not.toBeNull();
+      expect(picker.classList.contains('start-picker')).toBe(true);
+      const chips = picker.querySelectorAll('.start-picker-chip');
+      expect(chips.length).toBe(5);
+      const names = Array.from(chips).map(c => c.dataset.tag);
+      expect(names).toEqual(['rest', 'study', 'sport', 'other', 'work']);
+    });
+
+    it('calls onSelect with bucket name when chip clicked', () => {
+      const onSelect = vi.fn();
+      ui.showStartPicker(onSelect);
+      const chips = document.querySelectorAll('.start-picker-chip');
+      chips[2].click();
+      expect(onSelect).toHaveBeenCalledWith('sport');
+    });
+
+    it('calls onSelect with bucket name for the last chip (work)', () => {
+      const onSelect = vi.fn();
+      ui.showStartPicker(onSelect);
+      const chips = document.querySelectorAll('.start-picker-chip');
+      chips[4].click();
+      expect(onSelect).toHaveBeenCalledWith('work');
+    });
+
+    it('removes picker when hideStartPicker is called', () => {
+      ui.showStartPicker(() => {});
+      ui.hideStartPicker();
+      expect(document.getElementById('start-picker')).toBeNull();
+    });
+
+    it('hides picker after chip click', () => {
+      const onSelect = vi.fn();
+      ui.showStartPicker(onSelect);
+      const chips = document.querySelectorAll('.start-picker-chip');
+      chips[0].click();
+      expect(document.getElementById('start-picker')).toBeNull();
+    });
+  });
+
+  describe('initHashtagAutocomplete', () => {
+    const bucketData = {
+      work: ['coding', 'meeting', 'email'],
+      rest: ['sleep', 'read', 'music'],
+      study: ['rtu', 'read'],
+      sport: ['cycling'],
+      other: [],
+    };
+
+    beforeEach(() => {
+      store.setState({ tags: mockTags, tagBuckets: bucketData });
+    });
+
+    function typeText(id, text) {
+      const ta = document.getElementById(id);
+      ta.value = text;
+      ta.selectionStart = ta.selectionEnd = text.length;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    it('shows dropdown when #prefix typed in modal-notes', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', 'Worked on #re');
+      const dd = document.getElementById('hashtag-dropdown');
+      expect(dd).not.toBeNull();
+      expect(dd.querySelectorAll('.hashtag-item').length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('shows dropdown when #prefix typed in notes', () => {
+      ui.initHashtagAutocomplete('notes');
+      typeText('notes', '#re');
+      expect(document.getElementById('hashtag-dropdown')).not.toBeNull();
+    });
+
+    it('does not show dropdown when no hash', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', 'Worked on meeting');
+      expect(document.getElementById('hashtag-dropdown')).toBeNull();
+    });
+
+    it('does not show dropdown for just #', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', '#');
+      expect(document.getElementById('hashtag-dropdown')).toBeNull();
+    });
+
+    it('filters tags by prefix', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', '#si');
+      const dd = document.getElementById('hashtag-dropdown');
+      // 'si' matches nothing
+      expect(dd).toBeNull();
+    });
+
+    it('clicking item inserts #tag text into textarea preserving hash', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      const textarea = document.getElementById('modal-notes');
+      typeText('modal-notes', 'Worked on #re');
+      const items = document.querySelectorAll('.hashtag-item');
+      expect(items.length).toBeGreaterThan(0);
+      items[0].click();
+      expect(textarea.value).toMatch(/#(rest|read)\s/);
+      expect(textarea.value.length).toBeGreaterThan('Worked on #re'.length);
+      expect(textarea.value.startsWith('Worked on #')).toBe(true);
+      expect(document.getElementById('hashtag-dropdown')).toBeNull();
+    });
+
+    it('escape key closes dropdown', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', '#re');
+      expect(document.getElementById('hashtag-dropdown')).not.toBeNull();
+      document.getElementById('modal-notes')
+        .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(document.getElementById('hashtag-dropdown')).toBeNull();
+    });
+
+    it('blur closes dropdown', () => new Promise(done => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', '#re');
+      expect(document.getElementById('hashtag-dropdown')).not.toBeNull();
+      document.getElementById('modal-notes').dispatchEvent(new Event('blur'));
+      setTimeout(() => {
+        expect(document.getElementById('hashtag-dropdown')).toBeNull();
+        done();
+      }, 200);
+    }));
+
+    it('includes default tags as suggestions', () => {
+      ui.initHashtagAutocomplete('modal-notes');
+      typeText('modal-notes', '#wo');
+      const items = document.querySelectorAll('.hashtag-item');
+      const names = Array.from(items).map(el => el.textContent.trim());
+      expect(names).toContain('work');
+    });
   });
 
   describe('initializeCurrentSessionTags', () => {
-    it('renders tags with visible styling for unselected state', () => {
-      store.setState({ tags: mockTags });
+    const buckets = {
+      work: ['coding', 'meeting', 'email', 'planning', 'review', 'deploy', 'docs'],
+      rest: ['sleep', 'tv'],
+      study: ['rtu'],
+      sport: ['cycling'],
+      other: [],
+    };
+
+    it('renders two rows: default tags and subtags', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
       ui.initializeCurrentSessionTags();
       const container = document.getElementById('current-session-tags');
-      const tagEls = container.querySelectorAll('.tag');
-      expect(tagEls.length).toBe(mockTags.filter(t => t.isEnabled).length);
-      const unselected = container.querySelectorAll('.tag:not(.selected)');
-      expect(unselected.length).toBeGreaterThan(0);
-      const selected = container.querySelectorAll('.tag.selected');
+      expect(container.querySelector('.picker-row-1')).not.toBeNull();
+      expect(container.querySelector('.picker-row-2')).not.toBeNull();
+    });
+
+    it('renders all 5 default tags in row 1', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const chips = containerQSA('.picker-row-1 .tag-chip');
+      expect(chips.length).toBe(5);
+      const names = Array.from(chips).map(c => c.dataset.tag);
+      expect(names).toEqual(['work', 'rest', 'study', 'sport', 'other']);
+    });
+
+    it('pre-selects work in row 1', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const selected = containerQSA('.picker-row-1 .tag-chip.selected');
       expect(selected.length).toBe(1);
       expect(selected[0].dataset.tag).toBe('work');
-      for (const el of unselected) {
-        expect(el.classList.contains('selected')).toBe(false);
-        expect(el.textContent).toBeTruthy();
-      }
+    });
+
+    it('pre-selects bucket passed as argument', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags('rest');
+      const selected = containerQSA('.picker-row-1 .tag-chip.selected');
+      expect(selected.length).toBe(1);
+      expect(selected[0].dataset.tag).toBe('rest');
+    });
+
+    it('shows up to 6 subtags of selected default in row 2', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const subtagChips = containerQSA('.picker-row-2 .tag-chip');
+      const names = Array.from(subtagChips).map(c => c.dataset.tag);
+      expect(names).toEqual(['coding', 'meeting', 'email', 'planning', 'review', 'deploy']);
+      expect(containerQSA('.picker-row-2 .tag-more-btn').length).toBe(1);
+    });
+
+    it('shows all subtags when 6 or fewer', () => {
+      store.setState({ tags: mockTags, tagBuckets: { work: ['a', 'b', 'c'], rest: [], study: [], sport: [], other: [] } });
+      ui.initializeCurrentSessionTags();
+      const names = Array.from(containerQSA('.picker-row-2 .tag-chip')).map(c => c.dataset.tag);
+      expect(names).toEqual(['a', 'b', 'c']);
+    });
+
+    it('clicking a different default tag switches row 2 subtags', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const restChip = containerQSA('.picker-row-1 .tag-chip')[1];
+      restChip.click();
+      const subtagNames = Array.from(containerQSA('.picker-row-2 .tag-chip')).map(c => c.dataset.tag);
+      expect(subtagNames).toEqual(['sleep', 'tv']);
+    });
+
+    it('limits subtags to 6 with +N more expander', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const visibleChips = Array.from(containerQSA('.picker-row-2 .tag-chip:not(.tag-chip-hidden)'));
+      expect(visibleChips.length).toBe(6);
+      const expander = containerQSA('.picker-row-2 .tag-more-btn');
+      expect(expander.length).toBe(1);
+      expect(expander[0].textContent).toContain('+1 more');
+    });
+
+    it('expander click reveals hidden subtags', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const moreBtn = containerQSA('.picker-row-2 .tag-more-btn')[0];
+      moreBtn.click();
+      const allChips = containerQSA('.picker-row-2 .tag-chip');
+      expect(allChips.length).toBe(7);
+      expect(containerQSA('.picker-row-2 .tag-more-btn').length).toBe(0);
+    });
+
+    it('toggles subtag selection on click', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const chip = containerQSA('.picker-row-2 .tag-chip')[0];
+      expect(chip.classList.contains('selected')).toBe(false);
+      chip.click();
+      expect(chip.classList.contains('selected')).toBe(true);
+    });
+
+    it('only one default can be selected at a time (radio-style)', () => {
+      store.setState({ tags: mockTags, tagBuckets: buckets });
+      ui.initializeCurrentSessionTags();
+      const chips = containerQSA('.picker-row-1 .tag-chip');
+      chips[1].click();
+      const selected = containerQSA('.picker-row-1 .tag-chip.selected');
+      expect(selected.length).toBe(1);
+      expect(selected[0].dataset.tag).toBe('rest');
     });
   });
 
   describe('initializeSessionModalTags', () => {
-    it('renders tags with visible styling for unselected state', () => {
+    const modalBuckets = {
+      work: ['coding', 'meeting', 'email'],
+      rest: ['sleep'],
+      study: ['rtu'],
+      sport: ['cycling'],
+      other: [],
+    };
+
+    it('renders two-row picker when tagBuckets present', () => {
+      store.setState({ tags: mockTags, tagBuckets: modalBuckets });
+      ui.initializeSessionModalTags();
+      const container = document.getElementById('tags-container');
+      const row1 = container.querySelector('.picker-row-1');
+      const row2 = container.querySelector('.picker-row-2');
+      expect(row1).toBeTruthy();
+      expect(row2).toBeTruthy();
+      const chips = container.querySelectorAll('.tag-chip');
+      expect(chips.length).toBeGreaterThan(0);
+    });
+
+    it('pre-selects work bucket by default', () => {
+      store.setState({ tags: mockTags, tagBuckets: modalBuckets });
+      ui.initializeSessionModalTags();
+      const selected = document.querySelectorAll('#tags-container .tag-chip.selected');
+      expect(selected.length).toBe(1);
+      expect(selected[0].dataset.tag).toBe('work');
+    });
+
+    it('pre-selects given bucket', () => {
+      store.setState({ tags: mockTags, tagBuckets: modalBuckets });
+      ui.initializeSessionModalTags('rest');
+      const selected = document.querySelectorAll('#tags-container .tag-chip.selected');
+      expect(selected.length).toBe(1);
+      expect(selected[0].dataset.tag).toBe('rest');
+    });
+
+    it('pre-selects given subtags', () => {
+      store.setState({ tags: mockTags, tagBuckets: modalBuckets });
+      ui.initializeSessionModalTags('work', ['work', 'coding']);
+      const row2Chips = document.querySelectorAll('#tags-container .picker-row-2 .tag-chip.selected');
+      const selectedSubtagNames = Array.from(row2Chips).map(el => el.dataset.tag);
+      expect(selectedSubtagNames).toContain('coding');
+    });
+
+    it('falls back to legacy picker when no tagBuckets', () => {
       store.setState({ tags: mockTags });
       ui.initializeSessionModalTags();
       const container = document.getElementById('tags-container');
@@ -580,6 +921,26 @@ describe('uiManager', () => {
       ui.switchSettingsTab('salary');
       expect(document.getElementById('general-settings').classList.contains('hidden')).toBe(true);
     });
+
+    it('re-renders tag settings when switching to tags tab', () => {
+      store.setState({
+        tags: [
+          { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'rest', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'study', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'sport', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'other', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'hiking', isDefault: false, isEnabled: true, isCustom: true },
+        ],
+        tagBuckets: {
+          work: [], rest: [], study: [], sport: ['hiking'], other: [],
+        },
+      });
+      ui.switchSettingsTab('tags');
+      const sportGroup = document.querySelector('[data-bucket="sport"]');
+      expect(sportGroup).toBeTruthy();
+      expect(sportGroup.textContent).toContain('hiking');
+    });
   });
 
   describe('config history modal', () => {
@@ -594,6 +955,292 @@ describe('uiManager', () => {
       ui.showConfigHistoryModal();
       const items = document.getElementById('config-history-list').querySelectorAll('.config-version');
       expect(items.length).toBe(1);
+    });
+  });
+
+  describe('renderTagSettings', () => {
+    function setupTagsState(store) {
+      store.setState({
+        tags: [
+          { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'rest', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'study', isDefault: false, isEnabled: true, isCustom: false },
+          { name: 'music', isDefault: false, isEnabled: false, isCustom: false },
+          { name: 'customTag', isDefault: false, isEnabled: true, isCustom: true },
+          { name: 'read', isDefault: false, isEnabled: true, isCustom: false },
+          { name: 'sleep', isDefault: false, isEnabled: true, isCustom: false },
+        ],
+        tagBuckets: {
+          work: [],
+          rest: ['read', 'sleep', 'music'],
+          study: ['read'],
+          sport: [],
+          other: ['customTag'],
+        },
+      });
+    }
+
+    it('renders a collapsible bucket header for each bucket', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const headers = document.querySelectorAll('.tag-bucket-header');
+      expect(headers.length).toBe(5);
+      const hasBucketName = (name) => Array.from(headers).some(h => h.textContent.includes(name));
+      expect(hasBucketName('work')).toBe(true);
+      expect(hasBucketName('rest')).toBe(true);
+      expect(hasBucketName('study')).toBe(true);
+      expect(hasBucketName('sport')).toBe(true);
+      expect(hasBucketName('other')).toBe(true);
+    });
+
+    it('renders subtag chips inside each bucket', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const restGroup = document.querySelector('[data-bucket="rest"]');
+      expect(restGroup).toBeTruthy();
+      const subtags = restGroup.querySelectorAll('.tag-item:not([data-default="true"])');
+      expect(subtags.length).toBe(3);
+    });
+
+    it('renders subtag chips even when tag objects missing from s.tags', () => {
+      store.setState({
+        tags: [
+          { name: 'work', isDefault: true, isEnabled: true },
+          { name: 'sport', isDefault: true, isEnabled: true },
+        ],
+        tagBuckets: { work: [], sport: ['cycling', 'horse', 'running'], other: [] },
+      });
+      ui.renderTagSettings();
+      const sportGroup = document.querySelector('[data-bucket="sport"]');
+      expect(sportGroup).toBeTruthy();
+      const chips = sportGroup.querySelectorAll('.tag-item');
+      const chipNames = Array.from(chips).map(c => c.textContent.trim());
+      expect(chipNames).toContain('cycling');
+      expect(chipNames).toContain('horse');
+      expect(chipNames).toContain('running');
+    });
+
+    it('renders collapse arrow on each header', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const arrows = document.querySelectorAll('.tag-bucket-header .collapse-arrow');
+      expect(arrows.length).toBe(5);
+      expect(arrows[0].textContent).toContain('▼');
+    });
+
+    it('toggles subtag visibility when header is clicked', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const header = document.querySelector('[data-bucket="rest"] .tag-bucket-header');
+      const subtagsContainer = document.querySelector('[data-bucket="rest"] .tag-bucket-subtags');
+      expect(subtagsContainer.classList.contains('collapsed')).toBe(false);
+      header.click();
+      expect(subtagsContainer.classList.contains('collapsed')).toBe(true);
+      header.click();
+      expect(subtagsContainer.classList.contains('collapsed')).toBe(false);
+    });
+
+    it('renders unassigned section with custom tags not in any bucket', () => {
+      store.setState({
+        tags: [
+          { name: 'custom1', isDefault: false, isEnabled: true, isCustom: true },
+          { name: 'custom2', isDefault: false, isEnabled: true, isCustom: true },
+          { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+        ],
+        tagBuckets: { work: [], rest: [], study: [], sport: [], other: ['custom1'] },
+      });
+      ui.renderTagSettings();
+      const unassignedGroup = document.querySelector('[data-bucket="unassigned"]');
+      expect(unassignedGroup).toBeTruthy();
+      const unassignedTags = unassignedGroup.querySelectorAll('.tag-item');
+      expect(unassignedTags.length).toBe(1);
+      expect(unassignedTags[0].textContent).toContain('custom2');
+    });
+
+    it('sets draggable on subtag chips but not default tags', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const defaultChips = document.querySelectorAll('.tag-item[data-default="true"]');
+      defaultChips.forEach(chip => expect(chip.draggable).toBe(false));
+      const subtagChips = document.querySelectorAll('.tag-item:not([data-default="true"])');
+      subtagChips.forEach(chip => expect(chip.draggable).toBe(true));
+    });
+
+    it('dragstart sets tag name and source bucket in drag data', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const readChip = Array.from(document.querySelectorAll('.tag-item:not([data-default="true"])'))
+        .find(c => c.textContent.includes('read'));
+      expect(readChip).toBeTruthy();
+      const dt = new MockDataTransfer();
+      readChip.dispatchEvent(createDragEvent('dragstart', dt));
+      expect(dt.getData('text/plain')).toBe('read');
+      expect(dt.getData('application/x-source-bucket')).toBe('rest');
+    });
+
+    it('dragover adds drag-over class to subtags container', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const studySubtags = document.querySelector('[data-bucket="study"] .tag-bucket-subtags');
+      expect(studySubtags.classList.contains('drag-over')).toBe(false);
+      studySubtags.dispatchEvent(createDragEvent('dragover'));
+      expect(studySubtags.classList.contains('drag-over')).toBe(true);
+    });
+
+    it('dragleave removes drag-over class', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const studySubtags = document.querySelector('[data-bucket="study"] .tag-bucket-subtags');
+      studySubtags.dispatchEvent(createDragEvent('dragover'));
+      expect(studySubtags.classList.contains('drag-over')).toBe(true);
+      studySubtags.dispatchEvent(createDragEvent('dragleave'));
+      expect(studySubtags.classList.contains('drag-over')).toBe(false);
+    });
+
+    it('drop moves subtag between buckets', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const s = store.getState();
+      expect(s.tagBuckets.rest).toContain('read');
+      expect(s.tagBuckets.study).toContain('read');
+      const readChip = Array.from(document.querySelectorAll('.tag-item:not([data-default="true"])'))
+        .find(c => c.textContent.includes('read') && c.closest('[data-bucket="rest"]'));
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'read');
+      dt.setData('application/x-source-bucket', 'rest');
+      readChip.dispatchEvent(createDragEvent('dragstart', dt));
+      const studySubtags = document.querySelector('[data-bucket="study"] .tag-bucket-subtags');
+      studySubtags.dispatchEvent(createDragEvent('drop', dt));
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.rest).not.toContain('read');
+      expect(stateAfter.tagBuckets.study).toContain('read');
+    });
+
+    it('drop to same bucket is a no-op', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'read');
+      dt.setData('application/x-source-bucket', 'rest');
+      const restSubtags = document.querySelector('[data-bucket="rest"] .tag-bucket-subtags');
+      const originalState = store.getState();
+      restSubtags.dispatchEvent(createDragEvent('drop', dt));
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.rest).toEqual(originalState.tagBuckets.rest);
+    });
+
+    it('drop removes drag-over class', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const studySubtags = document.querySelector('[data-bucket="study"] .tag-bucket-subtags');
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'read');
+      dt.setData('application/x-source-bucket', 'rest');
+      studySubtags.dispatchEvent(createDragEvent('dragover'));
+      studySubtags.dispatchEvent(createDragEvent('drop', dt));
+      expect(studySubtags.classList.contains('drag-over')).toBe(false);
+    });
+
+    it('ctrl+drag duplicates subtag into target bucket without removing from source', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'read');
+      dt.setData('application/x-source-bucket', 'rest');
+      const workSubtags = document.querySelector('[data-bucket="work"] .tag-bucket-subtags');
+      const stateBefore = store.getState();
+      expect(stateBefore.tagBuckets.rest).toContain('read');
+      expect(stateBefore.tagBuckets.work).not.toContain('read');
+      workSubtags.dispatchEvent(createDragEvent('drop', dt, { ctrlKey: true }));
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.rest).toContain('read');
+      expect(stateAfter.tagBuckets.work).toContain('read');
+    });
+
+    it('ctrl+drag to bucket that already contains tag is a no-op', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'read');
+      dt.setData('application/x-source-bucket', 'rest');
+      const studySubtags = document.querySelector('[data-bucket="study"] .tag-bucket-subtags');
+      const stateBefore = store.getState();
+      expect(stateBefore.tagBuckets.study).toContain('read');
+      const countBefore = stateBefore.tagBuckets.study.length;
+      studySubtags.dispatchEvent(createDragEvent('drop', dt, { ctrlKey: true }));
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.study).toContain('read');
+      expect(stateAfter.tagBuckets.study.length).toBe(countBefore);
+    });
+
+    it('renders remove button on each non-default subtag chip', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const restSubtagChips = document.querySelectorAll('[data-bucket="rest"] .tag-item:not([data-default="true"])');
+      restSubtagChips.forEach(chip => {
+        const removeBtn = chip.querySelector('.tag-remove-btn');
+        expect(removeBtn).toBeTruthy();
+      });
+    });
+
+    it('does not render remove button on default tag chips', () => {
+      setupTagsState(store);
+      ui.renderTagSettings();
+      const defaultChips = document.querySelectorAll('.tag-item[data-default="true"]');
+      defaultChips.forEach(chip => {
+        expect(chip.querySelector('.tag-remove-btn')).toBeFalsy();
+      });
+    });
+
+    it('clicking remove button removes subtag from bucket', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const stateBefore = store.getState();
+      expect(stateBefore.tagBuckets.rest).toContain('read');
+      const readChip = Array.from(document.querySelectorAll('[data-bucket="rest"] .tag-item:not([data-default="true"])'))
+        .find(c => c.textContent.includes('read'));
+      const removeBtn = readChip.querySelector('.tag-remove-btn');
+      removeBtn.click();
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.rest).not.toContain('read');
+      expect(stateAfter.tagBuckets.study).toContain('read');
+    });
+
+    it('shows no-subtags placeholder when bucket has no subtags', () => {
+      setupTagsState(store);
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const workSubtags = document.querySelector('[data-bucket="work"] .tag-bucket-subtags');
+      expect(workSubtags.textContent).toContain('no subtags');
+    });
+
+    it('drag from unassigned adds tag to target bucket', () => {
+      store.setState({
+        tags: [
+          { name: 'work', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'rest', isDefault: true, isEnabled: true, isCustom: false },
+          { name: 'read', isDefault: false, isEnabled: true, isCustom: false },
+          { name: 'untagged', isDefault: false, isEnabled: true, isCustom: true },
+        ],
+        tagBuckets: { work: [], rest: [], sport: [], study: [], other: [] },
+      });
+      ui.setOnTagBucketsChange(() => {});
+      ui.renderTagSettings();
+      const unassignedGroup = document.querySelector('[data-bucket="unassigned"]');
+      expect(unassignedGroup).toBeTruthy();
+      const dt = new MockDataTransfer();
+      dt.setData('text/plain', 'untagged');
+      dt.setData('application/x-source-bucket', 'unassigned');
+      const workSubtags = document.querySelector('[data-bucket="work"] .tag-bucket-subtags');
+      workSubtags.dispatchEvent(createDragEvent('drop', dt));
+      const stateAfter = store.getState();
+      expect(stateAfter.tagBuckets.work).toContain('untagged');
     });
   });
 });

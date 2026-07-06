@@ -1,6 +1,7 @@
 import * as utils from '../js/utils.js';
 import { createCalendarView } from './calendarView.js';
-import { DEFAULT_BACKUP_INTERVAL_MS, CURRENT_SESSION_INIT } from './constants.js';
+import { DEFAULT_BACKUP_INTERVAL_MS, CURRENT_SESSION_INIT, DEFAULT_TAGS } from './constants.js';
+import { resolveSessionBucket } from './tagManager.js';
 
 const INITIAL_STATE = Object.freeze({
   sessions: [],
@@ -12,6 +13,7 @@ const INITIAL_STATE = Object.freeze({
   darkMode: false,
   backupIntervalMs: 300000,
   tracker: { startTime: null, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
+  tagBuckets: {},
 });
 
 function getDayType(dateStr, state) {
@@ -37,6 +39,7 @@ export function createEventHandlers(deps) {
     if (state && state.tags) store.setState({ tags: state.tags });
     if (state && state.darkMode !== undefined) store.setState({ darkMode: state.darkMode });
     if (state && state.backupIntervalMs) store.setState({ backupIntervalMs: state.backupIntervalMs });
+    if (state && state.tagBuckets) store.setState({ tagBuckets: state.tagBuckets });
     if (state && state.tracker && state.tracker.startTime) {
       const age = Date.now() - state.tracker.startTime;
       if (age < 24 * 3600 * 1000) {
@@ -56,13 +59,30 @@ export function createEventHandlers(deps) {
           configManager.addConfig();
         }
         if (s.tags.length === 0) {
-          const { DEFAULT_TAGS, PRESET_TAGS } = await import('./constants.js');
+          const { DEFAULT_TAGS, DEFAULT_BUCKET_MAP } = await import('./constants.js');
+          const subtagNames = [...new Set(Object.values(DEFAULT_BUCKET_MAP).flat())];
           const tags = [
             ...DEFAULT_TAGS.map(t => ({ name: t, isDefault: true, isEnabled: true, isCustom: false })),
-            ...PRESET_TAGS.map(t => ({ name: t, isDefault: false, isEnabled: true, isCustom: false })),
+            ...subtagNames.map(t => ({ name: t, isDefault: false, isEnabled: true, isCustom: false })),
           ];
           store.setState({ tags });
         }
+      }
+      const s = store.getState();
+      const { DEFAULT_TAGS, DEFAULT_BUCKET_MAP } = await import('./constants.js');
+      const allDefaultKeysPresent = s.tagBuckets
+        && DEFAULT_TAGS.every(t => Object.prototype.hasOwnProperty.call(s.tagBuckets, t));
+      if (!allDefaultKeysPresent) {
+        store.setState({ tagBuckets: { ...DEFAULT_BUCKET_MAP } });
+      }
+      if (s.tags.length > 0 && typeof s.tags[0] === 'string') {
+        const subtagNames = [...new Set(Object.values(DEFAULT_BUCKET_MAP).flat())];
+        store.setState({
+          tags: [
+            ...DEFAULT_TAGS.map(t => ({ name: t, isDefault: true, isEnabled: true, isCustom: false })),
+            ...subtagNames.map(t => ({ name: t, isDefault: false, isEnabled: s.tags.includes(t), isCustom: false })),
+          ],
+        });
       }
     } catch (err) {
       console.error('Failed to load data:', err);
@@ -80,6 +100,7 @@ export function createEventHandlers(deps) {
         darkMode: s.darkMode,
         tracker: s.tracker,
         backupIntervalMs: s.backupIntervalMs,
+        tagBuckets: s.tagBuckets,
       });
     } catch (err) {
       console.error('Failed to save data:', err);
@@ -97,7 +118,13 @@ export function createEventHandlers(deps) {
     if (s.currentTab === 'stats') ui.updateStatistics();
   }
 
-  function startSession() {
+  ui.setOnTagBucketsChange(saveState);
+  ui.setOnDeleteCustomTag(deleteCustomTag);
+
+  function startSession(bucket) {
+    if (bucket) {
+      ui.initializeCurrentSessionTags(bucket);
+    }
     clearInterval(timerInterval);
     clearInterval(backupInterval);
     sessionManager.startTracking();
@@ -205,6 +232,20 @@ export function createEventHandlers(deps) {
     const trackerEndInput = document.getElementById('current-session-end-time-input');
     const restInput = document.getElementById('current-session-accumulated-rest-duration-input');
     const notesInput = document.getElementById('notes');
+    let notesValue = notesInput ? notesInput.value.trim() : '';
+    const selectedTags = [];
+    let bucket;
+    document.querySelectorAll('#current-session-tags .tag-chip.selected').forEach(el => {
+      selectedTags.push(el.dataset.tag);
+      const parentRow = el.closest('.picker-row-1');
+      if (parentRow) bucket = el.dataset.tag;
+    });
+    if (selectedTags.length === 0) selectedTags.push('work');
+    const syncResult = syncHashtagTags(notesValue, bucket);
+    if (syncResult) {
+      syncResult.foundTags.forEach(t => { if (!selectedTags.includes(t)) selectedTags.push(t); });
+      notesValue = syncResult.cleanedNotes;
+    }
     const startTimeMs = parseInt(trackerStartInput ? trackerStartInput.value : '0', 10);
     const endTimeMs = parseInt(trackerEndInput ? trackerEndInput.value : '0', 10);
     const accumulatedPauseTimeMs = parseInt(restInput ? restInput.value : '0', 10);
@@ -214,11 +255,6 @@ export function createEventHandlers(deps) {
     const accumulatedPauseTimeSec = Math.floor(accumulatedPauseTimeMs / 1000);
     const date = utils.formatDate(startDate);
     const dayType = getDayType(date, s);
-    const selectedTags = [];
-    document.querySelectorAll('#current-session-tags .tag.selected').forEach(el => {
-      selectedTags.push(el.dataset.tag);
-    });
-    if (selectedTags.length === 0) selectedTags.push('work');
     const moodInput = document.getElementById('current-session-mood-input');
     sessionManager.addSession({
       id: Date.now(),
@@ -228,10 +264,11 @@ export function createEventHandlers(deps) {
       duration: utils.formatDuration(duration),
       durationSec: duration,
       accumulatedPauseTimeSec,
-      notes: notesInput ? notesInput.value.trim() : '',
+      notes: notesValue,
       dayType,
       tags: selectedTags,
       mood: moodInput ? parseFloat(moodInput.value) : 5,
+      bucket,
     });
     if (notesInput) notesInput.value = '';
     const durEl = document.getElementById('active-duration');
@@ -284,13 +321,28 @@ export function createEventHandlers(deps) {
     const accumulatedPauseMs = existingSession ? (existingSession.accumulatedPauseTimeSec || 0) * 1000 : 0;
     const duration = Math.max(0, Math.floor((endTime - startTime - accumulatedPauseMs) / 1000));
     const dayType = dayTypeInput ? dayTypeInput.value : 'Workday';
-    const notes = modalNotes ? modalNotes.value.trim() : '';
+    let notes = modalNotes ? modalNotes.value.trim() : '';
     const selectedTags = [];
-    document.querySelectorAll('#tags-container .tag.selected').forEach(el => {
-      selectedTags.push(el.dataset.tag);
-    });
+    let bucket;
+    const chips = document.querySelectorAll('#tags-container .tag-chip.selected');
+    if (chips.length > 0) {
+      chips.forEach(el => {
+        selectedTags.push(el.dataset.tag);
+        const parentRow = el.closest('.picker-row-1');
+        if (parentRow) bucket = el.dataset.tag;
+      });
+    } else {
+      document.querySelectorAll('#tags-container .tag.selected').forEach(el => {
+        selectedTags.push(el.dataset.tag);
+      });
+    }
     const isBreak = selectedTags.includes('rest') && !selectedTags.includes('work');
     if (!isBreak && selectedTags.length === 0) selectedTags.unshift('work');
+    const syncResult = syncHashtagTags(notes, bucket);
+    if (syncResult) {
+      syncResult.foundTags.forEach(t => { if (!selectedTags.includes(t)) selectedTags.push(t); });
+      notes = syncResult.cleanedNotes;
+    }
     const mood = moodInput ? parseFloat(moodInput.value) : 5;
     if (sessionId) {
       sessionManager.updateSession(parseInt(sessionId, 10), {
@@ -304,6 +356,7 @@ export function createEventHandlers(deps) {
         tags: selectedTags,
         mood,
         isBreak,
+        bucket,
       });
     } else {
       sessionManager.addSession({
@@ -318,6 +371,7 @@ export function createEventHandlers(deps) {
         tags: selectedTags,
         mood,
         isBreak,
+        bucket,
       });
     }
     ui.hideSessionModal();
@@ -343,29 +397,23 @@ export function createEventHandlers(deps) {
     if (endTimeInput) endTimeInput.value = utils.formatDateTimeLocal(new Date(session.endTime));
     if (dayTypeInput) dayTypeInput.value = session.dayType || 'Workday';
     if (modalNotes) modalNotes.value = session.notes || '';
-    const tagsContainer = document.getElementById('tags-container');
-    if (tagsContainer) {
-      tagsContainer.innerHTML = '';
-      const enabledTags = s.tags.filter(t => t.isEnabled);
-      for (const tag of enabledTags) {
-        const tagEl = document.createElement('div');
-        const isSelected = session.tags && session.tags.includes(tag.name);
-        tagEl.className = `tag px-2 py-1 rounded-full text-sm cursor-pointer ${isSelected ? 'selected' : ''} ${ui.getTagBadgeClass(tag.name, isSelected)}`;
-        tagEl.dataset.tag = tag.name;
-        tagEl.textContent = tag.name;
-        tagEl.addEventListener('click', () => {
-          const selected = tagsContainer.querySelectorAll('.tag.selected');
-          const selectedNames = Array.from(selected).map(el => el.dataset.tag);
-          if (selectedNames.length <= 1 && selectedNames.includes(tag.name)) return;
-          tagEl.classList.toggle('selected');
-          tagEl.classList.toggle('bg-blue-100');
-          tagEl.classList.toggle('text-blue-800');
-          tagEl.classList.toggle('dark:bg-blue-900');
-          tagEl.classList.toggle('dark:text-blue-300');
-        });
-        tagsContainer.appendChild(tagEl);
+    const bucket = session.bucket || resolveSessionBucket(session);
+    const sessionTags = session.tags || [];
+    const defaultsInTags = sessionTags.filter(t => DEFAULT_TAGS.includes(t));
+    if (defaultsInTags.length > 1) {
+      const existingWarning = document.getElementById('multiple-defaults-warning');
+      if (!existingWarning) {
+        const warning = document.createElement('div');
+        warning.id = 'multiple-defaults-warning';
+        warning.className = 'text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 rounded mb-2';
+        warning.textContent = `Session has multiple bucket tags (${defaultsInTags.join(', ')}). Only one bucket can be active.`;
+        const tagsContainer = document.getElementById('tags-container');
+        if (tagsContainer && tagsContainer.parentNode) {
+          tagsContainer.parentNode.insertBefore(warning, tagsContainer);
+        }
       }
     }
+    ui.initializeSessionModalTags(bucket, sessionTags);
     const rating = session.mood || 5;
     if (moodRating) moodRating.dataset.rating = rating;
     if (moodInput) moodInput.value = rating;
@@ -541,8 +589,9 @@ export function createEventHandlers(deps) {
       configs: s.configs,
       markedDays: s.markedDays,
       tags: s.tags,
+      tagBuckets: s.tagBuckets,
       exportedAt: new Date().toISOString(),
-      version: '1.1',
+      version: '1.2',
     };
     const dataStr = JSON.stringify(data, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
@@ -566,7 +615,8 @@ export function createEventHandlers(deps) {
         const data = JSON.parse(e.target.result);
         if (!data || typeof data !== 'object') throw new Error('Invalid data format');
         if (!confirm('Are you sure you want to import this data? This will overwrite your current data.')) return;
-        const { DEFAULT_TAGS, PRESET_TAGS } = await import('./constants.js');
+        const { DEFAULT_TAGS, DEFAULT_BUCKET_MAP } = await import('./constants.js');
+        const subtagNames = [...new Set(Object.values(DEFAULT_BUCKET_MAP).flat())];
         store.setState({
           sessions: Array.isArray(data.sessions) ? data.sessions.map(s => ({
             ...s,
@@ -577,8 +627,9 @@ export function createEventHandlers(deps) {
           markedDays: Array.isArray(data.markedDays) ? data.markedDays : [],
           tags: Array.isArray(data.tags) ? data.tags : [
             ...DEFAULT_TAGS.map(t => ({ name: t, isDefault: true, isEnabled: true, isCustom: false })),
-            ...PRESET_TAGS.map(t => ({ name: t, isDefault: false, isEnabled: true, isCustom: false })),
+            ...subtagNames.map(t => ({ name: t, isDefault: false, isEnabled: true, isCustom: false })),
           ],
+          tagBuckets: data.tagBuckets && Object.keys(data.tagBuckets).length > 0 ? data.tagBuckets : { ...DEFAULT_BUCKET_MAP },
         });
         const impState = store.getState();
 
@@ -637,8 +688,12 @@ export function createEventHandlers(deps) {
     if (!input) return;
     const tagName = input.value.trim();
     if (tagName && !s.tags.some(t => t.name === tagName)) {
+      const tagBuckets = { ...s.tagBuckets };
+      if (!tagBuckets.other) tagBuckets.other = [];
+      tagBuckets.other = [...tagBuckets.other, tagName];
       store.setState({
         tags: [...s.tags, { name: tagName, isDefault: false, isEnabled: true, isCustom: true }],
+        tagBuckets,
       });
       input.value = '';
       ui.renderTagSettings();
@@ -649,9 +704,56 @@ export function createEventHandlers(deps) {
   function deleteCustomTag(tagName) {
     if (!confirm(`Are you sure you want to delete the "${tagName}" tag?`)) return;
     const s = store.getState();
-    store.setState({ tags: s.tags.filter(t => t.name !== tagName) });
+    const tagBuckets = { ...s.tagBuckets };
+    for (const bucket of Object.keys(tagBuckets)) {
+      if (tagBuckets[bucket].includes(tagName)) {
+        tagBuckets[bucket] = tagBuckets[bucket].filter(t => t !== tagName);
+      }
+    }
+    store.setState({
+      tags: s.tags.filter(t => t.name !== tagName),
+      tagBuckets,
+    });
     ui.renderTagSettings();
     saveState();
+  }
+
+  function syncHashtagTags(notes, bucket) {
+    if (!notes) return { addedTags: [], foundTags: [], cleanedNotes: notes };
+    const s = store.getState();
+    const existing = new Set(s.tags.map(t => t.name));
+    const allTagNames = new Set(existing);
+    for (const b of Object.keys(s.tagBuckets || {})) {
+      allTagNames.add(b);
+      for (const st of (s.tagBuckets[b] || [])) allTagNames.add(st);
+    }
+    const hashtagRegex = /#(\w+)/g;
+    const toAdd = [];
+    const found = [];
+    let match;
+    while ((match = hashtagRegex.exec(notes)) !== null) {
+      const name = match[1];
+      if (!found.includes(name)) found.push(name);
+      if (!allTagNames.has(name) && !toAdd.includes(name)) {
+        toAdd.push(name);
+      }
+    }
+    if (found.length > 0) {
+      const removePattern = new RegExp(`#(${found.join('|')})\\b`, 'g');
+      notes = notes.replace(removePattern, '').replace(/\s{2,}/g, ' ').trim();
+    }
+    if (toAdd.length > 0) {
+      const tagBuckets = { ...s.tagBuckets };
+      const targetBucket = bucket && tagBuckets[bucket] ? bucket : 'other';
+      if (!tagBuckets[targetBucket]) tagBuckets[targetBucket] = [];
+      tagBuckets[targetBucket] = [...tagBuckets[targetBucket], ...toAdd];
+      store.setState({
+        tags: [...s.tags, ...toAdd.map(name => ({ name, isDefault: false, isEnabled: true, isCustom: true }))],
+        tagBuckets,
+      });
+      ui.renderTagSettings();
+    }
+    return { addedTags: toAdd, foundTags: found, cleanedNotes: notes };
   }
 
   function showMarkDayModal(dayType) {
@@ -679,7 +781,65 @@ export function createEventHandlers(deps) {
     document.getElementById('stats-tab')?.addEventListener('click', () => switchTab('stats'));
     document.getElementById('calendar-tab')?.addEventListener('click', () => switchTab('calendar'));
     document.getElementById('config-tab')?.addEventListener('click', () => switchTab('config'));
-    document.getElementById('start-btn')?.addEventListener('click', startSession);
+    let startPressTimer = null;
+    let startLongPress = false;
+
+    const startBtn = document.getElementById('start-btn');
+    if (startBtn) {
+      let pressX, pressY;
+      startBtn.addEventListener('mousedown', (e) => {
+        ui.hideStartPicker();
+        pressX = e.clientX;
+        pressY = e.clientY;
+        startLongPress = false;
+        startPressTimer = setTimeout(() => {
+          startLongPress = true;
+          ui.showStartPicker((bucket) => {
+            startSession(bucket);
+          }, pressX, pressY);
+        }, 500);
+      });
+      startBtn.addEventListener('mouseup', () => {
+        clearTimeout(startPressTimer);
+        startPressTimer = null;
+        if (startLongPress) {
+          startLongPress = false;
+          return;
+        }
+        ui.hideStartPicker();
+        startSession();
+      });
+      startBtn.addEventListener('mouseleave', () => {
+        clearTimeout(startPressTimer);
+        startPressTimer = null;
+      });
+      startBtn.addEventListener('touchstart', (e) => {
+        ui.hideStartPicker();
+        pressX = e.touches[0].clientX;
+        pressY = e.touches[0].clientY;
+        startLongPress = false;
+        startPressTimer = setTimeout(() => {
+          startLongPress = true;
+          ui.showStartPicker((bucket) => {
+            startSession(bucket);
+          }, pressX, pressY);
+        }, 500);
+      }, { passive: true });
+      startBtn.addEventListener('touchend', () => {
+        clearTimeout(startPressTimer);
+        startPressTimer = null;
+        if (startLongPress) {
+          startLongPress = false;
+          return;
+        }
+        ui.hideStartPicker();
+        startSession();
+      });
+      startBtn.addEventListener('touchcancel', () => {
+        clearTimeout(startPressTimer);
+        startPressTimer = null;
+      });
+    }
     document.getElementById('stop-btn')?.addEventListener('click', stopSession);
     document.getElementById('pause-btn')?.addEventListener('click', togglePause);
     document.getElementById('recent-sessions-grid-toggle')?.addEventListener('click', () => ui.toggleRecentSessionsGrid());
@@ -724,11 +884,16 @@ export function createEventHandlers(deps) {
         switchSettingsTab(tab);
       });
     });
-    const tagSettingsTab = document.querySelector('[data-settings-tab="tags"]');
-    if (tagSettingsTab) {
-      tagSettingsTab.addEventListener('click', () => switchSettingsTab('tags'));
-    }
     document.addEventListener('click', (e) => {
+      if (!e.target.closest('#hashtag-dropdown, #hashtag-dropdown *')) {
+        const dd = document.getElementById('hashtag-dropdown');
+        if (dd && !e.target.closest('.hashtag-item') && !e.target.closest('textarea')) {
+          dd.remove();
+        }
+      }
+      if (!e.target.closest('#start-picker, #start-picker *, #start-btn')) {
+        ui.hideStartPicker();
+      }
       const editBtn = e.target.closest('.edit-session');
       if (editBtn && editBtn.dataset.id) {
         editSession(parseInt(editBtn.dataset.id, 10));
@@ -751,6 +916,8 @@ export function createEventHandlers(deps) {
       moodRating.addEventListener('mousemove', ui.handleStarHover);
       moodRating.addEventListener('mouseleave', ui.resetStarDisplay);
     }
+    ui.initHashtagAutocomplete('notes');
+    ui.initHashtagAutocomplete('modal-notes');
   }
 
   async function init() {
@@ -822,7 +989,7 @@ export function createEventHandlers(deps) {
     showConfigHistoryModal, hideConfigHistoryModal, restoreConfig,
     exportAllData, importData,
     resetSessionsFn, resetConfigFn, resetMarkedDaysFn,
-    addCustomTag, deleteCustomTag, setupEventListeners, loadData,
+    addCustomTag, deleteCustomTag, syncHashtagTags, setupEventListeners, loadData,
     persistAndRender,
   };
 }
