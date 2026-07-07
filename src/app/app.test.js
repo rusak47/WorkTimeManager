@@ -1006,6 +1006,69 @@ describe('app event handlers', () => {
     vi.useRealTimers();
   });
 
+  it('stopSession when paused reads break form values and updates most recent work segment', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-07T12:00:00Z'));
+
+    app.startSession();
+    const blockId = store.getState().tracker.workBlockId;
+    vi.advanceTimersByTime(10000);
+    app.togglePause();
+    document.getElementById('break-notes').value = 'Grabbed coffee';
+    app.stopSession();
+
+    const workSegments = store.getState().sessions.filter(ses => !ses.isBreak && ses.workBlockId === blockId);
+    expect(workSegments.length).toBe(1);
+    expect(workSegments[0].notes).toBe('Grabbed coffee');
+    expect(workSegments[0].tags.includes('rest')).toBe(true);
+
+    vi.useRealTimers();
+  });
+
+  it('saveState reads break form values when paused', async () => {
+    const now = Date.now();
+    store.setState({
+      tracker: {
+        startTime: now, isPaused: true, pauseStart: now, segmentStartTime: now,
+        workBlockId: 'test-block', totalSavedDurationMs: 0, isBreak: false
+      },
+      sessions: [],
+    });
+    document.getElementById('break-notes').value = 'Break notes during save';
+    storage.saveState.mockClear();
+    await app.saveState();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tracker.backupNotes).toBe('Break notes during save');
+    expect(saved.tracker.backupMood).toBeDefined();
+  });
+
+  it('init restores break form when stopped while paused', async () => {
+    storage.loadState.mockClear();
+    const now = Date.now();
+    storage.loadState.mockResolvedValue({
+      _migrationVersion: '1.2.0',
+      sessions: [],
+      configs: [],
+      markedDays: [],
+      tags: [],
+      darkMode: false,
+      tracker: {
+        startTime: now, isPaused: true, pauseStart: now, segmentStartTime: now,
+        workBlockId: 'test-block', totalSavedDurationMs: 10000, isBreak: false,
+        backupNotes: 'Restored break notes', backupMood: '3',
+      },
+      backupIntervalMs: 600000,
+    });
+
+    document.getElementById('break-session-notes').classList.add('hidden');
+    document.getElementById('session-notes').classList.add('hidden');
+
+    await app.init();
+
+    expect(document.getElementById('break-notes').value).toBe('Restored break notes');
+    expect(document.getElementById('break-session-mood-input').value).toBe('3');
+  });
+
   it('readBreakFormValues returns break form values', () => {
     const tagContainer = document.getElementById('break-session-tags');
     const chip = document.createElement('div');

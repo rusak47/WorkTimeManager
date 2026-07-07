@@ -103,10 +103,17 @@ export function createEventHandlers(deps) {
     const s = store.getState();
     const tracker = { ...s.tracker };
     if (tracker.startTime) {
-      const notesEl = document.getElementById('notes');
-      if (notesEl) tracker.backupNotes = notesEl.value;
-      const moodEl = document.getElementById('current-session-mood-input');
-      if (moodEl) tracker.backupMood = moodEl.value;
+      if (tracker.isPaused) {
+        const breakNotesEl = document.getElementById('break-notes');
+        if (breakNotesEl) tracker.backupNotes = breakNotesEl.value;
+        const moodEl = document.getElementById('break-session-mood-input');
+        if (moodEl) tracker.backupMood = moodEl.value;
+      } else {
+        const notesEl = document.getElementById('notes');
+        if (notesEl) tracker.backupNotes = notesEl.value;
+        const moodEl = document.getElementById('current-session-mood-input');
+        if (moodEl) tracker.backupMood = moodEl.value;
+      }
     }
     try {
       await storage.saveState({
@@ -218,6 +225,17 @@ export function createEventHandlers(deps) {
           isBreak: true,
         };
         sessionManager.addSession(breakSession);
+      }
+      const breakValues = readBreakFormValues();
+      const allSessions = store.getState().sessions;
+      const workSegments = allSessions.filter(ses => !ses.isBreak && ses.workBlockId === tracker.workBlockId);
+      if (workSegments.length > 0) {
+        const lastWork = workSegments[workSegments.length - 1];
+        sessionManager.updateSession(lastWork.id, {
+          notes: breakValues.notes || '',
+          tags: breakValues.tags || ['work'],
+          mood: breakValues.mood || 5,
+        });
       }
       store.setState({
         tracker: {
@@ -1012,11 +1030,24 @@ export function createEventHandlers(deps) {
     ui.initializeBreakSessionTags('rest');
     ui.initializeBreakSessionMood();
     if (recoveredTracker && recoveredTracker.startTime) {
-      const notesInput = document.getElementById('notes');
-      if (notesInput && recoveredTracker.backupNotes !== undefined) {
-        notesInput.value = recoveredTracker.backupNotes;
+      if (recoveredTracker.isPaused) {
+        const breakNotes = document.getElementById('break-notes');
+        if (breakNotes && recoveredTracker.backupNotes !== undefined) {
+          breakNotes.value = recoveredTracker.backupNotes;
+          if (recoveredTracker.backupMood !== undefined) {
+            document.getElementById('break-session-mood-input').value = recoveredTracker.backupMood;
+            const moodVal = document.getElementById('break-mood-value');
+            if (moodVal) moodVal.textContent = recoveredTracker.backupMood + '.0';
+          }
+        }
+        document.getElementById('break-session-notes')?.classList.remove('hidden');
+      } else {
+        const notesInput = document.getElementById('notes');
+        if (notesInput && recoveredTracker.backupNotes !== undefined) {
+          notesInput.value = recoveredTracker.backupNotes;
+        }
+        document.getElementById('session-notes')?.classList.remove('hidden');
       }
-      document.getElementById('session-notes')?.classList.remove('hidden');
     }
     ui.updateCurrentTime();
     if (s.darkMode) ui.enableDarkMode();
@@ -1054,6 +1085,7 @@ export function createEventHandlers(deps) {
     exportAllData, importData,
     resetSessionsFn, resetConfigFn, resetMarkedDaysFn,
     addCustomTag, deleteCustomTag, syncHashtagTags, setupEventListeners, loadData,
+    saveState,
     persistAndRender,
     readBreakFormValues,
   };

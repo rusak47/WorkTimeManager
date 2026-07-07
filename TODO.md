@@ -7,7 +7,7 @@
 
 ## Sessions
 - [x] [normal++ - benefits?] - currently work session is not saved on pause, but accumulates brake time and is calculated afterwards. isnt it better to save work each time pause is pressed? what are the benefits - easier to calculate work time, no dependency on internal brake time accumulation, no sessions possible spanning over multiple days; possible cons - no behindhand work sessions possible (manual edit only or add shortcuts like move back -24h), one task sessions shattered in more pieces, e.g. 15min breaks. other ideas? (DONE: Phase 1-2 of spec at `tasks/new/20260629-save-on-pause-spec.md`, remaining phases: timer toggle, grouped sessions, delete, refactor)
-- [ ] [normal+ - must have] when pressing pause show tags (rest selected by default) and notes field to enter break notes - if left empty, then keep default value. show no submit buttons - this is applied when pressing resume or stop.
+- [x] [normal+ - must have] when pressing pause show tags (rest selected by default) and notes field to enter break notes - if left empty, then keep default value. show no submit buttons - this is applied when pressing resume or stop.
 - [x] [normal+ - must have] Allow notes while session is running — inline work tagging. A toggleable section now shows notes/tags/mood fields from session start; values captured at pause/stop time via readTrackerFormValues().
 - [ ] [normal+ - must have] Filter sessions by tags and/or text — input field with tag autocomplete/suggestion in the sessions tab.
 - [ ] [normal - must have] Exclude breaks from totals chart rendering — allow tag-based filtering of which sessions count toward chart totals.
