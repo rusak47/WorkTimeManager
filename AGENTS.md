@@ -69,6 +69,12 @@ npm run build      # vite build
 ## Task lifecycle
 - Doc/TODO review requires loading the `task-doc-lifecycle` skill first. Its trigger conditions include "reviews docs" and "reviews the TODO" despite its name suggesting only task tracking.
 
+## Crash recovery backup persistence
+- `saveState() (app.js:102-125)` clones `s.tracker` and attaches `backupNotes`/`backupMood` from DOM when tracker has a running session (`tracker.startTime` truthy). The clone prevents store mutation.
+- `init()` recovery block (app.js:969-978) sets up timer and banner. Form-value restoration (notes textarea, session-notes visibility) runs AFTER `initializeCurrentSessionTags()` and `initializeCurrentSessionMood()` at line 990 — those reset the tag picker and mood stars to defaults, so backup fields must be restored after.
+- Only `backupNotes` is restored to DOM textarea + `session-notes` revealed. Mood and tag picker default to init values (5 / 'work' bucket) after crash recovery — acceptable tradeoff for simplicity.
+- When `saveState()` is called mid-session (from `persistAndRender()` or backup interval), the saved tracker includes `backupNotes` and `backupMood`. On next `loadData()` + `init()`, these are available on the tracker object. Tests verify both persist and restore paths.
+
 ## Commit conventions
 - CHANGELOG.md: add entry under `## Unreleased` with the date
 - TODO.md: mark items as [x] when done, add new discoveries

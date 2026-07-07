@@ -9,7 +9,7 @@ import { createConfigManager } from './configManager.js';
 import { createStatsManager } from './statsManager.js';
 
 vi.mock('../storage/storage.js', () => ({
-  storage: { loadState: vi.fn(), saveState: vi.fn() },
+  storage: { loadState: vi.fn(), saveState: vi.fn(), loadCalendar: vi.fn().mockResolvedValue({}) },
 }));
 
 function setupDOM() {
@@ -21,7 +21,7 @@ function setupDOM() {
     <div id="current-session-tags"></div>
     <div id="tags-container"></div>
     <div id="current-session-mood" data-rating="5"></div>
-    <div id="current-session-mood-input" value="5"></div>
+    <input type="hidden" id="current-session-mood-input" value="5" />
     <div id="current-mood-value">5.0</div>
     <div id="current-session-start-time-input"></div>
     <div id="current-session-end-time-input"></div>
@@ -735,6 +735,58 @@ describe('app event handlers', () => {
     const saved = storage.saveState.mock.calls[0][0];
     expect(saved.tracker.startTime).toBe(now);
     expect(saved.backupIntervalMs).toBe(600000);
+  });
+
+  it('persistAndRender saves backup notes and mood in tracker when session is running', () => {
+    const now = Date.now();
+    document.getElementById('notes').value = 'Working on feature X';
+    document.getElementById('current-session-mood-input').value = '4';
+
+    store.setState({
+      sessions: [],
+      tracker: { startTime: now, isPaused: false, pauseStart: null, segmentStartTime: now, workBlockId: 'test-block', totalSavedDurationMs: 0, isBreak: false },
+      backupIntervalMs: 600000,
+    });
+    storage.saveState.mockClear();
+    app.persistAndRender();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tracker.backupNotes).toBe('Working on feature X');
+    expect(saved.tracker.backupMood).toBe('4');
+    expect(saved.tracker.startTime).toBe(now);
+  });
+
+  it('persistAndRender does not add backup fields when tracker is not running', () => {
+    document.getElementById('notes').value = 'Should not appear';
+    store.setState({
+      sessions: [],
+      tracker: { startTime: null, isPaused: false, pauseStart: null, segmentStartTime: null, workBlockId: null, totalSavedDurationMs: 0, isBreak: false },
+    });
+    storage.saveState.mockClear();
+    app.persistAndRender();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tracker.backupNotes).toBeUndefined();
+    expect(saved.tracker.backupMood).toBeUndefined();
+  });
+
+  it('init crash recovery reveals session-notes and restores backup notes from tracker', async () => {
+    const now = Date.now();
+    storage.loadState.mockResolvedValue({
+      _migrationVersion: '1.2.0',
+      sessions: [],
+      configs: [],
+      markedDays: [],
+      tags: [],
+      darkMode: false,
+      tracker: { startTime: now, isPaused: false, pauseStart: null, segmentStartTime: now, workBlockId: 'test-block', totalSavedDurationMs: 0, isBreak: false, backupNotes: 'Crashed but working', backupMood: '3' },
+      backupIntervalMs: 600000,
+    });
+
+    document.getElementById('session-notes').classList.add('hidden');
+
+    await app.init();
+
+    expect(document.getElementById('session-notes').classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('notes').value).toBe('Crashed but working');
   });
 
   it('loadData restores fresh tracker from backup', async () => {

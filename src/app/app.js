@@ -101,6 +101,13 @@ export function createEventHandlers(deps) {
 
   async function saveState() {
     const s = store.getState();
+    const tracker = { ...s.tracker };
+    if (tracker.startTime) {
+      const notesEl = document.getElementById('notes');
+      if (notesEl) tracker.backupNotes = notesEl.value;
+      const moodEl = document.getElementById('current-session-mood-input');
+      if (moodEl) tracker.backupMood = moodEl.value;
+    }
     try {
       await storage.saveState({
         sessions: s.sessions,
@@ -108,7 +115,7 @@ export function createEventHandlers(deps) {
         markedDays: s.markedDays,
         tags: s.tags,
         darkMode: s.darkMode,
-        tracker: s.tracker,
+        tracker,
         backupIntervalMs: s.backupIntervalMs,
         tagBuckets: s.tagBuckets,
       });
@@ -980,6 +987,13 @@ export function createEventHandlers(deps) {
     ui.renderTagSettings();
     ui.initializeCurrentSessionTags();
     ui.initializeCurrentSessionMood();
+    if (recoveredTracker && recoveredTracker.startTime) {
+      const notesInput = document.getElementById('notes');
+      if (notesInput && recoveredTracker.backupNotes !== undefined) {
+        notesInput.value = recoveredTracker.backupNotes;
+      }
+      document.getElementById('session-notes')?.classList.remove('hidden');
+    }
     ui.updateCurrentTime();
     if (s.darkMode) ui.enableDarkMode();
     const markDateInput = document.getElementById('mark-date');
