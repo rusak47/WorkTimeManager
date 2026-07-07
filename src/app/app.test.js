@@ -718,6 +718,58 @@ describe('app event handlers', () => {
     expect(modal.classList.contains('hidden')).toBe(true);
   });
 
+  it('handleSessionFormSubmit sets isBreak=true when tag changed to rest', () => {
+    const e = { preventDefault: vi.fn() };
+    store.setState({
+      sessions: [{
+        id: 301, date: '2026-07-07', startTime: '2026-07-07T10:00:00.000Z',
+        endTime: '2026-07-07T12:00:00.000Z', duration: '02:00:00', durationSec: 7200,
+        dayType: 'Workday', notes: 'Morning work', tags: ['work'], mood: 5, isBreak: false,
+        bucket: 'work',
+      }],
+      tagBuckets: { work: [], rest: [], study: [], sport: [], other: [] },
+    });
+    document.getElementById('session-id').value = '301';
+    document.getElementById('start-time').value = '2026-07-07T10:00';
+    document.getElementById('end-time').value = '2026-07-07T12:00';
+    document.getElementById('modal-notes').value = 'Morning work';
+    document.getElementById('session-mood').value = '5';
+    document.getElementById('tags-container').innerHTML =
+      '<div class="picker-row-1 flex flex-wrap gap-1.5 mb-2">' +
+        '<span class="tag-chip inline-block ... selected" data-tag="rest">Rest</span>' +
+      '</div>';
+    app.handleSessionFormSubmit(e);
+    const updated = store.getState().sessions[0];
+    expect(updated.isBreak).toBe(true);
+    expect(updated.tags).toContain('rest');
+  });
+
+  it('handleSessionFormSubmit sets isBreak=false when tag changed from rest to work', () => {
+    const e = { preventDefault: vi.fn() };
+    store.setState({
+      sessions: [{
+        id: 302, date: '2026-07-07', startTime: '2026-07-07T14:00:00.000Z',
+        endTime: '2026-07-07T14:30:00.000Z', duration: '00:30:00', durationSec: 1800,
+        dayType: 'Workday', notes: 'Break walk', tags: ['rest'], mood: 4, isBreak: true,
+        bucket: 'rest',
+      }],
+      tagBuckets: { work: [], rest: [], study: [], sport: [], other: [] },
+    });
+    document.getElementById('session-id').value = '302';
+    document.getElementById('start-time').value = '2026-07-07T14:00';
+    document.getElementById('end-time').value = '2026-07-07T14:30';
+    document.getElementById('modal-notes').value = 'Break walk';
+    document.getElementById('session-mood').value = '4';
+    document.getElementById('tags-container').innerHTML =
+      '<div class="picker-row-1 flex flex-wrap gap-1.5 mb-2">' +
+        '<span class="tag-chip inline-block selected" data-tag="work">Work</span>' +
+      '</div>';
+    app.handleSessionFormSubmit(e);
+    const updated = store.getState().sessions[0];
+    expect(updated.isBreak).toBe(false);
+    expect(updated.tags).toContain('work');
+  });
+
   it('handleSessionFormSubmit validates endTime > startTime', () => {
     const e = { preventDefault: vi.fn() };
     const now = new Date();
