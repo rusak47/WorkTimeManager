@@ -253,8 +253,12 @@ export function createEventHandlers(deps) {
     if (durEl) durEl.textContent = '00:00:00';
     ui.updateButtonStates(false);
     persistAndRender();
-    const notes = document.getElementById('session-notes');
-    if (notes) notes.classList.add('hidden');
+    const notes = document.getElementById('notes');
+    if (notes) notes.value = '';
+    const moodInput = document.getElementById('current-session-mood-input');
+    if (moodInput) moodInput.value = '5';
+    const notesContainer = document.getElementById('session-notes');
+    if (notesContainer) notesContainer.classList.add('hidden');
   }
 
   function togglePause() {
