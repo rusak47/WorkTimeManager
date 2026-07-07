@@ -103,17 +103,14 @@ export function createEventHandlers(deps) {
     const s = store.getState();
     const tracker = { ...s.tracker };
     if (tracker.startTime) {
-      if (tracker.isPaused) {
-        const breakNotesEl = document.getElementById('break-notes');
-        if (breakNotesEl) tracker.backupNotes = breakNotesEl.value;
-        const moodEl = document.getElementById('break-session-mood-input');
-        if (moodEl) tracker.backupMood = moodEl.value;
-      } else {
-        const notesEl = document.getElementById('notes');
-        if (notesEl) tracker.backupNotes = notesEl.value;
-        const moodEl = document.getElementById('current-session-mood-input');
-        if (moodEl) tracker.backupMood = moodEl.value;
-      }
+      const workNotesEl = document.getElementById('notes');
+      if (workNotesEl) tracker.backupWorkNotes = workNotesEl.value;
+      const workMoodEl = document.getElementById('current-session-mood-input');
+      if (workMoodEl) tracker.backupWorkMood = workMoodEl.value;
+      const breakNotesEl = document.getElementById('break-notes');
+      if (breakNotesEl) tracker.backupBreakNotes = breakNotesEl.value;
+      const breakMoodEl = document.getElementById('break-session-mood-input');
+      if (breakMoodEl) tracker.backupBreakMood = breakMoodEl.value;
     }
     try {
       await storage.saveState({
@@ -208,6 +205,7 @@ export function createEventHandlers(deps) {
 
     if (tracker.isPaused) {
       const breakDuration = Math.floor((Date.now() - tracker.pauseStart) / 1000);
+      const breakValues = readBreakFormValues();
       if (breakDuration >= 2) {
         const d = new Date(tracker.pauseStart);
         const breakSession = {
@@ -217,16 +215,15 @@ export function createEventHandlers(deps) {
           endTime: new Date().toISOString(),
           duration: utils.formatDuration(breakDuration),
           durationSec: breakDuration,
-          notes: 'Break session',
+          notes: breakValues.notes || 'Break session',
           dayType: getDayType(utils.formatDate(d), s),
-          tags: ['rest'],
-          mood: 5,
+          tags: breakValues.tags.length > 0 ? breakValues.tags : ['rest'],
+          mood: breakValues.mood || 5,
           workBlockId: tracker.workBlockId,
           isBreak: true,
         };
         sessionManager.addSession(breakSession);
       }
-      const breakValues = readBreakFormValues();
       const allSessions = store.getState().sessions;
       const workSegments = allSessions.filter(ses => !ses.isBreak && ses.workBlockId === tracker.workBlockId);
       if (workSegments.length > 0) {
@@ -288,6 +285,12 @@ export function createEventHandlers(deps) {
     if (moodInput) moodInput.value = '5';
     const notesContainer = document.getElementById('session-notes');
     if (notesContainer) notesContainer.classList.add('hidden');
+    const breakNotesContainer = document.getElementById('break-session-notes');
+    if (breakNotesContainer) breakNotesContainer.classList.add('hidden');
+    const breakNotes = document.getElementById('break-notes');
+    if (breakNotes) breakNotes.value = '';
+    const breakMoodInput = document.getElementById('break-session-mood-input');
+    if (breakMoodInput) breakMoodInput.value = '5';
   }
 
   function togglePause() {
@@ -985,6 +988,12 @@ export function createEventHandlers(deps) {
     }
     ui.initHashtagAutocomplete('notes');
     ui.initHashtagAutocomplete('modal-notes');
+
+    let breakNotesTimeout;
+    document.getElementById('break-notes')?.addEventListener('input', () => {
+      clearTimeout(breakNotesTimeout);
+      breakNotesTimeout = setTimeout(saveState, 500);
+    });
   }
 
   async function init() {
@@ -1032,19 +1041,22 @@ export function createEventHandlers(deps) {
     if (recoveredTracker && recoveredTracker.startTime) {
       if (recoveredTracker.isPaused) {
         const breakNotes = document.getElementById('break-notes');
-        if (breakNotes && recoveredTracker.backupNotes !== undefined) {
-          breakNotes.value = recoveredTracker.backupNotes;
-          if (recoveredTracker.backupMood !== undefined) {
-            document.getElementById('break-session-mood-input').value = recoveredTracker.backupMood;
-            const moodVal = document.getElementById('break-mood-value');
-            if (moodVal) moodVal.textContent = recoveredTracker.backupMood + '.0';
+        const breakNotesVal = recoveredTracker.backupBreakNotes;
+        if (breakNotes && breakNotesVal !== undefined) {
+          breakNotes.value = breakNotesVal;
+          const moodVal = recoveredTracker.backupBreakMood;
+          if (moodVal !== undefined) {
+            document.getElementById('break-session-mood-input').value = moodVal;
+            const moodEl = document.getElementById('break-mood-value');
+            if (moodEl) moodEl.textContent = moodVal + '.0';
           }
         }
         document.getElementById('break-session-notes')?.classList.remove('hidden');
       } else {
         const notesInput = document.getElementById('notes');
-        if (notesInput && recoveredTracker.backupNotes !== undefined) {
-          notesInput.value = recoveredTracker.backupNotes;
+        const workNotesVal = recoveredTracker.backupWorkNotes;
+        if (notesInput && workNotesVal !== undefined) {
+          notesInput.value = workNotesVal;
         }
         document.getElementById('session-notes')?.classList.remove('hidden');
       }

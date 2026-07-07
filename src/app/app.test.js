@@ -758,8 +758,8 @@ describe('app event handlers', () => {
     storage.saveState.mockClear();
     app.persistAndRender();
     const saved = storage.saveState.mock.calls[0][0];
-    expect(saved.tracker.backupNotes).toBe('Working on feature X');
-    expect(saved.tracker.backupMood).toBe('4');
+    expect(saved.tracker.backupWorkNotes).toBe('Working on feature X');
+    expect(saved.tracker.backupWorkMood).toBe('4');
     expect(saved.tracker.startTime).toBe(now);
   });
 
@@ -772,8 +772,8 @@ describe('app event handlers', () => {
     storage.saveState.mockClear();
     app.persistAndRender();
     const saved = storage.saveState.mock.calls[0][0];
-    expect(saved.tracker.backupNotes).toBeUndefined();
-    expect(saved.tracker.backupMood).toBeUndefined();
+    expect(saved.tracker.backupWorkNotes).toBeUndefined();
+    expect(saved.tracker.backupWorkMood).toBeUndefined();
   });
 
   it('init crash recovery reveals session-notes and restores backup notes from tracker', async () => {
@@ -785,7 +785,7 @@ describe('app event handlers', () => {
       markedDays: [],
       tags: [],
       darkMode: false,
-      tracker: { startTime: now, isPaused: false, pauseStart: null, segmentStartTime: now, workBlockId: 'test-block', totalSavedDurationMs: 0, isBreak: false, backupNotes: 'Crashed but working', backupMood: '3' },
+      tracker: { startTime: now, isPaused: false, pauseStart: null, segmentStartTime: now, workBlockId: 'test-block', totalSavedDurationMs: 0, isBreak: false, backupWorkNotes: 'Crashed but working', backupWorkMood: '3' },
       backupIntervalMs: 600000,
     });
 
@@ -1025,6 +1025,50 @@ describe('app event handlers', () => {
     vi.useRealTimers();
   });
 
+  it('stopSession when paused hides break form and clears break notes/mood', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-07T12:00:00Z'));
+
+    app.startSession();
+    vi.advanceTimersByTime(10000);
+    app.togglePause();
+    document.getElementById('break-notes').value = 'My break note';
+    document.getElementById('break-session-mood-input').value = '3';
+
+    app.stopSession();
+
+    const breakForm = document.getElementById('break-session-notes');
+    expect(breakForm.classList.contains('hidden')).toBe(true);
+    expect(document.getElementById('break-notes').value).toBe('');
+    expect(document.getElementById('break-session-mood-input').value).toBe('5');
+
+    vi.useRealTimers();
+  });
+
+  it('stopSession when paused uses break form values for break session instead of hardcoded defaults', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-07T12:00:00Z'));
+
+    app.startSession();
+    vi.advanceTimersByTime(10000);
+    app.togglePause();
+    vi.advanceTimersByTime(5000);
+    document.getElementById('break-notes').value = 'Reading documentation';
+    document.getElementById('break-session-tags').innerHTML =
+      '<span class="tag-chip selected" data-tag="research">Research</span>';
+    document.getElementById('break-session-mood-input').value = '4';
+
+    app.stopSession();
+
+    const breakSessions = store.getState().sessions.filter(s => s.isBreak);
+    expect(breakSessions.length).toBeGreaterThanOrEqual(1);
+    expect(breakSessions[0].notes).toBe('Reading documentation');
+    expect(breakSessions[0].tags).toContain('research');
+    expect(breakSessions[0].mood).toBe(4);
+
+    vi.useRealTimers();
+  });
+
   it('saveState reads break form values when paused', async () => {
     const now = Date.now();
     store.setState({
@@ -1038,8 +1082,8 @@ describe('app event handlers', () => {
     storage.saveState.mockClear();
     await app.saveState();
     const saved = storage.saveState.mock.calls[0][0];
-    expect(saved.tracker.backupNotes).toBe('Break notes during save');
-    expect(saved.tracker.backupMood).toBeDefined();
+    expect(saved.tracker.backupBreakNotes).toBe('Break notes during save');
+    expect(saved.tracker.backupBreakMood).toBeDefined();
   });
 
   it('init restores break form when stopped while paused', async () => {
@@ -1055,7 +1099,7 @@ describe('app event handlers', () => {
       tracker: {
         startTime: now, isPaused: true, pauseStart: now, segmentStartTime: now,
         workBlockId: 'test-block', totalSavedDurationMs: 10000, isBreak: false,
-        backupNotes: 'Restored break notes', backupMood: '3',
+        backupBreakNotes: 'Restored break notes', backupBreakMood: '3',
       },
       backupIntervalMs: 600000,
     });
@@ -1110,6 +1154,111 @@ describe('app event handlers', () => {
     expect(breakForm.classList.contains('hidden')).toBe(true);
   });
 
+  it('togglePause persists isPaused state on pause', () => {
+    app.startSession();
+    storage.saveState.mockClear();
+    app.togglePause();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tracker.isPaused).toBe(true);
+  });
+
+  it('togglePause on pause saves empty backupBreakNotes from uninitialized break form', () => {
+    app.startSession();
+    storage.saveState.mockClear();
+    app.togglePause();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tracker.backupBreakNotes).toBe('');
+  });
+
+  it('typing break notes triggers debounced saveState with backupBreakNotes', () => {
+    vi.useFakeTimers();
+    app.startSession();
+    app.togglePause();
+    app.setupEventListeners();
+    storage.saveState.mockClear();
+
+    const breakNotes = document.getElementById('break-notes');
+    breakNotes.value = 'Had lunch and rested well';
+    breakNotes.dispatchEvent(new Event('input'));
+
+    vi.advanceTimersByTime(500);
+
+    expect(storage.saveState).toHaveBeenCalledTimes(1);
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tracker.backupBreakNotes).toBe('Had lunch and rested well');
+    vi.useRealTimers();
+  });
+
+  it('saveState reads both work and break forms when paused', () => {
+    app.startSession();
+    app.togglePause();
+    document.getElementById('break-notes').value = 'Break notes here';
+    document.getElementById('notes').value = 'Work notes here';
+    storage.saveState.mockClear();
+    app.saveState();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tracker.backupBreakNotes).toBe('Break notes here');
+    expect(saved.tracker.backupWorkNotes).toBe('Work notes here');
+  });
+
+  it('saveState reads both work and break forms when working', () => {
+    app.startSession();
+    document.getElementById('notes').value = 'Work notes here';
+    document.getElementById('break-notes').value = 'Break notes here';
+    storage.saveState.mockClear();
+    app.saveState();
+    const saved = storage.saveState.mock.calls[0][0];
+    expect(saved.tracker.backupWorkNotes).toBe('Work notes here');
+    expect(saved.tracker.backupBreakNotes).toBe('Break notes here');
+  });
+
+  it('crash recovery after resume restores break notes from backupBreakNotes', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-07T08:00:00Z'));
+
+    app.startSession();
+    vi.advanceTimersByTime(3600000);
+    app.togglePause();
+
+    document.getElementById('break-notes').value = 'Ate lunch and went for a walk';
+    document.getElementById('break-session-mood-input').value = '7';
+
+    vi.advanceTimersByTime(5000);
+    app.togglePause();
+
+    storage.saveState.mockClear();
+    await app.saveState();
+    const savedState = storage.saveState.mock.calls[0][0];
+
+    expect(savedState.tracker.isPaused).toBe(false);
+    expect(savedState.tracker.backupBreakNotes).toBe('Ate lunch and went for a walk');
+    expect(savedState.tracker.backupWorkNotes).toBe('');
+
+    storage.loadState.mockResolvedValue(savedState);
+    const store2 = createStore();
+    store2.setState({
+      configs: [], markedDays: [], tags: [{ name: 'work', isDefault: true, isEnabled: true, isCustom: false }],
+      tagBuckets: {}, currentTab: 'tracker', currentStatsPeriod: 'daily', darkMode: false, backupIntervalMs: 300000,
+      tracker: CURRENT_SESSION_INIT,
+    });
+    const ui2 = createUIManager(store2);
+    const a11y2 = createAccessibility();
+    const sessionManager2 = createSessionManager(store2);
+    const configManager2 = createConfigManager(store2);
+    const statsManager2 = createStatsManager(store2);
+    const app2 = createEventHandlers({ store: store2, storage, sessionManager: sessionManager2, configManager: configManager2, statsManager: statsManager2, ui: ui2, a11y: a11y2 });
+
+    document.body.innerHTML = '';
+    setupDOM();
+
+    await app2.init();
+
+    expect(document.getElementById('session-notes').classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('notes').value).toBe('');
+
+    vi.useRealTimers();
+  });
+
   it('togglePause reads break form values on resume', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
@@ -1124,6 +1273,80 @@ describe('app event handlers', () => {
     const breakSegment = s.sessions[0];
     expect(breakSegment.notes).toBe('Coffee break');
     expect(breakSegment.tags).toContain('rest');
+
+    vi.useRealTimers();
+  });
+
+  it('full crash recovery cycle restores break notes from persisted state', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-07T08:00:00Z'));
+
+    app.startSession();
+    vi.advanceTimersByTime(3600000);
+    app.togglePause();
+
+    const breakForm = document.getElementById('break-session-notes');
+    expect(breakForm.classList.contains('hidden')).toBe(false);
+
+    document.getElementById('break-notes').value = 'Ate lunch and went for a walk';
+
+    storage.saveState.mockClear();
+    await app.saveState();
+    const savedState = storage.saveState.mock.calls[0][0];
+
+    expect(savedState.tracker.isPaused).toBe(true);
+    expect(savedState.tracker.backupBreakNotes).toBe('Ate lunch and went for a walk');
+
+    storage.loadState.mockResolvedValue(savedState);
+    const store2 = createStore();
+    store2.setState({
+      configs: [], markedDays: [], tags: [{ name: 'work', isDefault: true, isEnabled: true, isCustom: false }],
+      tagBuckets: {}, currentTab: 'tracker', currentStatsPeriod: 'daily', darkMode: false, backupIntervalMs: 300000,
+      tracker: CURRENT_SESSION_INIT,
+    });
+    const ui2 = createUIManager(store2);
+    const a11y2 = createAccessibility();
+    const sessionManager2 = createSessionManager(store2);
+    const configManager2 = createConfigManager(store2);
+    const statsManager2 = createStatsManager(store2);
+    const app2 = createEventHandlers({ store: store2, storage, sessionManager: sessionManager2, configManager: configManager2, statsManager: statsManager2, ui: ui2, a11y: a11y2 });
+
+    document.body.innerHTML = '';
+    document.body.innerHTML = `
+      <div id="break-session-notes" class="hidden">
+        <textarea id="break-notes"></textarea>
+        <div id="break-session-tags"></div>
+        <div id="break-session-mood" data-rating="5"></div>
+        <input type="hidden" id="break-session-mood-input" value="5">
+        <div id="break-mood-value">5.0</div>
+      </div>
+      <div id="session-notes" class="hidden"><input id="notes" /></div>
+      <div id="current-session-mood" data-rating="5"></div>
+      <input type="hidden" id="current-session-mood-input" value="5" />
+      <div id="current-mood-value">5.0</div>
+      <div id="current-session-tags"></div>
+      <div id="today-total">00:00:00</div>
+      <div id="recent-sessions"></div>
+      <div id="all-sessions-list"></div>
+      <div id="active-duration">00:00:00</div>
+      <span id="duration-label">Current Duration</span>
+      <div id="crash-recovery-banner" class="hidden"></div>
+      <button id="dismiss-recovery-banner"></button>
+      <input id="backup-interval" value="300" />
+      <button id="start-btn"></button>
+      <button id="stop-btn"></button>
+      <button id="pause-btn"></button>
+      <select id="year-selector"></select>
+      <select id="tag-filter"><option value="all">All Tags</option></select>
+      <div id="tag-bucket-settings"></div>
+      <input id="new-tag-input" />
+    `;
+
+    await app2.init();
+
+    const restoredBreakForm = document.getElementById('break-session-notes');
+    expect(restoredBreakForm.classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('break-notes').value).toBe('Ate lunch and went for a walk');
 
     vi.useRealTimers();
   });

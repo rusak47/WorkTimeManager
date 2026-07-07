@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+- **Break notes lost on crash recovery after resume** — `saveState()` now reads both work and break form textareas independently (`backupWorkNotes`/`backupBreakNotes` + mood equivalents). Previously `backupNotes` was overwritten when switching between forms. Also adds debounced (500ms) `saveState()` on `#break-notes` input so notes typed during a break are persisted shortly after typing, not only at the 5-minute backup interval. 346 tests.
+- **Break form not hidden/cleared on Stop while paused** — `stopSession()` paused branch now hides `#break-session-notes`, clears `#break-notes`, and resets `#break-session-mood-input` to `'5'`. Previously only work form was cleaned up. 346 tests.
+- **Break session uses hardcoded defaults on Stop while paused** — `stopSession()` paused branch now reads break form values before creating the break session, so user-typed notes, selected tags, and chosen mood are captured instead of the hardcoded `'Break session'`/`['rest']`/`5`. 346 tests.
+
 ### Added
 - **stopSession/saveState/init crash recovery for break form** — `stopSession` paused branch reads break form values and updates the most recent work segment's notes/tags/mood. `saveState` conditionally reads break form (`#break-notes`, `#break-session-mood-input`) when paused. `init` crash recovery restores break form values and reveals `#break-session-notes` when tracker was paused. `saveState` exported from `createEventHandlers`. 337 tests. (branch `save-on-pause`, Task 3 of break form fields feature)
 - **Break form HTML and init functions** — break-session-notes wrapper with tags, mood, and notes fields in `index.html`. Three init functions (`initializeBreakSessionTags`, `initializeBreakSessionMood`, `createStarsForBreakSession`) mirror existing work-session equivalents but target `#break-session-*` DOM ids. 329 tests. (branch `save-on-pause`, incremental toward `tasks/new/20260629-save-on-pause-spec.md`)
