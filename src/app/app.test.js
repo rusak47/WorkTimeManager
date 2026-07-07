@@ -28,6 +28,13 @@ function setupDOM() {
     <div id="current-session-accumulated-rest-duration-input"></div>
     <div id="tracker-session-id"></div>
     <div id="session-notes" class="hidden"></div>
+    <div id="break-session-notes" class="hidden">
+      <div id="break-session-tags"></div>
+      <div id="break-session-mood" data-rating="5"></div>
+      <input type="hidden" id="break-session-mood-input" value="5">
+      <div id="break-mood-value">5.0</div>
+    </div>
+    <textarea id="break-notes"></textarea>
     <div class="duration-display">
       <span id="duration-label">Current Duration</span>
       <span id="active-duration">00:00:00</span>

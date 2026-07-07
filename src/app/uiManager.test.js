@@ -48,6 +48,13 @@ function setupDOM() {
     <div id="mark-day-type"></div>
     <div id="day-description"></div>
     <div id="mark-day-modal" class="hidden"></div>
+    <div id="break-session-notes" class="hidden">
+      <div id="break-session-tags"></div>
+      <div id="break-session-mood" data-rating="5"></div>
+      <input type="hidden" id="break-session-mood-input" value="5">
+      <div id="break-mood-value">5.0</div>
+    </div>
+    <textarea id="break-notes"></textarea>
     <div id="delete-modal" class="hidden"></div>
     <div id="session-modal" class="hidden"></div>
     <div id="modal-title"></div>
@@ -1374,6 +1381,53 @@ describe('uiManager', () => {
       workSubtags.dispatchEvent(createDragEvent('drop', dt));
       const stateAfter = store.getState();
       expect(stateAfter.tagBuckets.work).toContain('untagged');
+    });
+  });
+
+  describe('break session init functions', () => {
+    const breakBuckets = {
+      work: ['coding', 'meeting'],
+      rest: ['walk', 'snack'],
+      study: [],
+      sport: [],
+      other: [],
+    };
+
+    it('initializeBreakSessionTags renders tags in container', () => {
+      store.setState({ tags: mockTags, tagBuckets: breakBuckets });
+      ui.initializeBreakSessionTags();
+      const container = document.getElementById('break-session-tags');
+      const chips = container.querySelectorAll('.tag-chip');
+      expect(chips.length).toBeGreaterThanOrEqual(5);
+    });
+
+    it('initializeBreakSessionMood renders 5 stars', () => {
+      ui.initializeBreakSessionMood();
+      const container = document.getElementById('break-session-mood');
+      const stars = container.querySelectorAll('.star');
+      expect(stars.length).toBe(5);
+      stars.forEach(star => {
+        expect(star.innerHTML).toBe('\u2605');
+      });
+    });
+
+    it('createStarsForBreakSession fills/unfills stars based on data-rating', () => {
+      const container = document.getElementById('break-session-mood');
+      container.dataset.rating = '3';
+      container.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const star = document.createElement('div');
+        star.className = 'star text-2xl cursor-pointer';
+        star.dataset.value = i;
+        container.appendChild(star);
+      }
+      ui.createStarsForBreakSession();
+      const stars = container.querySelectorAll('.star');
+      expect(stars[0].innerHTML).toBe('\u2605');
+      expect(stars[1].innerHTML).toBe('\u2605');
+      expect(stars[2].innerHTML).toBe('\u2605');
+      expect(stars[3].innerHTML).toBe('\u2606');
+      expect(stars[4].innerHTML).toBe('\u2606');
     });
   });
 });

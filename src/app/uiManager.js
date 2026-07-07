@@ -1416,6 +1416,85 @@ export function createUIManager(store) {
     });
   }
 
+  function initializeBreakSessionTags(bucket = 'work') {
+    const container = document.getElementById('break-session-tags');
+    const s = store.getState();
+    if (!container) return;
+    container.innerHTML = '';
+
+    const tagBuckets = s.tagBuckets || {};
+    const hasBuckets = DEFAULT_BUCKET_KEYS.every(k => Array.isArray(tagBuckets[k]));
+
+    if (!hasBuckets) {
+      renderLegacyTagPicker(container, s);
+      return;
+    }
+
+    let selectedDefault = bucket;
+
+    const row1 = document.createElement('div');
+    row1.className = 'picker-row-1 flex flex-wrap gap-1.5 mb-2';
+
+    for (const tagName of DEFAULT_BUCKET_KEYS) {
+      const isSelected = tagName === selectedDefault;
+      const chip = createPickerTagChip(tagName, isSelected);
+      chip.addEventListener('click', () => {
+        if (chip.classList.contains('selected')) return;
+        row1.querySelectorAll('.tag-chip.selected').forEach(el => {
+          el.classList.remove('selected');
+          el.className = el.className.replace(/selected\s*/, '');
+          const tn = el.dataset.tag;
+          el.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none ${getTagBadgeClass(tn, false)}`;
+        });
+        chip.classList.add('selected');
+        chip.className = `tag-chip inline-block px-2 py-1 rounded-full text-sm cursor-pointer select-none selected ${getTagBadgeClass(tagName, true)}`;
+        selectedDefault = tagName;
+        renderRow2(container, row2, tagBuckets, selectedDefault);
+      });
+      row1.appendChild(chip);
+    }
+
+    const row2 = document.createElement('div');
+    row2.className = 'picker-row-2 flex flex-wrap gap-1.5';
+
+    container.appendChild(row1);
+    container.appendChild(row2);
+
+    renderRow2(container, row2, tagBuckets, selectedDefault);
+  }
+
+  function initializeBreakSessionMood() {
+    const container = document.getElementById('break-session-mood');
+    if (!container) return;
+    container.dataset.rating = '5';
+    container.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const star = document.createElement('div');
+      star.className = 'star text-2xl cursor-pointer';
+      star.dataset.value = i;
+      star.innerHTML = '\u2605';
+      star.addEventListener('click', () => {
+        container.dataset.rating = i;
+        const moodInput = document.getElementById('break-session-mood-input');
+        const moodValue = document.getElementById('break-mood-value');
+        if (moodInput) moodInput.value = i;
+        if (moodValue) moodValue.textContent = i + '.0';
+        createStarsForBreakSession();
+      });
+      container.appendChild(star);
+    }
+  }
+
+  function createStarsForBreakSession() {
+    const container = document.getElementById('break-session-mood');
+    if (!container) return;
+    const rating = parseFloat(container.dataset.rating) || 5;
+    const stars = container.querySelectorAll('.star');
+    stars.forEach((star, index) => {
+      star.innerHTML = index < rating ? '\u2605' : '\u2606';
+    });
+  }
+
   function enableDarkMode() {
     document.body.classList.add('dark-mode');
     const toggle = document.getElementById('dark-mode-toggle');
@@ -2070,6 +2149,9 @@ export function createUIManager(store) {
     initializeSessionModalTags,
     initializeCurrentSessionMood,
     createStarsForCurrentSession,
+    initializeBreakSessionTags,
+    initializeBreakSessionMood,
+    createStarsForBreakSession,
     renderTagSettings,
     setOnTagBucketsChange,
     setOnDeleteCustomTag,
