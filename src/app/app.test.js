@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createStore } from './state.js';
 import { createEventHandlers } from './app.js';
+import { CURRENT_SESSION_INIT } from './constants.js';
 import { createUIManager } from './uiManager.js';
 import { createAccessibility } from './accessibility.js';
 import { createSessionManager } from './sessionManager.js';
@@ -1001,6 +1002,65 @@ describe('app event handlers', () => {
 
     const trackerSid = document.getElementById('tracker-session-id');
     expect(trackerSid.value).toBe(workSegments[0].id.toString());
+
+    vi.useRealTimers();
+  });
+
+  it('readBreakFormValues returns break form values', () => {
+    const tagContainer = document.getElementById('break-session-tags');
+    const chip = document.createElement('div');
+    chip.className = 'tag-chip selected';
+    chip.dataset.tag = 'rest';
+    tagContainer.appendChild(chip);
+    document.getElementById('break-notes').value = 'Stretch break';
+    document.getElementById('break-session-mood-input').value = '4';
+    const values = app.readBreakFormValues();
+    expect(values.notes).toBe('Stretch break');
+    expect(values.tags).toContain('rest');
+    expect(values.mood).toBe(4);
+  });
+
+  it('readBreakFormValues returns defaults when break form empty', () => {
+    document.getElementById('break-notes').value = '';
+    document.getElementById('break-session-mood-input').value = '5';
+    const values = app.readBreakFormValues();
+    expect(values.notes).toBe('');
+    expect(values.mood).toBe(5);
+  });
+
+  it('togglePause hides work form and shows break form on pause', () => {
+    app.startSession();
+    const workForm = document.getElementById('session-notes');
+    const breakForm = document.getElementById('break-session-notes');
+    app.togglePause();
+    expect(workForm.classList.contains('hidden')).toBe(true);
+    expect(breakForm.classList.contains('hidden')).toBe(false);
+  });
+
+  it('togglePause hides break form and shows work form on resume', () => {
+    const workForm = document.getElementById('session-notes');
+    const breakForm = document.getElementById('break-session-notes');
+    app.startSession();
+    app.togglePause();
+    app.togglePause();
+    expect(workForm.classList.contains('hidden')).toBe(false);
+    expect(breakForm.classList.contains('hidden')).toBe(true);
+  });
+
+  it('togglePause reads break form values on resume', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-25T12:00:00Z'));
+
+    app.startSession();
+    vi.advanceTimersByTime(10000);
+    app.togglePause();
+    document.getElementById('break-notes').value = 'Coffee break';
+    vi.advanceTimersByTime(5000);
+    app.togglePause();
+    const s = store.getState();
+    const breakSegment = s.sessions[0];
+    expect(breakSegment.notes).toBe('Coffee break');
+    expect(breakSegment.tags).toContain('rest');
 
     vi.useRealTimers();
   });

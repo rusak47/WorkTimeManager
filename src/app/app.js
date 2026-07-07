@@ -162,6 +162,17 @@ export function createEventHandlers(deps) {
     };
   }
 
+  function readBreakFormValues() {
+    const notes = document.getElementById('break-notes').value;
+    const selectedTag = document.querySelector('#break-session-tags .tag-chip.selected');
+    const mood = document.getElementById('break-session-mood-input').value;
+    return {
+      notes,
+      tags: selectedTag ? [selectedTag.dataset.tag] : ['rest'],
+      mood: parseInt(mood) || 5
+    };
+  }
+
   function startSession(bucket) {
     if (bucket) {
       ui.initializeCurrentSessionTags(bucket);
@@ -269,6 +280,7 @@ export function createEventHandlers(deps) {
       const breakDuration = Math.floor((Date.now() - tracker.pauseStart) / 1000);
       if (breakDuration >= 2) {
         const d = new Date(tracker.pauseStart);
+        const breakValues = readBreakFormValues();
         const breakSession = {
           id: Date.now(),
           date: utils.formatDate(d),
@@ -276,16 +288,18 @@ export function createEventHandlers(deps) {
           endTime: new Date().toISOString(),
           duration: utils.formatDuration(breakDuration),
           durationSec: breakDuration,
-          notes: 'Break session',
+          notes: breakValues.notes,
           dayType: getDayType(utils.formatDate(d), s),
-          tags: ['rest'],
-          mood: 5,
+          tags: breakValues.tags,
+          mood: breakValues.mood,
           workBlockId: tracker.workBlockId,
           isBreak: true,
         };
         sessionManager.addSession(breakSession);
       }
       sessionManager.resumeTracking();
+      document.getElementById('break-session-notes')?.classList.add('hidden');
+      document.getElementById('session-notes')?.classList.remove('hidden');
       const pauseBtn = document.getElementById('pause-btn');
       if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-pause sm:mr-2"></i> <span class="hidden sm:inline">Pause</span>';
     } else {
@@ -317,6 +331,10 @@ export function createEventHandlers(deps) {
           totalSavedDurationMs: tracker.totalSavedDurationMs + Math.max(0, elapsed),
         },
       });
+      document.getElementById('session-notes')?.classList.add('hidden');
+      document.getElementById('break-session-notes')?.classList.remove('hidden');
+      ui.initializeBreakSessionTags('rest');
+      ui.initializeBreakSessionMood();
       const pauseBtn = document.getElementById('pause-btn');
       if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-play sm:mr-2"></i> <span class="hidden sm:inline">Resume</span>';
     }
@@ -991,6 +1009,8 @@ export function createEventHandlers(deps) {
     ui.renderTagSettings();
     ui.initializeCurrentSessionTags();
     ui.initializeCurrentSessionMood();
+    ui.initializeBreakSessionTags('rest');
+    ui.initializeBreakSessionMood();
     if (recoveredTracker && recoveredTracker.startTime) {
       const notesInput = document.getElementById('notes');
       if (notesInput && recoveredTracker.backupNotes !== undefined) {
@@ -1035,5 +1055,6 @@ export function createEventHandlers(deps) {
     resetSessionsFn, resetConfigFn, resetMarkedDaysFn,
     addCustomTag, deleteCustomTag, syncHashtagTags, setupEventListeners, loadData,
     persistAndRender,
+    readBreakFormValues,
   };
 }
