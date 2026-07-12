@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Refactored
+- **Extracted income multiplier logic** — `computeIncome`'s salary/tax multiplier application extracted into dedicated `_applyIncomeMultiplier(totalHours, isHourly, salaryValue, taxRate, isNet, workDaysInMonth)` method. 354 tests.
+
 ### Fixed
 - **Break notes lost on crash recovery after resume** — `saveState()` now reads both work and break form textareas independently (`backupWorkNotes`/`backupBreakNotes` + mood equivalents). Previously `backupNotes` was overwritten when switching between forms. Also adds debounced (500ms) `saveState()` on `#break-notes` input so notes typed during a break are persisted shortly after typing, not only at the 5-minute backup interval. 346 tests.
 - **Break form not hidden/cleared on Stop while paused** — `stopSession()` paused branch now hides `#break-session-notes`, clears `#break-notes`, and resets `#break-session-mood-input` to `'5'`. Previously only work form was cleaned up. 346 tests.

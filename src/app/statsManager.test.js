@@ -78,6 +78,36 @@ describe('statsManager', () => {
     expect(income.every((v) => v === 0)).toBe(true);
   });
 
+  it('_applyIncomeMultiplier computes hourly net income', () => {
+    const result = stats._applyIncomeMultiplier(3.5, true, 15, 0, true, 22);
+    expect(result).toBeCloseTo(52.5, 1);
+  });
+
+  it('_applyIncomeMultiplier applies tax gross-up for hourly pretax', () => {
+    const result = stats._applyIncomeMultiplier(3.5, true, 15, 0.2, false, 22);
+    expect(result).toBeCloseTo(65.625, 2);
+  });
+
+  it('_applyIncomeMultiplier computes monthly prorated net income', () => {
+    const result = stats._applyIncomeMultiplier(0, false, 3000, 0, true, 20);
+    expect(result).toBeCloseTo(150, 1);
+  });
+
+  it('_applyIncomeMultiplier applies tax gross-up for monthly pretax', () => {
+    const result = stats._applyIncomeMultiplier(0, false, 3000, 0.2, false, 20);
+    expect(result).toBeCloseTo(187.5, 1);
+  });
+
+  it('_applyIncomeMultiplier returns 0 for zero hours hourly net', () => {
+    const result = stats._applyIncomeMultiplier(0, true, 15, 0, true, 22);
+    expect(result).toBe(0);
+  });
+
+  it('_applyIncomeMultiplier returns 0 for monthly with zero work days', () => {
+    const result = stats._applyIncomeMultiplier(0, false, 3000, 0, true, 0);
+    expect(result).toBe(0);
+  });
+
   it('computeBucketStats groups sessions by bucket', () => {
     store.setState({
       sessions: [

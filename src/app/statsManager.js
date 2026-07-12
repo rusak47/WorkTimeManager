@@ -168,6 +168,21 @@ export function createStatsManager(store) {
       });
     },
 
+    _applyIncomeMultiplier(totalHours, isHourly, salaryValue, taxRate, isNet, workDaysInMonth) {
+      let income = 0;
+      if (isHourly) {
+        income = totalHours * salaryValue;
+      } else {
+        income = workDaysInMonth > 0 ? (1 / workDaysInMonth) * salaryValue : 0;
+      }
+
+      if (!isNet) {
+        income = income / (1 - taxRate);
+      }
+
+      return income;
+    },
+
     computeIncome(year) {
       const config = getConfig();
       if (!config || !config.salaryValue) return Array(12).fill(0);
@@ -183,17 +198,8 @@ export function createStatsManager(store) {
 
         const totalHours = monthSessions.reduce((sum, s) => sum + (s.durationSec || 0), 0) / SECONDS_PER_HOUR;
 
-        let income = 0;
-        if (isHourly) {
-          income = totalHours * salaryValue;
-        } else {
-          const workDaysInMonth = this.getWorkDaysInMonth(year, i);
-          income = workDaysInMonth > 0 ? (1 / workDaysInMonth) * salaryValue : 0;
-        }
-
-        if (!isNet) {
-          income = income / (1 - taxRate);
-        }
+        const workDaysInMonth = isHourly ? 0 : this.getWorkDaysInMonth(year, i);
+        const income = this._applyIncomeMultiplier(totalHours, isHourly, salaryValue, taxRate, isNet, workDaysInMonth);
 
         return +income.toFixed(2);
       });
