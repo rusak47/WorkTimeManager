@@ -390,7 +390,8 @@ describe('uiManager', () => {
       const cards = document.querySelectorAll('.session-card-grid');
       expect(cards.length).toBe(3);
       const container = document.getElementById('recent-sessions');
-      expect(container.className).toContain('gap-3');
+      expect(container.className).toContain('grid');
+      expect(container.style.gridTemplateColumns).toContain('repeat(auto-fit');
     });
 
     it('toggleRecentSessionsGrid flips _isGridMode', () => {

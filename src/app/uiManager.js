@@ -641,8 +641,13 @@ export function createUIManager(store) {
     }
     const recent = s.sessions.slice(0, 5);
     container.className = _isGridMode
-      ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3'
+      ? 'grid gap-3'
       : 'space-y-3';
+    if (_isGridMode) {
+      container.style.gridTemplateColumns = 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))';
+    } else {
+      container.style.gridTemplateColumns = '';
+    }
     container.innerHTML = recent.map(session => _isGridMode
       ? `
       <div class="session-card-grid bg-white border border-gray-200 rounded-lg p-3 transition-all duration-200 dark:bg-gray-600 dark:border-gray-500"${session.notes ? ` title="${session.notes}"` : ''}>
