@@ -434,6 +434,7 @@ describe('uiManager', () => {
       ui.toggleRecentSessionsGrid();
       ui.renderRecentSessions();
       const card = document.querySelector('.session-card-grid');
+      expect(card.className).toContain('group');
       const overlay = card.querySelector('.grid-actions');
       expect(overlay).toBeTruthy();
       expect(overlay.querySelector('.edit-session')).toBeTruthy();

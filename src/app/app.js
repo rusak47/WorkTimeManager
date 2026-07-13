@@ -974,7 +974,7 @@ export function createEventHandlers(deps) {
         showDeleteModal(parseInt(deleteBtn.dataset.id, 10));
         return;
       }
-      const sessionCard = e.target.closest('.session-card');
+      const sessionCard = e.target.closest('.session-card, .session-card-grid');
       if (sessionCard && !e.target.closest('button')) {
         const sid = sessionCard.dataset.sessionId || sessionCard.querySelector('[data-id]')?.dataset.id;
         if (sid) editSession(parseInt(sid, 10));

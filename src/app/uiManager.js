@@ -650,8 +650,8 @@ export function createUIManager(store) {
     }
     container.innerHTML = recent.map(session => _isGridMode
       ? `
-      <div class="session-card-grid relative bg-white border border-gray-200 rounded-lg p-3 transition-all duration-200 dark:bg-gray-600 dark:border-gray-500"${session.notes ? ` title="${session.notes}"` : ''}>
-        <div class="grid-actions absolute top-2 right-2 flex space-x-1 opacity-0 hover:opacity-100 transition-opacity">
+      <div class="session-card-grid group relative bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all duration-200 dark:bg-gray-600 dark:border-gray-500"${session.notes ? ` title="${session.notes}"` : ''}>
+        <div class="grid-actions absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button class="edit-session text-blue-600 hover:text-blue-800 text-xs dark:text-blue-400 dark:hover:text-blue-300" data-id="${session.id}"><i class="fas fa-edit"></i></button>
           <button class="delete-session text-red-600 hover:text-red-800 text-xs dark:text-red-400 dark:hover:text-red-300" data-id="${session.id}"><i class="fas fa-trash-alt"></i></button>
         </div>
