@@ -650,16 +650,19 @@ export function createUIManager(store) {
     }
     container.innerHTML = recent.map(session => _isGridMode
       ? `
-      <div class="session-card-grid bg-white border border-gray-200 rounded-lg p-3 transition-all duration-200 dark:bg-gray-600 dark:border-gray-500"${session.notes ? ` title="${session.notes}"` : ''}>
+      <div class="session-card-grid relative bg-white border border-gray-200 rounded-lg p-3 transition-all duration-200 dark:bg-gray-600 dark:border-gray-500"${session.notes ? ` title="${session.notes}"` : ''}>
+        <div class="grid-actions absolute top-2 right-2 flex space-x-1 opacity-0 hover:opacity-100 transition-opacity">
+          <button class="edit-session text-blue-600 hover:text-blue-800 text-xs dark:text-blue-400 dark:hover:text-blue-300" data-id="${session.id}"><i class="fas fa-edit"></i></button>
+          <button class="delete-session text-red-600 hover:text-red-800 text-xs dark:text-red-400 dark:hover:text-red-300" data-id="${session.id}"><i class="fas fa-trash-alt"></i></button>
+        </div>
         <div class="mb-2">
-          <h3 class="font-medium text-gray-800 text-sm dark:text-white">${session.date}</h3>
+          <h3 class="font-bold text-gray-800 text-sm dark:text-white">${session.date}</h3>
           <p class="text-xs text-gray-600 dark:text-gray-300">${utils.formatTime(new Date(session.startTime))} - ${utils.formatTime(new Date(session.endTime))}</p>
-          <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${utils.getDayTypeBadgeClass(session.dayType)}">
+        </div>
+        <div class="badge-row flex items-center justify-between mb-2">
+          <span class="inline-block text-xs px-2 py-0.5 rounded-full ${utils.getDayTypeBadgeClass(session.dayType)}">
             ${session.dayType}
           </span>
-        </div>
-        <div class="flex items-center justify-between mb-2">
-          <span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium dark:bg-blue-900 dark:bg-opacity-20 dark:text-blue-300">${session.duration}</span>
           ${session.mood ? `
           <div class="flex items-center">
             <div class="flex">
@@ -670,17 +673,15 @@ export function createUIManager(store) {
           </div>
           ` : ''}
         </div>
+        <div class="duration-badge flex items-center mb-2">
+          <span class="text-xs mr-1">\u23F1</span>
+          <span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium dark:bg-blue-900 dark:bg-opacity-20 dark:text-blue-300">${session.duration}</span>
+        </div>
         ${session.accumulatedPauseTimeSec ? `<div class="text-xs text-gray-500 dark:text-gray-400 mb-2">Rest ${utils.formatDuration(session.accumulatedPauseTimeSec)}</div>` : ''}
-        <div class="flex justify-between items-center">
-          <div class="flex flex-wrap gap-1">
-            ${session.tags ? session.tags.map(tag => `
-              <span class="text-xs px-1.5 py-0.5 rounded-full ${getTagBadgeClass(tag, true)}">${tag}</span>
-            `).join('') : ''}
-          </div>
-          <div class="flex space-x-2">
-            <button class="edit-session text-blue-600 hover:text-blue-800 text-xs dark:text-blue-400 dark:hover:text-blue-300" data-id="${session.id}"><i class="fas fa-edit"></i></button>
-            <button class="delete-session text-red-600 hover:text-red-800 text-xs dark:text-red-400 dark:hover:text-red-300" data-id="${session.id}"><i class="fas fa-trash-alt"></i></button>
-          </div>
+        <div class="tags-section flex flex-wrap gap-1">
+          ${session.tags ? session.tags.map(tag => `
+            <span class="text-xs px-1.5 py-0.5 rounded-full ${getTagBadgeClass(tag, true)}">${tag}</span>
+          `).join('') : ''}
         </div>
       </div>`
       : `

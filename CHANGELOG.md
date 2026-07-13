@@ -7,6 +7,7 @@
 
 ### Fixed
 - **Recent sessions grid wasted space** — replaced fixed Tailwind breakpoints (`sm:grid-cols-2 xl:grid-cols-3`) with CSS Grid `auto-fit` + `minmax(min(100%, 160px), 1fr)` so columns resize fluidly and fill available space at any viewport width.
+- **Grid card ergonomics** — moved action icons (edit/delete) to top-right hover overlay, bolded date as header, added clock icon before duration, aligned stars with badge row, separated tags into dedicated section. 360 tests.
 
 ### Refactored
 - **Extracted income multiplier logic** — `computeIncome`'s salary/tax multiplier application extracted into dedicated `_applyIncomeMultiplier(totalHours, isHourly, salaryValue, taxRate, isNet, workDaysInMonth)` method. 354 tests.
