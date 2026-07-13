@@ -4,7 +4,8 @@
   "description": "Desktop time tracker with tag buckets, session management, and calendar analytics",
   "main": "main.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "fuser -k 5173/tcp 2>/dev/null; vite",
+    "debug": "fuser -k 5173/tcp 2>/dev/null; vite & sleep 2 && chromium --remote-debugging-port=9222 http://localhost:5173",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run --coverage",

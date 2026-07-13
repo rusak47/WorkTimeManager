@@ -644,7 +644,7 @@ export function createUIManager(store) {
       ? 'grid gap-3'
       : 'space-y-3';
     if (_isGridMode) {
-      container.style.gridTemplateColumns = 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))';
+      container.style.gridTemplateColumns = 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))';
     } else {
       container.style.gridTemplateColumns = '';
     }
