@@ -410,12 +410,22 @@ describe('uiManager', () => {
       expect(gridCards.length).toBe(0);
     });
 
-    it('hides notes in grid mode', () => {
+    it('shows notes in title tooltip on grid cards', () => {
       store.setState({ sessions: mockSessions });
       ui.toggleRecentSessionsGrid();
       ui.renderRecentSessions();
-      const container = document.getElementById('recent-sessions');
-      expect(container.innerHTML).not.toContain('Weekend work');
+      const cards = document.querySelectorAll('.session-card-grid');
+      const cardWithNotes = cards[2]; // session id=3 has notes: 'Weekend work'
+      expect(cardWithNotes.title).toBe('Weekend work');
+    });
+
+    it('omits title attribute when session has no notes', () => {
+      store.setState({ sessions: mockSessions });
+      ui.toggleRecentSessionsGrid();
+      ui.renderRecentSessions();
+      const cards = document.querySelectorAll('.session-card-grid');
+      const cardWithoutNotes = cards[1]; // session id=2 has notes: ''
+      expect(cardWithoutNotes.hasAttribute('title')).toBe(false);
     });
   });
 

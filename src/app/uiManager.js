@@ -645,7 +645,7 @@ export function createUIManager(store) {
       : 'space-y-3';
     container.innerHTML = recent.map(session => _isGridMode
       ? `
-      <div class="session-card-grid bg-white border border-gray-200 rounded-lg p-3 transition-all duration-200 dark:bg-gray-600 dark:border-gray-500">
+      <div class="session-card-grid bg-white border border-gray-200 rounded-lg p-3 transition-all duration-200 dark:bg-gray-600 dark:border-gray-500"${session.notes ? ` title="${session.notes}"` : ''}>
         <div class="mb-2">
           <h3 class="font-medium text-gray-800 text-sm dark:text-white">${session.date}</h3>
           <p class="text-xs text-gray-600 dark:text-gray-300">${utils.formatTime(new Date(session.startTime))} - ${utils.formatTime(new Date(session.endTime))}</p>

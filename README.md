@@ -25,6 +25,9 @@ npm start          # Launch Electron app (requires npm run build first)
 npm test           # Vitest run with coverage
 npm run test:watch # Watch mode
 npm run lint       # ESLint
+
+# allow remote debugging for mcp
+chromium --remote-debugging-port=9222 --user-data-dir=/tmp/chromium-devtools http://localhost:5173
 ```
 
 ## Release Builds

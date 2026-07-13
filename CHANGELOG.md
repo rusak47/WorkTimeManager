@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- **Grid card note tooltip** — hovering a session card in Recent Sessions grid view now shows the session note in a native browser tooltip. Cards without notes have no tooltip. See `tasks/done/2026-07-13-grid-card-note-tooltip.md`.
+
 ### Refactored
 - **Extracted income multiplier logic** — `computeIncome`'s salary/tax multiplier application extracted into dedicated `_applyIncomeMultiplier(totalHours, isHourly, salaryValue, taxRate, isNet, workDaysInMonth)` method. 354 tests.
 
