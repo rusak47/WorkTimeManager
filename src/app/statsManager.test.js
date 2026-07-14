@@ -85,6 +85,18 @@ describe('statsManager', () => {
     expect(income[0]).toBe(0);
   });
 
+  it('computeIncome filters by tags when provided', () => {
+    store.setState({
+      sessions: [
+        { id: 1, date: '2026-06-24', durationSec: 3600, dayType: 'Workday', tags: ['work'] },
+        { id: 2, date: '2026-06-24', durationSec: 1800, dayType: 'Workday', tags: ['rest'] },
+      ],
+    });
+    const income = stats.computeIncome(2026, { tags: ['work'] });
+    // Only work session: 3600 sec = 1h * $15 = $15
+    expect(income[5]).toBeCloseTo(15, 1);
+  });
+
   it('computeIncome returns 0 for all months when no config', () => {
     store.setState({ configs: [] });
     const income = stats.computeIncome(2026);

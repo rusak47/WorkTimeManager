@@ -185,11 +185,13 @@ export function createStatsManager(store) {
       return income;
     },
 
-    computeIncome(year) {
+    computeIncome(year, opts = {}) {
       const config = getConfig();
       if (!config || !config.salaryValue) return Array(12).fill(0);
 
-      const sessions = getSessions();
+      const sessions = opts.tags
+        ? filterByTag(getSessions(), opts.tags)
+        : getSessions();
       const isHourly = config.salaryType === 'hourly';
       const isNet = config.salaryTaxType === 'net';
       const salaryValue = config.salaryValue;

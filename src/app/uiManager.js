@@ -1804,7 +1804,8 @@ export function createUIManager(store) {
       }
       updateYearlyStatsTable(selectedYear, filteredSessions);
       if (s.configs.length > 0 && s.configs[0].salaryValue) {
-        updateIncomeChart(selectedYear);
+        const incomeSessions = filteredSessions.filter(sess => sess.tags && sess.tags.includes('work'));
+        updateIncomeChart(selectedYear, incomeSessions);
         const incomeContainer = document.getElementById('income-chart-container');
         if (incomeContainer) incomeContainer.classList.remove('hidden');
       } else {
@@ -2085,7 +2086,7 @@ export function createUIManager(store) {
     table.classList.remove('hidden');
   }
 
-  function updateIncomeChart(year) {
+  function updateIncomeChart(year, filteredSessions) {
     const s = store.getState();
     if (s.configs.length === 0 || !s.configs[0].salaryValue) return;
     const incomeCtx = document.getElementById('incomeChart');
@@ -2101,7 +2102,7 @@ export function createUIManager(store) {
       const month = new Date(year, i, 1);
       const monthName = month.toLocaleDateString(undefined, { month: 'short' });
       months.push(monthName);
-      const monthSessions = s.sessions.filter(sess => {
+      const monthSessions = (filteredSessions || s.sessions).filter(sess => {
         const sessionDate = new Date(sess.startTime);
         return sessionDate.getFullYear() === year && sessionDate.getMonth() === i;
       });
