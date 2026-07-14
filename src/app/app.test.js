@@ -478,7 +478,7 @@ describe('app event handlers', () => {
     });
     app.persistAndRender();
     expect(storage.saveState).toHaveBeenCalled();
-    expect(document.getElementById('recent-sessions').innerHTML).toContain('2026-06-24');
+    expect(document.getElementById('recent-sessions').innerHTML).toContain('24 Jun 2026');
   });
 
   it('applyFilters filters sessions by date', () => {

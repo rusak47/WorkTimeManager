@@ -10,12 +10,15 @@ function formatGridDate(dateStr) {
   return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function getStripeColor(dayType) {
-  switch (dayType) {
-    case 'Weekend': return 'bg-red-400';
-    case 'Holiday': return 'bg-green-400';
-    case 'Vacation': return 'bg-purple-400';
-    default: return 'bg-blue-400';
+function getStripeColor(tags) {
+  if (!tags || tags.length === 0) return 'bg-gray-400';
+  const tag = tags[0];
+  switch (tag) {
+    case 'work': return 'bg-blue-400';
+    case 'rest': return 'bg-purple-400';
+    case 'study': return 'bg-orange-400';
+    case 'sport': return 'bg-green-400';
+    default: return 'bg-gray-400';
   }
 }
 
@@ -668,7 +671,7 @@ export function createUIManager(store) {
       ? `
       <div class="session-card-grid group relative bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-200 hover:border-gray-400 dark:bg-gray-600 dark:border-gray-500 dark:hover:border-gray-400"${session.notes ? ` title="${session.notes}"` : ''}>
         <div class="flex">
-          <div class="w-1 self-stretch rounded-l-lg ${getStripeColor(session.dayType)}"></div>
+          <div class="w-1 self-stretch rounded-l-lg ${getStripeColor(session.tags)}"></div>
           <div class="flex-1 p-3">
             <div class="grid-date text-sm font-semibold text-gray-800 dark:text-white">${formatGridDate(session.date)}</div>
             <div class="grid-time text-xs text-gray-500 dark:text-gray-400 mb-2">${utils.formatTime(new Date(session.startTime))} \u2013 ${utils.formatTime(new Date(session.endTime))}</div>
@@ -692,48 +695,36 @@ export function createUIManager(store) {
         ` : ''}
       </div>`
       : `
-      <div class="session-card bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 dark:bg-gray-600 dark:border-gray-500">
-        <div class="flex justify-between items-start">
-          <div>
-            <h3 class="font-medium text-gray-800 dark:text-white">${session.date}</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-300">${utils.formatTime(new Date(session.startTime))} - ${utils.formatTime(new Date(session.endTime))}</p>
-            <span class="inline-block mt-1 text-xs px-2 py-1 rounded-full ${utils.getDayTypeBadgeClass(session.dayType)}">
-              ${session.dayType}
-            </span>
-          </div>
-          <div class="text-right">
-            <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium dark:bg-blue-900 dark:bg-opacity-20 dark:text-blue-300">${session.duration}</span>
-            ${session.accumulatedPauseTimeSec ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Rest ${utils.formatDuration(session.accumulatedPauseTimeSec)}</div>` : ''}
-            ${session.mood ? `
-            <div class="mt-1 flex items-center justify-end">
-              <span class="text-xs mr-1">${session.mood.toFixed(1)}</span>
-              <div class="flex">
-                ${Array.from({length: 5}).map((_, i) => `
-                  <span class="text-xs ${i < Math.floor(session.mood) ? 'text-yellow-500' : 'text-gray-400'}">
-                    ${i < Math.floor(session.mood) ? '\u2605' : '\u2606'}
-                  </span>
-                `).join('')}
+      <div class="session-card group relative bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 hover:border-gray-400 dark:bg-gray-600 dark:border-gray-500 dark:hover:border-gray-400"${session.notes ? ` title="${session.notes}"` : ''}>
+        <div class="flex">
+          <div class="w-1 self-stretch rounded-l-lg ${getStripeColor(session.tags)}"></div>
+          <div class="flex-1 p-3">
+            <div class="flex items-center justify-between mb-1">
+              <div class="list-date text-sm font-semibold text-gray-800 dark:text-white">${formatGridDate(session.date)}</div>
+              ${session.mood ? `
+              <div class="list-stars flex items-center">
+                ${Array.from({length: 5}).map((_, i) => `<span class="text-xs ${i < Math.floor(session.mood) ? 'text-yellow-500' : 'text-gray-300'}">${i < Math.floor(session.mood) ? '\u2605' : '\u2606'}</span>`).join('')}
               </div>
+              ` : ''}
+            </div>
+            <div class="list-time text-xs text-gray-500 dark:text-gray-400 mb-2">${utils.formatTime(new Date(session.startTime))} \u2013 ${utils.formatTime(new Date(session.endTime))}</div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="inline-block text-xs px-2 py-0.5 rounded-full ${utils.getDayTypeBadgeClass(session.dayType)}">${session.dayType}</span>
+              <span class="list-dur text-xs text-gray-600 dark:text-gray-300"><i class="far fa-clock mr-1"></i>${session.duration}</span>
+            </div>
+            ${session.notes ? `
+            <div class="list-note flex items-start gap-1 mb-2 text-xs text-gray-600 dark:text-gray-400">
+              <i class="fas fa-quote-left mt-0.5 opacity-50"></i>
+              <span class="line-clamp-2">${session.notes}</span>
             </div>
             ` : ''}
-          </div>
-        </div>
-        ${session.notes ? `<p class="mt-2 text-gray-700 dark:text-gray-300">${session.notes}</p>` : ''}
-        <div class="flex justify-between items-center mt-3">
-          <div class="flex flex-wrap gap-1">
-            ${session.tags ? session.tags.map(tag => `
-              <span class="text-xs px-2 py-1 rounded-full ${getTagBadgeClass(tag, true)}">
-                ${tag}
-              </span>
-            `).join('') : ''}
-          </div>
-          <div class="flex space-x-2">
-            <button class="edit-session text-blue-600 hover:text-blue-800 text-sm font-medium dark:text-blue-400 dark:hover:text-blue-300" data-id="${session.id}">
-              <i class="fas fa-edit mr-1"></i>Edit
-            </button>
-            <button class="delete-session text-red-600 hover:text-red-800 text-sm font-medium dark:text-red-400 dark:hover:text-red-300" data-id="${session.id}">
-              <i class="fas fa-trash-alt mr-1"></i>Delete
-            </button>
+            <div class="list-tags relative flex flex-wrap gap-1 pt-2 border-t border-gray-100 dark:border-gray-500">
+              ${session.tags ? session.tags.map(tag => `<span class="text-xs px-1.5 py-0.5 rounded ${getTagBadgeClass(tag, true)}">${tag}</span>`).join('') : ''}
+              <div class="grid-actions absolute inset-0 flex items-center justify-center gap-2 bg-white/90 dark:bg-gray-600/90 opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded">
+                <button class="edit-session px-2 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-gray-500" data-id="${session.id}"><i class="fas fa-edit"></i> Edit</button>
+                <button class="delete-session px-2 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-gray-500" data-id="${session.id}"><i class="fas fa-trash-alt"></i> Delete</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>`
