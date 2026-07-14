@@ -446,7 +446,7 @@ describe('uiManager', () => {
       ui.toggleRecentSessionsGrid();
       ui.renderRecentSessions();
       const card = document.querySelector('.session-card-grid');
-      const dateEl = card.querySelector('.grid-date');
+      const dateEl = card.querySelector('.day-type-pill');
       expect(dateEl).toBeTruthy();
       expect(dateEl.textContent).toContain('2026');
     });

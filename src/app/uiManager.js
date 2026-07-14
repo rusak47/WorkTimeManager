@@ -22,6 +22,39 @@ function getStripeColor(tags) {
   }
 }
 
+function getDayTypePillClasses(dayType) {
+  switch (dayType) {
+    case 'Workday':
+      return 'bg-[#dbeafe] text-[#1e40af] dark:bg-[#1e3a5f] dark:text-[#93c5fd]';
+    case 'Weekend':
+      return 'bg-[#fff3ef] text-[#9a3412] dark:bg-[#1d2438] dark:text-[#8090b0]';
+    case 'Holiday':
+      return 'bg-[#fce5dc] text-[#166534] dark:bg-[#680a0a] dark:text-[#fca5a5]';
+    case 'Memorial':
+    case 'Memorial day':
+      return 'bg-transparent text-[#9d174d] border border-[#f9a8d4] dark:bg-transparent dark:text-[#a899f5] dark:border-[#5046a0]';
+    case 'Vacation':
+      return 'bg-[#ede9fe] text-[#5b21b6] dark:bg-[#2e1065] dark:text-[#c4b5fd]';
+    case 'Short day':
+      return 'bg-[#fef3c7] text-[#92400e] dark:bg-[#3a2d10] dark:text-[#f0b840]';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+  }
+}
+
+function getDayTypeDotColor(dayType) {
+  switch (dayType) {
+    case 'Workday': return 'bg-[#3b82f6]';
+    case 'Weekend': return 'bg-[#f97316]';
+    case 'Holiday': return 'bg-[#22c55e]';
+    case 'Memorial':
+    case 'Memorial day': return 'bg-[#ec4899]';
+    case 'Vacation': return 'bg-[#8b5cf6]';
+    case 'Short day': return 'bg-[#eab308]';
+    default: return 'bg-gray-400';
+  }
+}
+
 export function createUIManager(store) {
   let _showCurrentRest = true;
   let _showSegmentOnly = true;
@@ -673,10 +706,15 @@ export function createUIManager(store) {
         <div class="flex">
           <div class="w-1 self-stretch rounded-l-lg ${getStripeColor(session.tags)}"></div>
           <div class="flex-1 p-3">
-            <div class="grid-date text-sm font-semibold text-gray-800 dark:text-white">${formatGridDate(session.date)}</div>
+            <div class="day-type-pill relative group/pill inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium mb-2 ${getDayTypePillClasses(session.dayType)}">
+              <span class="w-1.5 h-1.5 rounded-full ${getDayTypeDotColor(session.dayType)}"></span>
+              <span>${formatGridDate(session.date)}</span>
+              <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 text-xs text-gray-800 bg-white border border-gray-200 rounded shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover/pill:opacity-100 transition-opacity duration-150 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 z-10">
+                ${session.dayType}
+              </div>
+            </div>
             <div class="grid-time text-xs text-gray-500 dark:text-gray-400 mb-2">${utils.formatTime(new Date(session.startTime))} \u2013 ${utils.formatTime(new Date(session.endTime))}</div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="inline-block text-xs px-2 py-0.5 rounded-full ${utils.getDayTypeBadgeClass(session.dayType)}">${session.dayType}</span>
+            <div class="flex items-center justify-end mb-2">
               <span class="grid-dur text-xs text-gray-600 dark:text-gray-300"><i class="far fa-clock mr-1"></i>${session.duration}</span>
             </div>
             <div class="grid-tags relative flex flex-wrap gap-1 pt-2 border-t border-gray-100 dark:border-gray-500">
@@ -699,8 +737,14 @@ export function createUIManager(store) {
         <div class="flex">
           <div class="w-1 self-stretch rounded-l-lg ${getStripeColor(session.tags)}"></div>
           <div class="flex-1 p-3">
-            <div class="flex items-center justify-between mb-1">
-              <div class="list-date text-sm font-semibold text-gray-800 dark:text-white">${formatGridDate(session.date)}</div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="day-type-pill relative group/pill inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${getDayTypePillClasses(session.dayType)}">
+                <span class="w-1.5 h-1.5 rounded-full ${getDayTypeDotColor(session.dayType)}"></span>
+                <span>${formatGridDate(session.date)}</span>
+                <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 text-xs text-gray-800 bg-white border border-gray-200 rounded shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover/pill:opacity-100 transition-opacity duration-150 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 z-10">
+                  ${session.dayType}
+                </div>
+              </div>
               ${session.mood ? `
               <div class="list-stars flex items-center">
                 ${Array.from({length: 5}).map((_, i) => `<span class="text-xs ${i < Math.floor(session.mood) ? 'text-yellow-500' : 'text-gray-300'}">${i < Math.floor(session.mood) ? '\u2605' : '\u2606'}</span>`).join('')}
@@ -708,8 +752,7 @@ export function createUIManager(store) {
               ` : ''}
             </div>
             <div class="list-time text-xs text-gray-500 dark:text-gray-400 mb-2">${utils.formatTime(new Date(session.startTime))} \u2013 ${utils.formatTime(new Date(session.endTime))}</div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="inline-block text-xs px-2 py-0.5 rounded-full ${utils.getDayTypeBadgeClass(session.dayType)}">${session.dayType}</span>
+            <div class="flex items-center justify-end mb-2">
               <span class="list-dur text-xs text-gray-600 dark:text-gray-300"><i class="far fa-clock mr-1"></i>${session.duration}</span>
             </div>
             ${session.notes ? `
