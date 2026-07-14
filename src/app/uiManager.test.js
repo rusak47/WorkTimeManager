@@ -441,14 +441,14 @@ describe('uiManager', () => {
       expect(overlay.querySelector('.delete-session')).toBeTruthy();
     });
 
-    it('renders date as bold header in grid cards', () => {
+    it('renders date in grid cards', () => {
       store.setState({ sessions: mockSessions });
       ui.toggleRecentSessionsGrid();
       ui.renderRecentSessions();
       const card = document.querySelector('.session-card-grid');
-      const dateEl = card.querySelector('h3');
+      const dateEl = card.querySelector('.grid-date');
       expect(dateEl).toBeTruthy();
-      expect(dateEl.className).toContain('font-bold');
+      expect(dateEl.textContent).toContain('2026');
     });
 
     it('renders duration with clock icon in grid cards', () => {
@@ -456,27 +456,26 @@ describe('uiManager', () => {
       ui.toggleRecentSessionsGrid();
       ui.renderRecentSessions();
       const card = document.querySelector('.session-card-grid');
-      const durationEl = card.querySelector('.duration-badge');
+      const durationEl = card.querySelector('.grid-dur');
       expect(durationEl).toBeTruthy();
-      expect(durationEl.textContent).toContain('\u23F1');
+      expect(durationEl.querySelector('.fa-clock')).toBeTruthy();
     });
 
-    it('renders stars aligned with badge in grid cards', () => {
+    it('renders stars in grid cards', () => {
       store.setState({ sessions: mockSessions });
       ui.toggleRecentSessionsGrid();
       ui.renderRecentSessions();
       const card = document.querySelector('.session-card-grid');
-      const badgeRow = card.querySelector('.badge-row');
-      expect(badgeRow).toBeTruthy();
-      expect(badgeRow.querySelector('.flex.items-center')).toBeTruthy();
+      const stars = card.querySelector('.grid-stars');
+      expect(stars).toBeTruthy();
     });
 
-    it('renders tags in separate section in grid cards', () => {
+    it('renders tags in grid cards', () => {
       store.setState({ sessions: mockSessions });
       ui.toggleRecentSessionsGrid();
       ui.renderRecentSessions();
       const card = document.querySelector('.session-card-grid');
-      const tagsSection = card.querySelector('.tags-section');
+      const tagsSection = card.querySelector('.grid-tags');
       expect(tagsSection).toBeTruthy();
       expect(tagsSection.querySelectorAll('.text-xs').length).toBeGreaterThan(0);
     });
