@@ -1802,7 +1802,7 @@ export function createUIManager(store) {
         data.push(monthTotal / 3600);
         backgroundColors.push(colors[i % colors.length]);
       }
-      updateYearlyStatsTable(selectedYear);
+      updateYearlyStatsTable(selectedYear, filteredSessions);
       if (s.configs.length > 0 && s.configs[0].salaryValue) {
         updateIncomeChart(selectedYear);
         const incomeContainer = document.getElementById('income-chart-container');
@@ -2036,7 +2036,7 @@ export function createUIManager(store) {
     }
   }
 
-  function updateYearlyStatsTable(year) {
+  function updateYearlyStatsTable(year, filteredSessions) {
     const s = store.getState();
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const body = document.getElementById('yearly-stats-body');
@@ -2044,10 +2044,11 @@ export function createUIManager(store) {
     if (!body || !table) return;
     let tableHTML = '';
     const latestConfig = s.configs[0] || { workingHours: 8, breakDuration: 60 };
+    const sessionsToUse = filteredSessions || s.sessions;
     for (let i = 0; i < 12; i++) {
       const monthStart = new Date(year, i, 1);
       const monthEnd = new Date(year, i + 1, 0);
-      const monthSessions = s.sessions.filter(sess => {
+      const monthSessions = sessionsToUse.filter(sess => {
         const sessionDate = new Date(sess.startTime);
         return sessionDate.getFullYear() === monthStart.getFullYear() && sessionDate.getMonth() === monthStart.getMonth();
       });

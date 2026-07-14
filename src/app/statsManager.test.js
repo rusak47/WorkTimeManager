@@ -64,6 +64,19 @@ describe('statsManager', () => {
     expect(table[5].avgHoursPerDay).toBe(1.8);
   });
 
+  it('computeYearlyTable filters by tags when provided', () => {
+    store.setState({
+      sessions: [
+        { id: 1, date: '2026-06-24', durationSec: 3600, dayType: 'Workday', tags: ['work'] },
+        { id: 2, date: '2026-06-24', durationSec: 1800, dayType: 'Workday', tags: ['rest'] },
+        { id: 3, date: '2026-06-23', durationSec: 7200, dayType: 'Workday', tags: ['work'] },
+      ],
+    });
+    const table = stats.computeYearlyTable(2026, { tags: ['work'] });
+    // Only work sessions: 3600 + 7200 = 10800 sec = 3 hours
+    expect(table[5].totalHours).toBe(3);
+  });
+
   it('computeIncome returns monthly income array for hourly rate', () => {
     const income = stats.computeIncome(2026);
     expect(income).toHaveLength(12);

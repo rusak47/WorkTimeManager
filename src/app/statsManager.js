@@ -111,8 +111,10 @@ export function createStatsManager(store) {
       return { labels, data, totalSec };
     },
 
-    computeYearlyTable(year) {
-      const sessions = getSessions();
+    computeYearlyTable(year, opts = {}) {
+      const sessions = opts.tags
+        ? filterByTag(getSessions(), opts.tags)
+        : getSessions();
       const markedDays = getMarkedDays();
       const config = getConfig();
       const expectedDailyHours = config ? config.workingHours : 8;
