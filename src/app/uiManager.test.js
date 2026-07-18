@@ -620,21 +620,24 @@ describe('uiManager', () => {
       expect(cbs[2].value).toBe('study');
     });
 
-    it('all checkboxes checked by default', () => {
+    it('only work checkbox checked by default', () => {
       store.setState({ tagBuckets: { work: [], study: [] } });
       ui.populateSessionTagFilter();
       const cbs = document.querySelectorAll('#session-tag-dropdown input[type="checkbox"]');
-      expect(Array.from(cbs).every(cb => cb.checked)).toBe(true);
+      const workCb = document.querySelector('#session-tag-dropdown input[value="work"]');
+      const studyCb = document.querySelector('#session-tag-dropdown input[value="study"]');
+      expect(workCb.checked).toBe(true);
+      expect(studyCb.checked).toBe(false);
     });
 
     it('preserves previous selection on re-populate', () => {
       store.setState({ tagBuckets: { work: [], rest: [], study: [] } });
       ui.populateSessionTagFilter();
       const cb = document.querySelector('#session-tag-dropdown input[value="rest"]');
-      cb.checked = false;
+      cb.checked = true;
       ui.populateSessionTagFilter();
       const restCb = document.querySelector('#session-tag-dropdown input[value="rest"]');
-      expect(restCb.checked).toBe(false);
+      expect(restCb.checked).toBe(true);
       const workCb = document.querySelector('#session-tag-dropdown input[value="work"]');
       expect(workCb.checked).toBe(true);
     });
@@ -644,6 +647,7 @@ describe('uiManager', () => {
     it('shows "All tags" when all selected', () => {
       store.setState({ tagBuckets: { work: [], study: [] } });
       ui.populateSessionTagFilter();
+      document.querySelectorAll('#session-tag-dropdown input[type="checkbox"]').forEach(cb => cb.checked = true);
       ui.updateSessionTagBtnLabel();
       expect(document.getElementById('session-tag-filter-btn').textContent).toBe('All tags');
     });
@@ -651,8 +655,8 @@ describe('uiManager', () => {
     it('shows count when some deselected', () => {
       store.setState({ tagBuckets: { work: [], rest: [], study: [] } });
       ui.populateSessionTagFilter();
-      const cb = document.querySelector('#session-tag-dropdown input[value="rest"]');
-      cb.checked = false;
+      const restCb = document.querySelector('#session-tag-dropdown input[value="rest"]');
+      restCb.checked = true;
       ui.updateSessionTagBtnLabel();
       expect(document.getElementById('session-tag-filter-btn').textContent).toBe('Tags (2)');
     });

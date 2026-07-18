@@ -995,7 +995,7 @@ export function createUIManager(store) {
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.value = bucket;
-      cb.checked = prevChecked.size === 0 || prevChecked.has(bucket);
+      cb.checked = prevChecked.size === 0 ? bucket === 'work' : prevChecked.has(bucket);
       const span = document.createElement('span');
       span.textContent = bucket;
       label.appendChild(cb);
