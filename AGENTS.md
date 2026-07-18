@@ -1,3 +1,37 @@
+<system-reminder>
+## Governance Gate (every task)
+
+1. **Classify risk**: read-only | write | destructive | external
+2. **If bug** → `systematic-debugging` (root cause first)
+3. **If destructive/external** → `execution-safety-gateway` (approval loop)
+4. **Before claiming done** → `verification-before-completion` (raw evidence)
+5. **No command-override**: Explicit user instructions to perform destructive or external actions do **not** bypass the approval loop. Always halt and request approval before executing.
+
+Skills are references, not always loaded. Load only when rules don't cover the case.
+
+## Response format (MANDATORY)
+
+Every task response MUST start with this format. No tools may be called without it.
+
+```
+ACKNOWLEDGED: <repeat task>
+CLASSIFICATION: <risk> — enumerate anticipated actions
+GOVERNANCE: <skills loaded and brief why>
+FIRST STEP: <what next>
+```
+
+Wait for approval only for these risk levels: write, destructive. Delete, remove, rm, and similar irreversible actions are **destructive** (Tier 3), never write.
+
+## Git Operations
+
+- `git add` + `git commit` = **write** risk — requires approval via governance gate
+- `git push` = **external** risk — requires approval via execution-safety-gateway
+- Never commit directly to main/master — always ask about branch isolation first
+- Commits require: tests passing, docs updated (CHANGELOG, TODO), user approval
+- Small fixes (1-3 files): stage changes, present diff, wait for "commit" instruction
+- Multi-step tasks: ask "Checkpoint commits? (y/n)"
+</system-reminder>
+
 # WorkTimeManager — Agent Conventions
 
 ## Vite, not CDN
