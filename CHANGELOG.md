@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- **All-sessions collapsible views** — session list now groups by time period (Year/Month/Week) with collapsible headers showing session count and total duration. View toggle buttons switch between modes. Groups expand/collapse on click with chevron animation. See `tasks/done/2026-07-18-all-sessions-collapsible-views.md`.
 - **Utils.js unit tests** — 24 tests covering all 6 exported functions (`formatTime`, `formatDuration`, `formatDate`, `parseDuration`, `formatDateTimeLocal`, `getDayTypeBadgeClass`). Includes round-trip inverse test. See `tasks/done/2026-07-18-utils-tests-and-font-awesome-local.md`.
 - **Grid card note tooltip** — hovering a session card in Recent Sessions grid view now shows the session note in a native browser tooltip. Cards without notes have no tooltip. See `tasks/done/2026-07-13-grid-card-note-tooltip.md`.
 

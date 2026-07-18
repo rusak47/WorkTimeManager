@@ -32,6 +32,11 @@ function setupDOM() {
     <div id="current-session-mood"></div>
     <div id="recent-sessions"></div>
     <div id="all-sessions-list"></div>
+    <div id="all-sessions-controls">
+      <button id="view-year" class="view-toggle">Year</button>
+      <button id="view-month" class="view-toggle">Month</button>
+      <button id="view-week" class="view-toggle">Week</button>
+    </div>
     <div class="duration-display">
       <span id="duration-label">Current Duration</span>
       <span id="active-duration">00:00:00</span>
@@ -153,6 +158,8 @@ describe('uiManager', () => {
       tags: [],
       currentTab: 'tracker',
       currentStatsPeriod: 'daily',
+      allSessionsView: 'month',
+      allSessionsPeriod: null,
       darkMode: false,
       tracker: { startTime: null, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
     });
@@ -488,10 +495,83 @@ describe('uiManager', () => {
       expect(html).toContain('No sessions found');
     });
 
-    it('renders sessions grouped by date', () => {
-      store.setState({ sessions: mockSessions, markedDays: [] });
+    it('renders sessions grouped by date in week view', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-24T12:00:00'));
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+        allSessionsPeriod: '2026-W26',
+      });
       ui.renderAllSessions();
-      expect(document.querySelectorAll('.day-header').length).toBe(2);
+      expect(document.querySelectorAll('.group-header').length).toBe(2);
+      vi.useRealTimers();
+    });
+
+    it('renders collapsible groups in month view', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-24T12:00:00'));
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'month',
+        allSessionsPeriod: '2026-06',
+      });
+      ui.renderAllSessions();
+      const groups = document.querySelectorAll('.collapsible-group');
+      expect(groups.length).toBeGreaterThan(0);
+      groups.forEach(g => {
+        expect(g.querySelector('.group-header')).toBeTruthy();
+        expect(g.querySelector('.fa-chevron-right')).toBeTruthy();
+      });
+      vi.useRealTimers();
+    });
+
+    it('renders collapsible groups in year view', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-24T12:00:00'));
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'year',
+        allSessionsPeriod: '2026',
+      });
+      ui.renderAllSessions();
+      const groups = document.querySelectorAll('.collapsible-group');
+      expect(groups.length).toBeGreaterThan(0);
+      vi.useRealTimers();
+    });
+
+    it('renders flat groups in week view', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-24T12:00:00'));
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+        allSessionsPeriod: '2026-W26',
+      });
+      ui.renderAllSessions();
+      const groups = document.querySelectorAll('.collapsible-group');
+      expect(groups.length).toBeGreaterThan(0);
+      vi.useRealTimers();
+    });
+
+    it('session count badge shows correct count', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-24T12:00:00'));
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+        allSessionsPeriod: '2026-W26',
+      });
+      ui.renderAllSessions();
+      const badges = document.querySelectorAll('.group-session-count');
+      const counts = Array.from(badges).map(b => parseInt(b.textContent));
+      expect(counts).toContain(2);
+      vi.useRealTimers();
     });
   });
 

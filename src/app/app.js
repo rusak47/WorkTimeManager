@@ -10,6 +10,8 @@ const INITIAL_STATE = Object.freeze({
   tags: [],
   currentTab: 'tracker',
   currentStatsPeriod: 'daily',
+  allSessionsView: 'month',
+  allSessionsPeriod: null,
   darkMode: false,
   backupIntervalMs: 300000,
   tracker: { startTime: null, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
@@ -40,6 +42,8 @@ export function createEventHandlers(deps) {
     if (state && state.darkMode !== undefined) store.setState({ darkMode: state.darkMode });
     if (state && state.backupIntervalMs) store.setState({ backupIntervalMs: state.backupIntervalMs });
     if (state && state.tagBuckets) store.setState({ tagBuckets: state.tagBuckets });
+    if (state && state.allSessionsView) store.setState({ allSessionsView: state.allSessionsView });
+    if (state && state.allSessionsPeriod !== undefined) store.setState({ allSessionsPeriod: state.allSessionsPeriod });
     if (state && state.tracker && state.tracker.startTime) {
       const age = Date.now() - state.tracker.startTime;
       if (age < 24 * 3600 * 1000) {
@@ -122,6 +126,8 @@ export function createEventHandlers(deps) {
         tracker,
         backupIntervalMs: s.backupIntervalMs,
         tagBuckets: s.tagBuckets,
+        allSessionsView: s.allSessionsView,
+        allSessionsPeriod: s.allSessionsPeriod,
       });
     } catch (err) {
       console.error('Failed to save data:', err);
@@ -714,8 +720,9 @@ export function createEventHandlers(deps) {
           }
         }
 
-        ui.renderRecentSessions();
-        ui.renderAllSessions();
+    ui.renderRecentSessions();
+    ui.renderAllSessions();
+    document.getElementById(`view-${s.allSessionsView || 'month'}`)?.classList.add('active');
         ui.updateTodayTotal();
         ui.updateTodayStatus(impState, calendarService);
     ui.populateYearSelector();
@@ -951,6 +958,22 @@ export function createEventHandlers(deps) {
     });
     document.getElementById('reset-marked-days')?.addEventListener('click', () => {
       if (confirm('Reset Marked Days\n\nAre you sure you want to reset all marked days?')) resetMarkedDaysFn();
+    });
+    const setAllSessionsView = (view) => {
+      store.setState({ allSessionsView: view, allSessionsPeriod: null });
+      document.querySelectorAll('.view-toggle').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`view-${view}`)?.classList.add('active');
+      ui.renderAllSessions();
+    };
+    document.getElementById('view-year')?.addEventListener('click', () => setAllSessionsView('year'));
+    document.getElementById('view-month')?.addEventListener('click', () => setAllSessionsView('month'));
+    document.getElementById('view-week')?.addEventListener('click', () => setAllSessionsView('week'));
+    document.getElementById('all-sessions-list')?.addEventListener('click', (e) => {
+      const header = e.target.closest('.group-header');
+      if (header) {
+        ui.toggleAllSessionGroup(header.dataset.groupId);
+        ui.renderAllSessions();
+      }
     });
     document.querySelectorAll('[data-settings-tab]').forEach(btn => {
       btn.addEventListener('click', () => {

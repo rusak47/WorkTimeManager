@@ -1,6 +1,6 @@
 # All-Sessions Collapsible Views — Spec
 
-> **Status**: proposed
+> **Status**: done
 > **Date**: 2026-07-18
 > **TODO reference**: `TODO.md` line 9-13
 
@@ -26,9 +26,9 @@ Three toggle buttons above the session list: **Year** | **Month** | **Week**
 
 ### Initial load limit
 
-- **Year view**: Show current year only (not all years). Year selector dropdown filters which year is displayed. Remove "all years" option
-- **Month view**: Show current month only.
-- **Week view**: Show current week only.
+- **Year view**: by default Show current year only (year selector = current year). Year selector dropdown filters which year is displayed. keep "all years" option.
+- **Month view**: by default Show current month only.
+- **Week view**: by default Show current week only.
 
 "Show more" button at the bottom loads the previous period through filter adapt (prev month, prev week, etc.).
 

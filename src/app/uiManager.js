@@ -2,6 +2,11 @@ import { Chart } from 'chart.js/auto';
 import * as utils from '../js/utils.js';
 import { DEFAULT_TAGS, SECONDS_PER_HOUR } from './constants.js';
 import { moveSubtagBetweenBuckets, removeTagFromBucket } from './tagManager.js';
+import {
+  groupByYear, groupByMonth, groupByWeek,
+  filterByPeriod, getDefaultPeriod,
+  toggleGroup, isGroupExpanded, getTotalDuration,
+} from './allSessionsView.js';
 
 function formatGridDate(dateStr) {
   const d = new Date(dateStr);
@@ -774,63 +779,141 @@ export function createUIManager(store) {
     ).join('');
   }
 
+  let expandedGroups = new Set();
+
+  function renderSessionCard(session) {
+    const card = document.createElement('div');
+    card.className = 'session-card bg-white border border-gray-200 px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:bg-gray-600 dark:border-gray-500 dark:hover:bg-gray-500';
+    card.dataset.sessionId = session.id;
+    const info = document.createElement('div');
+    const timeRange = document.createElement('div');
+    timeRange.className = 'text-sm font-medium dark:text-white';
+    timeRange.textContent = `${utils.formatTime(new Date(session.startTime))} - ${utils.formatTime(new Date(session.endTime))}`;
+    const duration = document.createElement('div');
+    duration.className = 'text-xs text-gray-500 dark:text-gray-300';
+    duration.textContent = session.duration;
+    info.appendChild(timeRange);
+    info.appendChild(duration);
+    if (session.accumulatedPauseTimeSec) {
+      const restEl = document.createElement('div');
+      restEl.className = 'text-xs text-gray-400 dark:text-gray-400';
+      restEl.textContent = `Rest ${utils.formatDuration(session.accumulatedPauseTimeSec)}`;
+      info.appendChild(restEl);
+    }
+    const notes = document.createElement('div');
+    notes.className = 'text-sm text-gray-600 truncate max-w-xs dark:text-gray-200';
+    notes.textContent = session.notes || 'No notes';
+    card.appendChild(info);
+    card.appendChild(notes);
+    return card;
+  }
+
+  function renderDaySessions(date, sessions, container) {
+    const s = store.getState();
+    const md = s.markedDays.find(d => d.date === date);
+    const dayType = md ? md.dayType : (() => { const d = new Date(date); return (d.getDay() === 0 || d.getDay() === 6) ? 'Weekend' : 'Workday'; })();
+    const dateHeader = document.createElement('div');
+    dateHeader.className = `day-header px-4 py-2 rounded-t-lg flex justify-between items-center ${dayType.toLowerCase()}`;
+    const dateText = document.createElement('span');
+    dateText.className = 'font-medium';
+    dateText.textContent = new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const dayTypeBadge = document.createElement('span');
+    dayTypeBadge.className = 'text-xs px-2 py-1 rounded-full bg-white dark:bg-gray-600';
+    dayTypeBadge.textContent = dayType;
+    dateHeader.appendChild(dateText);
+    dateHeader.appendChild(dayTypeBadge);
+    container.appendChild(dateHeader);
+    for (const session of sessions) {
+      container.appendChild(renderSessionCard(session));
+    }
+  }
+
+  function renderGroupHeader(groupId, label, sessionCount, totalSec) {
+    const expanded = isGroupExpanded(expandedGroups, groupId);
+    const header = document.createElement('div');
+    header.className = 'group-header px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg select-none';
+    header.dataset.groupId = groupId;
+    const chevron = document.createElement('i');
+    chevron.className = `fas fa-chevron-${expanded ? 'down' : 'right'} text-xs text-gray-400 transition-transform`;
+    const name = document.createElement('span');
+    name.className = 'font-medium text-sm dark:text-white';
+    name.textContent = label;
+    const countBadge = document.createElement('span');
+    countBadge.className = 'group-session-count text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300';
+    countBadge.textContent = sessionCount;
+    const durationBadge = document.createElement('span');
+    durationBadge.className = 'text-xs text-gray-500 dark:text-gray-400';
+    durationBadge.textContent = utils.formatDuration(totalSec);
+    header.appendChild(chevron);
+    header.appendChild(name);
+    header.appendChild(countBadge);
+    header.appendChild(durationBadge);
+    return { header, expanded };
+  }
+
   function renderAllSessions(filteredSessions) {
     const container = document.getElementById('all-sessions-list');
     const s = store.getState();
     if (!container) return;
-    const sessionsToRender = filteredSessions || s.sessions;
+    const view = s.allSessionsView || 'month';
+    const period = s.allSessionsPeriod || getDefaultPeriod(view);
+    let sessionsToRender = filteredSessions || s.sessions;
     if (sessionsToRender.length === 0) {
       container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-8">No sessions found. Start tracking or add a session manually.</p>';
       return;
     }
-    const sessionsByDate = {};
-    for (const session of sessionsToRender) {
-      if (!sessionsByDate[session.date]) sessionsByDate[session.date] = [];
-      sessionsByDate[session.date].push(session);
+    const periodSessions = filteredSessions ? sessionsToRender : filterByPeriod(sessionsToRender, view, period);
+    if (periodSessions.length === 0) {
+      container.innerHTML = `<p class="text-gray-500 dark:text-gray-400 text-center py-8">No sessions for this period.</p>`;
+      return;
     }
     container.innerHTML = '';
-    const markedDay = (dateStr) => s.markedDays.find(d => d.date === dateStr);
-    for (const [date, dateSessions] of Object.entries(sessionsByDate)) {
-      const md = markedDay(date);
-      const dayType = md ? md.dayType : (() => { const d = new Date(date); return (d.getDay() === 0 || d.getDay() === 6) ? 'Weekend' : 'Workday'; })();
-      const dateHeader = document.createElement('div');
-      dateHeader.className = `day-header px-4 py-2 rounded-t-lg flex justify-between items-center ${dayType.toLowerCase()}`;
-      const dateText = document.createElement('span');
-      dateText.className = 'font-medium';
-      dateText.textContent = new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      const dayTypeBadge = document.createElement('span');
-      dayTypeBadge.className = 'text-xs px-2 py-1 rounded-full bg-white dark:bg-gray-600';
-      dayTypeBadge.textContent = dayType;
-      dateHeader.appendChild(dateText);
-      dateHeader.appendChild(dayTypeBadge);
-      container.appendChild(dateHeader);
-      for (const session of dateSessions) {
-        const sessionCard = document.createElement('div');
-        sessionCard.className = 'session-card bg-white border border-gray-200 px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:bg-gray-600 dark:border-gray-500 dark:hover:bg-gray-500';
-        sessionCard.dataset.sessionId = session.id;
-        const sessionInfo = document.createElement('div');
-        const timeRange = document.createElement('div');
-        timeRange.className = 'text-sm font-medium dark:text-white';
-        timeRange.textContent = `${utils.formatTime(new Date(session.startTime))} - ${utils.formatTime(new Date(session.endTime))}`;
-        const duration = document.createElement('div');
-        duration.className = 'text-xs text-gray-500 dark:text-gray-300';
-        duration.textContent = session.duration;
-        sessionInfo.appendChild(timeRange);
-        sessionInfo.appendChild(duration);
-        if (session.accumulatedPauseTimeSec) {
-          const restEl = document.createElement('div');
-          restEl.className = 'text-xs text-gray-400 dark:text-gray-400';
-          restEl.textContent = `Rest ${utils.formatDuration(session.accumulatedPauseTimeSec)}`;
-          sessionInfo.appendChild(restEl);
+    if (filteredSessions) expandedGroups = new Set(['__all__']);
+    const renderGroup = (groupId, label, sessions, childRenderer) => {
+      const group = document.createElement('div');
+      group.className = 'collapsible-group';
+      const expanded = filteredSessions || isGroupExpanded(expandedGroups, groupId);
+      const { header } = renderGroupHeader(groupId, label, sessions.length, getTotalDuration(sessions));
+      group.appendChild(header);
+      if (expanded) childRenderer(group);
+      container.appendChild(group);
+    };
+    if (view === 'year') {
+      const grouped = groupByYear(periodSessions);
+      for (const [year, months] of Object.entries(grouped)) {
+        for (const [month, days] of Object.entries(months)) {
+          const groupSessions = Object.values(days).flat();
+          renderGroup(`year-${year}-${month}`, `${month} ${year}`, groupSessions, (group) => {
+            for (const [date, daySessions] of Object.entries(days)) {
+              renderDaySessions(date, daySessions, group);
+            }
+          });
         }
-        const sessionNotes = document.createElement('div');
-        sessionNotes.className = 'text-sm text-gray-600 truncate max-w-xs dark:text-gray-200';
-        sessionNotes.textContent = session.notes || 'No notes';
-        sessionCard.appendChild(sessionInfo);
-        sessionCard.appendChild(sessionNotes);
-        container.appendChild(sessionCard);
+      }
+    } else if (view === 'month') {
+      const grouped = groupByMonth(periodSessions);
+      for (const [week, days] of Object.entries(grouped)) {
+        const groupSessions = Object.values(days).flat();
+        renderGroup(`month-${week}`, `Week ${week.split('-W')[1]}`, groupSessions, (group) => {
+          for (const [date, daySessions] of Object.entries(days)) {
+            renderDaySessions(date, daySessions, group);
+          }
+        });
+      }
+    } else {
+      const grouped = groupByWeek(periodSessions);
+      for (const [date, daySessions] of Object.entries(grouped)) {
+        renderGroup(`week-${date}`, new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }), daySessions, (group) => {
+          for (const session of daySessions) {
+            group.appendChild(renderSessionCard(session));
+          }
+        });
       }
     }
+  }
+
+  function toggleAllSessionGroup(groupId) {
+    expandedGroups = toggleGroup(expandedGroups, groupId);
   }
 
   function populateYearSelector() {
@@ -2202,6 +2285,7 @@ export function createUIManager(store) {
     renderRecentSessions,
     toggleRecentSessionsGrid,
     renderAllSessions,
+    toggleAllSessionGroup,
     populateYearSelector,
     populateYearFilter,
     showAddSessionModal,
