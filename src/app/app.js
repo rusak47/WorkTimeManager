@@ -919,6 +919,7 @@ export function createEventHandlers(deps) {
     document.getElementById('cancel-session')?.addEventListener('click', hideSessionModal);
     document.getElementById('session-form')?.addEventListener('submit', handleSessionFormSubmit);
     document.getElementById('apply-filters')?.addEventListener('click', applyFilters);
+    document.getElementById('year-filter')?.addEventListener('change', applyFilters);
     document.getElementById('mark-holiday')?.addEventListener('click', () => showMarkDayModal('Holiday'));
     document.getElementById('mark-vacation')?.addEventListener('click', () => showMarkDayModal('Vacation'));
     document.getElementById('save-mark-day')?.addEventListener('click', saveMarkedDay);

@@ -1,7 +1,7 @@
 # TODO
 
 ## Bugs
-- [ ] [low] — year selector dropdown in session view doesn't filter sessions when changed
+- [x] [low] — year selector dropdown in session view doesn't filter sessions when changed (2026-07-18)
 
 ## Sessions
 - [ ] [normal+ - must have] Filter sessions by tags and/or text — input field with tag autocomplete/suggestion in the sessions tab.
@@ -10,7 +10,7 @@
 make buttons to switch view - year/month/week view.
 year - sessions collapsed by month (Jan/Feb/...) - when pressing some month, this month weeks uncollapse 
 month - sessions collapsed by weeks (Week 1/Week 2/... ) - when pressing some week, this week days uncollapse 
-weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its sessions uncollapse
+weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its sessions uncollapse (spec: `tasks/new/20260718-all-sessions-collapsible-views.md`)
 - [ ] [normal - must have] Add delete button in all-sessions tab (currently only present in recent sessions preview).
 - [ ] [low prior - maybe] Save session instantly, then open edit window for adjustments.
 - [ ] [low priority - maybe] Show session start time on tracker tab while timer is running.

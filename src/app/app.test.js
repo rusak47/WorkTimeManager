@@ -517,6 +517,20 @@ describe('app event handlers', () => {
     expect(document.querySelectorAll('.session-card').length).toBe(1);
   });
 
+  it('year-filter change event triggers applyFilters automatically', () => {
+    app.setupEventListeners();
+    store.setState({
+      sessions: [
+        { id: 1, date: '2026-01-01', startTime: '2026-01-01T08:00:00Z', durationSec: 3600, dayType: 'Workday' },
+        { id: 2, date: '2025-06-01', startTime: '2025-06-01T08:00:00Z', durationSec: 3600, dayType: 'Workday' },
+      ],
+    });
+    const yearFilter = document.getElementById('year-filter');
+    yearFilter.value = '2025';
+    yearFilter.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(document.querySelectorAll('.session-card').length).toBe(1);
+  });
+
   it('applyFilters filters sessions by day type', () => {
     document.getElementById('day-type-filter').value = 'Weekend';
     store.setState({
