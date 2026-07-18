@@ -41,6 +41,7 @@ function setupDOM() {
     <select id="month-filter"><option value="">All Months</option></select>
     <select id="year-filter"><option value="">All Years</option></select>
     <select id="day-type-filter"><option value="">All Types</option></select>
+    <select id="session-tag-filter" multiple></select>
     <div class="duration-display">
       <span id="duration-label">Current Duration</span>
       <span id="active-duration">00:00:00</span>
@@ -564,6 +565,41 @@ describe('uiManager', () => {
       const badges = document.querySelectorAll('.group-session-count');
       const counts = Array.from(badges).map(b => parseInt(b.textContent));
       expect(counts).toContain(2);
+    });
+
+    it('filters sessions by selected tags', () => {
+      document.getElementById('year-filter').value = '2026';
+      document.getElementById('month-filter').value = '6';
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+        tagBuckets: { work: [], study: [] },
+      });
+      const tagFilter = document.getElementById('session-tag-filter');
+      tagFilter.innerHTML = '<option value="work" selected>work</option><option value="study">study</option>';
+      tagFilter.value = ['work'];
+      ui.renderAllSessions();
+      const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
+      const total = counts.reduce((a, b) => a + b, 0);
+      expect(total).toBe(3);
+    });
+
+    it('shows all sessions when all tags selected', () => {
+      document.getElementById('year-filter').value = '2026';
+      document.getElementById('month-filter').value = '6';
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+        tagBuckets: { work: [], study: [] },
+      });
+      const tagFilter = document.getElementById('session-tag-filter');
+      tagFilter.innerHTML = '<option value="work" selected>work</option><option value="study" selected>study</option>';
+      ui.renderAllSessions();
+      const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
+      const total = counts.reduce((a, b) => a + b, 0);
+      expect(total).toBe(3);
     });
   });
 

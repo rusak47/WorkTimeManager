@@ -139,6 +139,7 @@ export function createEventHandlers(deps) {
     ui.updateTodayStatus(store.getState(), calendarService);
     ui.populateYearSelector();
     ui.populateYearFilter();
+    ui.populateSessionTagFilter();
     const s = store.getState();
     if (s.currentTab === 'stats') ui.updateStatistics();
   }
@@ -704,7 +705,9 @@ export function createEventHandlers(deps) {
         ui.updateTodayStatus(impState, calendarService);
     ui.populateYearSelector();
     ui.populateYearFilter();
+    ui.populateSessionTagFilter();
         ui.populateYearFilter();
+    ui.populateSessionTagFilter();
         ui.applyLatestConfig();
         ui.renderTagSettings();
         ui.initializeCurrentSessionTags();
@@ -909,6 +912,7 @@ export function createEventHandlers(deps) {
     document.getElementById('year-filter')?.addEventListener('change', applyFilters);
     document.getElementById('month-filter')?.addEventListener('change', applyFilters);
     document.getElementById('day-type-filter')?.addEventListener('change', applyFilters);
+    document.getElementById('session-tag-filter')?.addEventListener('change', applyFilters);
     document.getElementById('mark-holiday')?.addEventListener('click', () => showMarkDayModal('Holiday'));
     document.getElementById('mark-vacation')?.addEventListener('click', () => showMarkDayModal('Vacation'));
     document.getElementById('save-mark-day')?.addEventListener('click', saveMarkedDay);
@@ -1035,6 +1039,7 @@ export function createEventHandlers(deps) {
     calendarView = createCalendarView(store);
     ui.populateYearSelector();
     ui.populateYearFilter();
+    ui.populateSessionTagFilter();
     const yearFilter = document.getElementById('year-filter');
     const monthFilter = document.getElementById('month-filter');
     if (yearFilter) yearFilter.value = String(new Date().getFullYear());

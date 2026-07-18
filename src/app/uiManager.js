@@ -874,6 +874,18 @@ export function createUIManager(store) {
     if (dayTypeFilter && dayTypeFilter.value) {
       sessionsToRender = sessionsToRender.filter(sess => sess.dayType === dayTypeFilter.value);
     }
+    const sessionTagFilter = document.getElementById('session-tag-filter');
+    if (sessionTagFilter) {
+      const selectedBuckets = Array.from(sessionTagFilter.selectedOptions).map(o => o.value);
+      const allBuckets = Object.keys(s.tagBuckets || {});
+      if (selectedBuckets.length > 0 && selectedBuckets.length < allBuckets.length) {
+        const validTags = new Set(selectedBuckets);
+        for (const bucket of selectedBuckets) {
+          for (const sub of (s.tagBuckets[bucket] || [])) validTags.add(sub);
+        }
+        sessionsToRender = sessionsToRender.filter(sess => (sess.tags || []).some(t => validTags.has(t)));
+      }
+    }
     if (sessionsToRender.length === 0) {
       container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-8">No sessions found. Start tracking or add a session manually.</p>';
       return;
@@ -965,6 +977,23 @@ export function createUIManager(store) {
       const option = document.createElement('option');
       option.value = year;
       option.textContent = year;
+      filter.appendChild(option);
+    }
+  }
+
+  function populateSessionTagFilter() {
+    const filter = document.getElementById('session-tag-filter');
+    if (!filter) return;
+    const s = store.getState();
+    const tagBuckets = s.tagBuckets || {};
+    const prevSelected = new Set(Array.from(filter.selectedOptions).map(o => o.value));
+    filter.innerHTML = '';
+    const buckets = Object.keys(tagBuckets);
+    for (const bucket of buckets) {
+      const option = document.createElement('option');
+      option.value = bucket;
+      option.textContent = bucket;
+      if (prevSelected.size === 0 || prevSelected.has(bucket)) option.selected = true;
       filter.appendChild(option);
     }
   }
@@ -2298,6 +2327,7 @@ export function createUIManager(store) {
     toggleAllSessionGroup,
     populateYearSelector,
     populateYearFilter,
+    populateSessionTagFilter,
     showAddSessionModal,
     hideSessionModal,
     showMarkDayModal,
