@@ -37,6 +37,10 @@ function setupDOM() {
       <button id="view-month" class="view-toggle">Month</button>
       <button id="view-week" class="view-toggle">Week</button>
     </div>
+    <select id="date-filter"><option value="">All Dates</option></select>
+    <select id="month-filter"><option value="">All Months</option></select>
+    <select id="year-filter"><option value="">All Years</option></select>
+    <select id="day-type-filter"><option value="">All Types</option></select>
     <div class="duration-display">
       <span id="duration-label">Current Duration</span>
       <span id="active-duration">00:00:00</span>
@@ -159,7 +163,6 @@ describe('uiManager', () => {
       currentTab: 'tracker',
       currentStatsPeriod: 'daily',
       allSessionsView: 'month',
-      allSessionsPeriod: null,
       darkMode: false,
       tracker: { startTime: null, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
     });
@@ -496,27 +499,24 @@ describe('uiManager', () => {
     });
 
     it('renders sessions grouped by date in week view', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-06-24T12:00:00'));
+      document.getElementById('year-filter').value = '2026';
+      document.getElementById('month-filter').value = '6';
       store.setState({
         sessions: mockSessions,
         markedDays: [],
         allSessionsView: 'week',
-        allSessionsPeriod: '2026-W26',
       });
       ui.renderAllSessions();
       expect(document.querySelectorAll('.group-header').length).toBe(2);
-      vi.useRealTimers();
     });
 
     it('renders collapsible groups in month view', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-06-24T12:00:00'));
+      document.getElementById('year-filter').value = '2026';
+      document.getElementById('month-filter').value = '6';
       store.setState({
         sessions: mockSessions,
         markedDays: [],
         allSessionsView: 'month',
-        allSessionsPeriod: '2026-06',
       });
       ui.renderAllSessions();
       const groups = document.querySelectorAll('.collapsible-group');
@@ -525,53 +525,45 @@ describe('uiManager', () => {
         expect(g.querySelector('.group-header')).toBeTruthy();
         expect(g.querySelector('.fa-chevron-right')).toBeTruthy();
       });
-      vi.useRealTimers();
     });
 
     it('renders collapsible groups in year view', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-06-24T12:00:00'));
+      document.getElementById('year-filter').value = '2026';
       store.setState({
         sessions: mockSessions,
         markedDays: [],
         allSessionsView: 'year',
-        allSessionsPeriod: '2026',
       });
       ui.renderAllSessions();
       const groups = document.querySelectorAll('.collapsible-group');
       expect(groups.length).toBeGreaterThan(0);
-      vi.useRealTimers();
     });
 
     it('renders flat groups in week view', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-06-24T12:00:00'));
+      document.getElementById('year-filter').value = '2026';
+      document.getElementById('month-filter').value = '6';
       store.setState({
         sessions: mockSessions,
         markedDays: [],
         allSessionsView: 'week',
-        allSessionsPeriod: '2026-W26',
       });
       ui.renderAllSessions();
       const groups = document.querySelectorAll('.collapsible-group');
       expect(groups.length).toBeGreaterThan(0);
-      vi.useRealTimers();
     });
 
     it('session count badge shows correct count', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-06-24T12:00:00'));
+      document.getElementById('year-filter').value = '2026';
+      document.getElementById('month-filter').value = '6';
       store.setState({
         sessions: mockSessions,
         markedDays: [],
         allSessionsView: 'week',
-        allSessionsPeriod: '2026-W26',
       });
       ui.renderAllSessions();
       const badges = document.querySelectorAll('.group-session-count');
       const counts = Array.from(badges).map(b => parseInt(b.textContent));
       expect(counts).toContain(2);
-      vi.useRealTimers();
     });
   });
 

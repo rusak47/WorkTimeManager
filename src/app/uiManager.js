@@ -4,7 +4,6 @@ import { DEFAULT_TAGS, SECONDS_PER_HOUR } from './constants.js';
 import { moveSubtagBetweenBuckets, removeTagFromBucket } from './tagManager.js';
 import {
   groupByYear, groupByMonth, groupByWeek,
-  filterByPeriod, getDefaultPeriod,
   toggleGroup, isGroupExpanded, getTotalDuration,
 } from './allSessionsView.js';
 
@@ -851,35 +850,46 @@ export function createUIManager(store) {
     return { header, expanded };
   }
 
-  function renderAllSessions(filteredSessions) {
+  function renderAllSessions() {
     const container = document.getElementById('all-sessions-list');
     const s = store.getState();
     if (!container) return;
     const view = s.allSessionsView || 'month';
-    const period = s.allSessionsPeriod || getDefaultPeriod(view);
-    let sessionsToRender = filteredSessions || s.sessions;
+    let sessionsToRender = [...s.sessions];
+    const dateFilter = document.getElementById('date-filter');
+    const monthFilter = document.getElementById('month-filter');
+    const yearFilter = document.getElementById('year-filter');
+    const dayTypeFilter = document.getElementById('day-type-filter');
+    if (dateFilter && dateFilter.value) {
+      sessionsToRender = sessionsToRender.filter(sess => sess.date === dateFilter.value);
+    }
+    if (monthFilter && monthFilter.value) {
+      const m = parseInt(monthFilter.value, 10);
+      sessionsToRender = sessionsToRender.filter(sess => new Date(sess.startTime).getMonth() + 1 === m);
+    }
+    if (yearFilter && yearFilter.value) {
+      const y = parseInt(yearFilter.value, 10);
+      sessionsToRender = sessionsToRender.filter(sess => new Date(sess.startTime).getFullYear() === y);
+    }
+    if (dayTypeFilter && dayTypeFilter.value) {
+      sessionsToRender = sessionsToRender.filter(sess => sess.dayType === dayTypeFilter.value);
+    }
     if (sessionsToRender.length === 0) {
       container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-8">No sessions found. Start tracking or add a session manually.</p>';
       return;
     }
-    const periodSessions = filteredSessions ? sessionsToRender : filterByPeriod(sessionsToRender, view, period);
-    if (periodSessions.length === 0) {
-      container.innerHTML = `<p class="text-gray-500 dark:text-gray-400 text-center py-8">No sessions for this period.</p>`;
-      return;
-    }
     container.innerHTML = '';
-    if (filteredSessions) expandedGroups = new Set(['__all__']);
+    expandedGroups = new Set(['__all__']);
     const renderGroup = (groupId, label, sessions, childRenderer) => {
       const group = document.createElement('div');
       group.className = 'collapsible-group';
-      const expanded = filteredSessions || isGroupExpanded(expandedGroups, groupId);
       const { header } = renderGroupHeader(groupId, label, sessions.length, getTotalDuration(sessions));
       group.appendChild(header);
-      if (expanded) childRenderer(group);
+      childRenderer(group);
       container.appendChild(group);
     };
     if (view === 'year') {
-      const grouped = groupByYear(periodSessions);
+      const grouped = groupByYear(sessionsToRender);
       for (const [year, months] of Object.entries(grouped)) {
         for (const [month, days] of Object.entries(months)) {
           const groupSessions = Object.values(days).flat();
@@ -891,7 +901,7 @@ export function createUIManager(store) {
         }
       }
     } else if (view === 'month') {
-      const grouped = groupByMonth(periodSessions);
+      const grouped = groupByMonth(sessionsToRender);
       for (const [week, days] of Object.entries(grouped)) {
         const groupSessions = Object.values(days).flat();
         renderGroup(`month-${week}`, `Week ${week.split('-W')[1]}`, groupSessions, (group) => {
@@ -901,7 +911,7 @@ export function createUIManager(store) {
         });
       }
     } else {
-      const grouped = groupByWeek(periodSessions);
+      const grouped = groupByWeek(sessionsToRender);
       for (const [date, daySessions] of Object.entries(grouped)) {
         renderGroup(`week-${date}`, new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }), daySessions, (group) => {
           for (const session of daySessions) {

@@ -11,7 +11,6 @@ const INITIAL_STATE = Object.freeze({
   currentTab: 'tracker',
   currentStatsPeriod: 'daily',
   allSessionsView: 'month',
-  allSessionsPeriod: null,
   darkMode: false,
   backupIntervalMs: 300000,
   tracker: { startTime: null, isPaused: false, pauseStart: null, accumulatedPauseTime: 0, isBreak: false },
@@ -43,7 +42,6 @@ export function createEventHandlers(deps) {
     if (state && state.backupIntervalMs) store.setState({ backupIntervalMs: state.backupIntervalMs });
     if (state && state.tagBuckets) store.setState({ tagBuckets: state.tagBuckets });
     if (state && state.allSessionsView) store.setState({ allSessionsView: state.allSessionsView });
-    if (state && state.allSessionsPeriod !== undefined) store.setState({ allSessionsPeriod: state.allSessionsPeriod });
     if (state && state.tracker && state.tracker.startTime) {
       const age = Date.now() - state.tracker.startTime;
       if (age < 24 * 3600 * 1000) {
@@ -127,7 +125,6 @@ export function createEventHandlers(deps) {
         backupIntervalMs: s.backupIntervalMs,
         tagBuckets: s.tagBuckets,
         allSessionsView: s.allSessionsView,
-        allSessionsPeriod: s.allSessionsPeriod,
       });
     } catch (err) {
       console.error('Failed to save data:', err);
@@ -519,27 +516,7 @@ export function createEventHandlers(deps) {
   }
 
   function applyFilters() {
-    const dateFilter = document.getElementById('date-filter');
-    const monthFilter = document.getElementById('month-filter');
-    const yearFilter = document.getElementById('year-filter');
-    const dayTypeFilter = document.getElementById('day-type-filter');
-    const s = store.getState();
-    let filtered = [...s.sessions];
-    if (dateFilter && dateFilter.value) {
-      filtered = filtered.filter(sess => sess.date === dateFilter.value);
-    }
-    if (monthFilter && monthFilter.value) {
-      const m = parseInt(monthFilter.value, 10);
-      filtered = filtered.filter(sess => new Date(sess.startTime).getMonth() + 1 === m);
-    }
-    if (yearFilter && yearFilter.value) {
-      const y = parseInt(yearFilter.value, 10);
-      filtered = filtered.filter(sess => new Date(sess.startTime).getFullYear() === y);
-    }
-    if (dayTypeFilter && dayTypeFilter.value) {
-      filtered = filtered.filter(sess => sess.dayType === dayTypeFilter.value);
-    }
-    ui.renderAllSessions(filtered);
+    ui.renderAllSessions();
   }
 
   function saveMarkedDay() {
@@ -960,7 +937,7 @@ export function createEventHandlers(deps) {
       if (confirm('Reset Marked Days\n\nAre you sure you want to reset all marked days?')) resetMarkedDaysFn();
     });
     const setAllSessionsView = (view) => {
-      store.setState({ allSessionsView: view, allSessionsPeriod: null });
+      store.setState({ allSessionsView: view });
       document.querySelectorAll('.view-toggle').forEach(btn => btn.classList.remove('active'));
       document.getElementById(`view-${view}`)?.classList.add('active');
       ui.renderAllSessions();
@@ -1054,12 +1031,17 @@ export function createEventHandlers(deps) {
     }
 
     calendarView = createCalendarView(store);
+    ui.populateYearSelector();
+    ui.populateYearFilter();
+    const yearFilter = document.getElementById('year-filter');
+    const monthFilter = document.getElementById('month-filter');
+    if (yearFilter) yearFilter.value = String(new Date().getFullYear());
+    if (monthFilter) monthFilter.value = String(new Date().getMonth() + 1);
+    document.getElementById(`view-${s.allSessionsView || 'month'}`)?.classList.add('active');
     ui.renderRecentSessions();
     ui.renderAllSessions();
     ui.updateTodayTotal();
     ui.updateTodayStatus(s, calendarService);
-    ui.populateYearSelector();
-    ui.populateYearFilter();
     ui.applyLatestConfig();
     ui.renderTagSettings();
     ui.initializeCurrentSessionTags();

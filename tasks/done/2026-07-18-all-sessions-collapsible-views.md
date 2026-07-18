@@ -26,18 +26,13 @@ Three toggle buttons above the session list: **Year** | **Month** | **Week**
 
 ### Initial load limit
 
-- **Year view**: by default Show current year only (year selector = current year). Year selector dropdown filters which year is displayed. keep "all years" option.
-- **Month view**: by default Show current month only.
-- **Week view**: by default Show current week only.
-
-"Show more" button at the bottom loads the previous period through filter adapt (prev month, prev week, etc.).
+Filter dropdowns (year, month) are pre-filled with current year/month on init. The collapsible grouping applies to the filtered set. View mode only controls grouping, not filtering.
 
 ### State
 
 ```js
 // Add to store defaults
 allSessionsView: 'month',  // 'year' | 'month' | 'week'
-allSessionsPeriod: null,    // ISO string like '2026-07' or '2026-W29', null = current
 ```
 
 ### Collapsible groups
@@ -50,13 +45,9 @@ Each group header is clickable:
 
 Click toggles visibility of children. State tracked in a `Set` of expanded group IDs (in-memory, not persisted — reset on tab switch).
 
-### "Show more" button
-
-Renders at the bottom of the list. Clicking loads the previous period and prepends it to the list. Button moves down as new content loads.
-
 ### Interaction with existing filters
 
-The existing filter dropdowns (date/month/year/dayType) continue to work. When filters are active, the collapsible grouping still applies but respects the filtered set.
+The existing filter dropdowns (date/month/year/dayType) control which sessions are shown. `renderAllSessions` reads filters from DOM directly. View mode only changes grouping. All groups are expanded by default so filtered results are immediately visible.
 
 ## Files to modify
 
