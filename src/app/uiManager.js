@@ -879,13 +879,14 @@ export function createUIManager(store) {
       return;
     }
     container.innerHTML = '';
-    expandedGroups = new Set(['__all__']);
+    if (sessionsToRender.length <= 10) expandedGroups = new Set(['__all__']);
     const renderGroup = (groupId, label, sessions, childRenderer) => {
       const group = document.createElement('div');
       group.className = 'collapsible-group';
+      const expanded = expandedGroups.has('__all__') || isGroupExpanded(expandedGroups, groupId);
       const { header } = renderGroupHeader(groupId, label, sessions.length, getTotalDuration(sessions));
       group.appendChild(header);
-      childRenderer(group);
+      if (expanded) childRenderer(group);
       container.appendChild(group);
     };
     if (view === 'year') {
