@@ -3,7 +3,11 @@
 ## Unreleased
 
 ### Added
+- **Utils.js unit tests** — 24 tests covering all 6 exported functions (`formatTime`, `formatDuration`, `formatDate`, `parseDuration`, `formatDateTimeLocal`, `getDayTypeBadgeClass`). Includes round-trip inverse test. See `tasks/done/2026-07-18-utils-tests-and-font-awesome-local.md`.
 - **Grid card note tooltip** — hovering a session card in Recent Sessions grid view now shows the session note in a native browser tooltip. Cards without notes have no tooltip. See `tasks/done/2026-07-13-grid-card-note-tooltip.md`.
+
+### Changed
+- **Font Awesome: CDN replaced with local static assets** — removed `cdnjs.cloudflare.com` external dependency. CSS and woff2 font files now bundled in `src/css/` and `src/webfonts/`. Enables offline use and removes runtime JS overhead. See `tasks/done/2026-07-18-utils-tests-and-font-awesome-local.md`.
 
 ### Fixed
 - **Recent sessions grid wasted space** — replaced fixed Tailwind breakpoints (`sm:grid-cols-2 xl:grid-cols-3`) with CSS Grid `auto-fit` + `minmax(min(100%, 160px), 1fr)` so columns resize fluidly and fill available space at any viewport width.

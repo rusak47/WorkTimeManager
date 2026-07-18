@@ -52,3 +52,11 @@
 - `setupDOM` must include elements under test in `innerHTML` string (e.g. `#today-status` for today-status tests).
 - `storage.loadCalendar()` returns `{}` in browser-only dev mode (no Electron IPC). Test by mocking `window.api.loadCalendar` or injecting a calendarService directly.
 - Tests for `updateTodayStatus` pass `calendarService` as second arg; no-calendar-service path tests today from `state.markedDays` only.
+
+## Tag filter propagation
+- `filteredSessions` is built in `updateRecentSessions` (line 1647) and threaded through to all sub-displays. Any new statistical display (table, chart, income) that reads from `s.sessions` directly will ignore the tag filter — always use `filteredSessions` or a subset of it.
+- `computeYearlyTable(year, opts)` and `computeIncome(year, opts)` in statsManager.js accept `opts.tags` via `filterByTag()`. The UI layer is responsible for passing the right sessions; the stats functions are filter-ready.
+- Income chart (`updateIncomeChart`) must always filter to `tags.includes('work')` sessions regardless of user tag filter — income only comes from work sessions. The call site at line 1807 applies this filter before passing to the function.
+
+## Calendar view color vocabulary
+- Calendar view CSS classes in `styles.css` (lines 256-275, 354-414) define the color vocabulary for day types: `.cal-holiday` (coral/green), `.cal-weekend` (peach), `.cal-memoriam` (pink border), `.cal-vacation` (purple), `.cal-short` (yellow/brown). Reuse these colors for UI consistency — the day-type pill helpers (`getDayTypePillClasses`, `getDayTypeDotColor`) mirror them exactly.

@@ -21,6 +21,7 @@ All dependencies (Chart.js, TailwindCSS, Font Awesome) are npm imports, not CDN 
 - Handlers call managers (`sessionManager`, `configManager`, etc.)
 - State mutations go through `store.setState()` → triggers subscribers
 - UI reads state via `store.getState()` — never reads DOM for data
+- `filteredSessions` is the tag-filtered subset of `s.sessions`. Any new display that reads `s.sessions` directly ignores the tag filter — always use `filteredSessions`.
 
 ## Today-status banner
 - `#today-status` sits above the "Current Session" header in the tracker tab

@@ -20,9 +20,7 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 - [ ] [low - must have] Add refresh button in statistics tab (auto-refresh on tab switch is insufficient).
 
 ## UI/UX
-- [ ] [important] Prevent session from resetting when navigating between tabs while a session is running.
+- [x] [rejected - doesnt happen] Prevent session from resetting when navigating between tabs while a session is running.
 - [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `tasks/new/20260626-tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
 - [x] [high] - when in grid mode and session description is hidden add a tooltip with session description (spec: `tasks/done/2026-07-13-grid-card-note-tooltip.md`, 2026-07-13)
-- [ ] [low - tech debt] Replace Font Awesome CDN with npm import (`@fortawesome/fontawesome-free`) — still loaded from `cdnjs.cloudflare.com` in `index.html:7`. Impact: removes external dependency, enables offline use, aligns with Phase 7 CDN-removal goal.
-- [ ] [low - tech debt] Add `src/js/utils.js` unit tests — utility functions (date/number formatting) lack coverage. Medium priority in refactoring plan Phase 8, never written.
 - [ ] [low - future] Set up E2E test infrastructure (Playwright) for full Electron app flows — listed as "future" in refactoring plan. Impact: UI regressions can slip past unit tests.
