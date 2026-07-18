@@ -854,6 +854,28 @@ export function createUIManager(store) {
     }
   }
 
+  function populateYearFilter() {
+    const filter = document.getElementById('year-filter');
+    const s = store.getState();
+    if (!filter) return;
+    const currentYear = new Date().getFullYear();
+    const prevYear = currentYear - 1;
+    filter.innerHTML = '<option value="">All Years</option>';
+    const years = new Set();
+    for (const session of s.sessions) {
+      years.add(new Date(session.startTime).getFullYear());
+    }
+    years.add(currentYear);
+    years.add(prevYear);
+    const sortedYears = Array.from(years).sort((a, b) => b - a);
+    for (const year of sortedYears) {
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year;
+      filter.appendChild(option);
+    }
+  }
+
   function showAddSessionModal() {
     const titleEl = document.getElementById('modal-title');
     const sessionIdEl = document.getElementById('session-id');
@@ -2181,6 +2203,7 @@ export function createUIManager(store) {
     toggleRecentSessionsGrid,
     renderAllSessions,
     populateYearSelector,
+    populateYearFilter,
     showAddSessionModal,
     hideSessionModal,
     showMarkDayModal,

@@ -135,6 +135,7 @@ export function createEventHandlers(deps) {
     ui.updateTodayTotal();
     ui.updateTodayStatus(store.getState(), calendarService);
     ui.populateYearSelector();
+    ui.populateYearFilter();
     const s = store.getState();
     if (s.currentTab === 'stats') ui.updateStatistics();
   }
@@ -717,7 +718,9 @@ export function createEventHandlers(deps) {
         ui.renderAllSessions();
         ui.updateTodayTotal();
         ui.updateTodayStatus(impState, calendarService);
-        ui.populateYearSelector();
+    ui.populateYearSelector();
+    ui.populateYearFilter();
+        ui.populateYearFilter();
         ui.applyLatestConfig();
         ui.renderTagSettings();
         ui.initializeCurrentSessionTags();
@@ -1033,6 +1036,7 @@ export function createEventHandlers(deps) {
     ui.updateTodayTotal();
     ui.updateTodayStatus(s, calendarService);
     ui.populateYearSelector();
+    ui.populateYearFilter();
     ui.applyLatestConfig();
     ui.renderTagSettings();
     ui.initializeCurrentSessionTags();
