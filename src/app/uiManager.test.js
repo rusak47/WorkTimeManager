@@ -41,7 +41,10 @@ function setupDOM() {
     <select id="month-filter"><option value="">All Months</option></select>
     <select id="year-filter"><option value="">All Years</option></select>
     <select id="day-type-filter"><option value="">All Types</option></select>
-    <select id="session-tag-filter" multiple></select>
+    <div id="session-tag-filter-wrap" class="relative">
+      <button id="session-tag-filter-btn" class="border border-gray-300 rounded-md px-3 py-2">Tags</button>
+      <div id="session-tag-dropdown" class="hidden absolute z-10 bg-white border rounded-md shadow-lg"></div>
+    </div>
     <div class="duration-display">
       <span id="duration-label">Current Duration</span>
       <span id="active-duration">00:00:00</span>
@@ -576,9 +579,9 @@ describe('uiManager', () => {
         allSessionsView: 'week',
         tagBuckets: { work: [], study: [] },
       });
-      const tagFilter = document.getElementById('session-tag-filter');
-      tagFilter.innerHTML = '<option value="work" selected>work</option><option value="study">study</option>';
-      tagFilter.value = ['work'];
+      ui.populateSessionTagFilter();
+      const cb = document.querySelector('#session-tag-dropdown input[value="study"]');
+      if (cb) cb.checked = false;
       ui.renderAllSessions();
       const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
       const total = counts.reduce((a, b) => a + b, 0);
@@ -594,12 +597,61 @@ describe('uiManager', () => {
         allSessionsView: 'week',
         tagBuckets: { work: [], study: [] },
       });
-      const tagFilter = document.getElementById('session-tag-filter');
-      tagFilter.innerHTML = '<option value="work" selected>work</option><option value="study" selected>study</option>';
+      ui.populateSessionTagFilter();
       ui.renderAllSessions();
       const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
       const total = counts.reduce((a, b) => a + b, 0);
       expect(total).toBe(3);
+    });
+  });
+
+  describe('populateSessionTagFilter', () => {
+    it('renders checkboxes for each tag bucket', () => {
+      store.setState({ tagBuckets: { work: [], rest: [], study: [] } });
+      ui.populateSessionTagFilter();
+      const dropdown = document.getElementById('session-tag-dropdown');
+      const cbs = dropdown.querySelectorAll('input[type="checkbox"]');
+      expect(cbs.length).toBe(3);
+      expect(cbs[0].value).toBe('work');
+      expect(cbs[1].value).toBe('rest');
+      expect(cbs[2].value).toBe('study');
+    });
+
+    it('all checkboxes checked by default', () => {
+      store.setState({ tagBuckets: { work: [], study: [] } });
+      ui.populateSessionTagFilter();
+      const cbs = document.querySelectorAll('#session-tag-dropdown input[type="checkbox"]');
+      expect(Array.from(cbs).every(cb => cb.checked)).toBe(true);
+    });
+
+    it('preserves previous selection on re-populate', () => {
+      store.setState({ tagBuckets: { work: [], rest: [], study: [] } });
+      ui.populateSessionTagFilter();
+      const cb = document.querySelector('#session-tag-dropdown input[value="rest"]');
+      cb.checked = false;
+      ui.populateSessionTagFilter();
+      const restCb = document.querySelector('#session-tag-dropdown input[value="rest"]');
+      expect(restCb.checked).toBe(false);
+      const workCb = document.querySelector('#session-tag-dropdown input[value="work"]');
+      expect(workCb.checked).toBe(true);
+    });
+  });
+
+  describe('updateSessionTagBtnLabel', () => {
+    it('shows "Tags" when all selected', () => {
+      store.setState({ tagBuckets: { work: [], study: [] } });
+      ui.populateSessionTagFilter();
+      ui.updateSessionTagBtnLabel();
+      expect(document.getElementById('session-tag-filter-btn').textContent).toBe('Tags');
+    });
+
+    it('shows count when some deselected', () => {
+      store.setState({ tagBuckets: { work: [], rest: [], study: [] } });
+      ui.populateSessionTagFilter();
+      const cb = document.querySelector('#session-tag-dropdown input[value="rest"]');
+      cb.checked = false;
+      ui.updateSessionTagBtnLabel();
+      expect(document.getElementById('session-tag-filter-btn').textContent).toBe('Tags (2)');
     });
   });
 

@@ -912,7 +912,22 @@ export function createEventHandlers(deps) {
     document.getElementById('year-filter')?.addEventListener('change', applyFilters);
     document.getElementById('month-filter')?.addEventListener('change', applyFilters);
     document.getElementById('day-type-filter')?.addEventListener('change', applyFilters);
-    document.getElementById('session-tag-filter')?.addEventListener('change', applyFilters);
+    document.getElementById('session-tag-filter-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dd = document.getElementById('session-tag-dropdown');
+      if (dd) dd.classList.toggle('hidden');
+    });
+    document.getElementById('session-tag-dropdown')?.addEventListener('change', () => {
+      ui.updateSessionTagBtnLabel();
+      applyFilters();
+    });
+    document.addEventListener('click', (e) => {
+      const dd = document.getElementById('session-tag-dropdown');
+      const btn = document.getElementById('session-tag-filter-btn');
+      if (dd && !dd.classList.contains('hidden') && !dd.contains(e.target) && e.target !== btn) {
+        dd.classList.add('hidden');
+      }
+    });
     document.getElementById('mark-holiday')?.addEventListener('click', () => showMarkDayModal('Holiday'));
     document.getElementById('mark-vacation')?.addEventListener('click', () => showMarkDayModal('Vacation'));
     document.getElementById('save-mark-day')?.addEventListener('click', saveMarkedDay);

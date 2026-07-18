@@ -874,17 +874,14 @@ export function createUIManager(store) {
     if (dayTypeFilter && dayTypeFilter.value) {
       sessionsToRender = sessionsToRender.filter(sess => sess.dayType === dayTypeFilter.value);
     }
-    const sessionTagFilter = document.getElementById('session-tag-filter');
-    if (sessionTagFilter) {
-      const selectedBuckets = Array.from(sessionTagFilter.selectedOptions).map(o => o.value);
-      const allBuckets = Object.keys(s.tagBuckets || {});
-      if (selectedBuckets.length > 0 && selectedBuckets.length < allBuckets.length) {
-        const validTags = new Set(selectedBuckets);
-        for (const bucket of selectedBuckets) {
-          for (const sub of (s.tagBuckets[bucket] || [])) validTags.add(sub);
-        }
-        sessionsToRender = sessionsToRender.filter(sess => (sess.tags || []).some(t => validTags.has(t)));
+    const selectedBuckets = getSelectedSessionTags();
+    const allBuckets = Object.keys(s.tagBuckets || {});
+    if (selectedBuckets.length > 0 && selectedBuckets.length < allBuckets.length) {
+      const validTags = new Set(selectedBuckets);
+      for (const bucket of selectedBuckets) {
+        for (const sub of (s.tagBuckets[bucket] || [])) validTags.add(sub);
       }
+      sessionsToRender = sessionsToRender.filter(sess => (sess.tags || []).some(t => validTags.has(t)));
     }
     if (sessionsToRender.length === 0) {
       container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-8">No sessions found. Start tracking or add a session manually.</p>';
@@ -982,20 +979,47 @@ export function createUIManager(store) {
   }
 
   function populateSessionTagFilter() {
-    const filter = document.getElementById('session-tag-filter');
-    if (!filter) return;
+    const dropdown = document.getElementById('session-tag-dropdown');
+    const btn = document.getElementById('session-tag-filter-btn');
+    if (!dropdown) return;
     const s = store.getState();
     const tagBuckets = s.tagBuckets || {};
-    const prevSelected = new Set(Array.from(filter.selectedOptions).map(o => o.value));
-    filter.innerHTML = '';
+    const prevChecked = new Set(Array.from(dropdown.querySelectorAll('input:checked')).map(cb => cb.value));
+    dropdown.innerHTML = '';
     const buckets = Object.keys(tagBuckets);
     for (const bucket of buckets) {
-      const option = document.createElement('option');
-      option.value = bucket;
-      option.textContent = bucket;
-      if (prevSelected.size === 0 || prevSelected.has(bucket)) option.selected = true;
-      filter.appendChild(option);
+      const label = document.createElement('label');
+      label.className = 'flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer text-sm dark:text-white';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = bucket;
+      cb.checked = prevChecked.size === 0 || prevChecked.has(bucket);
+      const span = document.createElement('span');
+      span.textContent = bucket;
+      label.appendChild(cb);
+      label.appendChild(span);
+      dropdown.appendChild(label);
     }
+    updateSessionTagBtnLabel();
+  }
+
+  function updateSessionTagBtnLabel() {
+    const btn = document.getElementById('session-tag-filter-btn');
+    if (!btn) return;
+    const selected = getSelectedSessionTags();
+    const s = store.getState();
+    const allBuckets = Object.keys(s.tagBuckets || {});
+    if (selected.length === allBuckets.length || allBuckets.length === 0) {
+      btn.textContent = 'Tags';
+    } else {
+      btn.textContent = `Tags (${selected.length})`;
+    }
+  }
+
+  function getSelectedSessionTags() {
+    const dropdown = document.getElementById('session-tag-dropdown');
+    if (!dropdown) return [];
+    return Array.from(dropdown.querySelectorAll('input:checked')).map(cb => cb.value);
   }
 
   function showAddSessionModal() {
@@ -2328,6 +2352,8 @@ export function createUIManager(store) {
     populateYearSelector,
     populateYearFilter,
     populateSessionTagFilter,
+    getSelectedSessionTags,
+    updateSessionTagBtnLabel,
     showAddSessionModal,
     hideSessionModal,
     showMarkDayModal,
