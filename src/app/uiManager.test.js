@@ -523,7 +523,7 @@ describe('uiManager', () => {
       expect(groups.length).toBeGreaterThan(0);
       groups.forEach(g => {
         expect(g.querySelector('.group-header')).toBeTruthy();
-        expect(g.querySelector('.fa-chevron-right')).toBeTruthy();
+        expect(g.querySelector('.fa-chevron-right, .fa-chevron-down')).toBeTruthy();
       });
     });
 

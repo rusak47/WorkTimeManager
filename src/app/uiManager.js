@@ -879,11 +879,10 @@ export function createUIManager(store) {
       return;
     }
     container.innerHTML = '';
-    if (sessionsToRender.length <= 10) expandedGroups = new Set(['__all__']);
     const renderGroup = (groupId, label, sessions, childRenderer) => {
       const group = document.createElement('div');
       group.className = 'collapsible-group';
-      const expanded = expandedGroups.has('__all__') || isGroupExpanded(expandedGroups, groupId);
+      const expanded = isGroupExpanded(expandedGroups, groupId);
       const { header } = renderGroupHeader(groupId, label, sessions.length, getTotalDuration(sessions));
       group.appendChild(header);
       if (expanded) childRenderer(group);
