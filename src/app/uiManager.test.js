@@ -40,9 +40,12 @@ function setupDOM() {
     <select id="date-filter"><option value="">All Dates</option></select>
     <select id="month-filter"><option value="">All Months</option></select>
     <select id="year-filter"><option value="">All Years</option></select>
-    <select id="day-type-filter"><option value="">All Types</option></select>
+    <div id="day-type-filter-wrap" class="relative">
+      <button id="day-type-filter-btn" class="border border-gray-300 rounded-md px-3 py-2 text-sm min-w-[120px] text-left">All types</button>
+      <div id="day-type-dropdown" class="hidden absolute z-10 bg-white border rounded-md shadow-lg min-w-[120px] max-h-48 overflow-y-auto"></div>
+    </div>
     <div id="session-tag-filter-wrap" class="relative">
-      <button id="session-tag-filter-btn" class="border border-gray-300 rounded-md px-3 py-2">Tags</button>
+      <button id="session-tag-filter-btn" class="border border-gray-300 rounded-md px-3 py-2">All tags</button>
       <div id="session-tag-dropdown" class="hidden absolute z-10 bg-white border rounded-md shadow-lg"></div>
     </div>
     <div class="duration-display">
@@ -638,11 +641,11 @@ describe('uiManager', () => {
   });
 
   describe('updateSessionTagBtnLabel', () => {
-    it('shows "Tags" when all selected', () => {
+    it('shows "All tags" when all selected', () => {
       store.setState({ tagBuckets: { work: [], study: [] } });
       ui.populateSessionTagFilter();
       ui.updateSessionTagBtnLabel();
-      expect(document.getElementById('session-tag-filter-btn').textContent).toBe('Tags');
+      expect(document.getElementById('session-tag-filter-btn').textContent).toBe('All tags');
     });
 
     it('shows count when some deselected', () => {

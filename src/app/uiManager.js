@@ -859,7 +859,6 @@ export function createUIManager(store) {
     const dateFilter = document.getElementById('date-filter');
     const monthFilter = document.getElementById('month-filter');
     const yearFilter = document.getElementById('year-filter');
-    const dayTypeFilter = document.getElementById('day-type-filter');
     if (dateFilter && dateFilter.value) {
       sessionsToRender = sessionsToRender.filter(sess => sess.date === dateFilter.value);
     }
@@ -871,8 +870,11 @@ export function createUIManager(store) {
       const y = parseInt(yearFilter.value, 10);
       sessionsToRender = sessionsToRender.filter(sess => new Date(sess.startTime).getFullYear() === y);
     }
-    if (dayTypeFilter && dayTypeFilter.value) {
-      sessionsToRender = sessionsToRender.filter(sess => sess.dayType === dayTypeFilter.value);
+    const selectedDayTypes = getSelectedDayTypes();
+    const allDayTypes = DAY_TYPES;
+    if (selectedDayTypes.length > 0 && selectedDayTypes.length < allDayTypes.length) {
+      const validTypes = new Set(selectedDayTypes);
+      sessionsToRender = sessionsToRender.filter(sess => validTypes.has(sess.dayType));
     }
     const selectedBuckets = getSelectedSessionTags();
     const allBuckets = Object.keys(s.tagBuckets || {});
@@ -1010,7 +1012,7 @@ export function createUIManager(store) {
     const s = store.getState();
     const allBuckets = Object.keys(s.tagBuckets || {});
     if (selected.length === allBuckets.length || allBuckets.length === 0) {
-      btn.textContent = 'Tags';
+      btn.textContent = 'All tags';
     } else {
       btn.textContent = `Tags (${selected.length})`;
     }
@@ -1018,6 +1020,46 @@ export function createUIManager(store) {
 
   function getSelectedSessionTags() {
     const dropdown = document.getElementById('session-tag-dropdown');
+    if (!dropdown) return [];
+    return Array.from(dropdown.querySelectorAll('input:checked')).map(cb => cb.value);
+  }
+
+  const DAY_TYPES = ['Workday', 'Weekend', 'Holiday', 'Vacation'];
+
+  function populateDayTypeFilter() {
+    const dropdown = document.getElementById('day-type-dropdown');
+    if (!dropdown) return;
+    const prevChecked = new Set(Array.from(dropdown.querySelectorAll('input:checked')).map(cb => cb.value));
+    dropdown.innerHTML = '';
+    for (const dt of DAY_TYPES) {
+      const label = document.createElement('label');
+      label.className = 'flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer text-sm dark:text-white';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = dt;
+      cb.checked = prevChecked.size === 0 || prevChecked.has(dt);
+      const span = document.createElement('span');
+      span.textContent = dt;
+      label.appendChild(cb);
+      label.appendChild(span);
+      dropdown.appendChild(label);
+    }
+    updateDayTypeBtnLabel();
+  }
+
+  function updateDayTypeBtnLabel() {
+    const btn = document.getElementById('day-type-filter-btn');
+    if (!btn) return;
+    const selected = getSelectedDayTypes();
+    if (selected.length === DAY_TYPES.length || selected.length === 0) {
+      btn.textContent = 'All types';
+    } else {
+      btn.textContent = `Types (${selected.length})`;
+    }
+  }
+
+  function getSelectedDayTypes() {
+    const dropdown = document.getElementById('day-type-dropdown');
     if (!dropdown) return [];
     return Array.from(dropdown.querySelectorAll('input:checked')).map(cb => cb.value);
   }
@@ -2354,6 +2396,9 @@ export function createUIManager(store) {
     populateSessionTagFilter,
     getSelectedSessionTags,
     updateSessionTagBtnLabel,
+    populateDayTypeFilter,
+    getSelectedDayTypes,
+    updateDayTypeBtnLabel,
     showAddSessionModal,
     hideSessionModal,
     showMarkDayModal,

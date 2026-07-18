@@ -140,6 +140,7 @@ export function createEventHandlers(deps) {
     ui.populateYearSelector();
     ui.populateYearFilter();
     ui.populateSessionTagFilter();
+    ui.populateDayTypeFilter();
     const s = store.getState();
     if (s.currentTab === 'stats') ui.updateStatistics();
   }
@@ -706,8 +707,10 @@ export function createEventHandlers(deps) {
     ui.populateYearSelector();
     ui.populateYearFilter();
     ui.populateSessionTagFilter();
+    ui.populateDayTypeFilter();
         ui.populateYearFilter();
     ui.populateSessionTagFilter();
+    ui.populateDayTypeFilter();
         ui.applyLatestConfig();
         ui.renderTagSettings();
         ui.initializeCurrentSessionTags();
@@ -911,7 +914,15 @@ export function createEventHandlers(deps) {
     document.getElementById('apply-filters')?.addEventListener('click', applyFilters);
     document.getElementById('year-filter')?.addEventListener('change', applyFilters);
     document.getElementById('month-filter')?.addEventListener('change', applyFilters);
-    document.getElementById('day-type-filter')?.addEventListener('change', applyFilters);
+    document.getElementById('day-type-filter-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dd = document.getElementById('day-type-dropdown');
+      if (dd) dd.classList.toggle('hidden');
+    });
+    document.getElementById('day-type-dropdown')?.addEventListener('change', () => {
+      ui.updateDayTypeBtnLabel();
+      applyFilters();
+    });
     document.getElementById('session-tag-filter-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
       const dd = document.getElementById('session-tag-dropdown');
@@ -922,10 +933,15 @@ export function createEventHandlers(deps) {
       applyFilters();
     });
     document.addEventListener('click', (e) => {
-      const dd = document.getElementById('session-tag-dropdown');
-      const btn = document.getElementById('session-tag-filter-btn');
+      const dd = document.getElementById('day-type-dropdown');
+      const btn = document.getElementById('day-type-filter-btn');
       if (dd && !dd.classList.contains('hidden') && !dd.contains(e.target) && e.target !== btn) {
         dd.classList.add('hidden');
+      }
+      const tdd = document.getElementById('session-tag-dropdown');
+      const tbtn = document.getElementById('session-tag-filter-btn');
+      if (tdd && !tdd.classList.contains('hidden') && !tdd.contains(e.target) && e.target !== tbtn) {
+        tdd.classList.add('hidden');
       }
     });
     document.getElementById('mark-holiday')?.addEventListener('click', () => showMarkDayModal('Holiday'));
@@ -1055,6 +1071,7 @@ export function createEventHandlers(deps) {
     ui.populateYearSelector();
     ui.populateYearFilter();
     ui.populateSessionTagFilter();
+    ui.populateDayTypeFilter();
     const yearFilter = document.getElementById('year-filter');
     const monthFilter = document.getElementById('month-filter');
     if (yearFilter) yearFilter.value = String(new Date().getFullYear());
