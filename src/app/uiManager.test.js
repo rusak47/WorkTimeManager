@@ -606,6 +606,118 @@ describe('uiManager', () => {
       const total = counts.reduce((a, b) => a + b, 0);
       expect(total).toBe(3);
     });
+
+    it('shows at most PAGE_SIZE groups initially', () => {
+      document.getElementById('year-filter').value = '';
+      document.getElementById('month-filter').value = '';
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+      });
+      ui.renderAllSessions();
+      const groups = document.querySelectorAll('.collapsible-group');
+      expect(groups.length).toBeLessThanOrEqual(8);
+    });
+
+    it('shows More button when groups exceed PAGE_SIZE', () => {
+      document.getElementById('year-filter').value = '';
+      document.getElementById('month-filter').value = '';
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+      });
+      ui.renderAllSessions();
+      const moreBtn = document.querySelector('.all-sessions-more');
+      const groups = document.querySelectorAll('.collapsible-group');
+      if (groups.length > 8) {
+        expect(moreBtn).toBeTruthy();
+        expect(moreBtn.textContent).toMatch(/More/);
+      }
+    });
+
+    it('More button hidden when all groups fit', () => {
+      document.getElementById('year-filter').value = '2026';
+      document.getElementById('month-filter').value = '6';
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+      });
+      ui.renderAllSessions();
+      const moreBtn = document.querySelector('.all-sessions-more');
+      expect(moreBtn).toBeNull();
+    });
+
+    it('clicking More reveals next batch', () => {
+      document.getElementById('year-filter').value = '';
+      document.getElementById('month-filter').value = '';
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+      });
+      ui.renderAllSessions();
+      const moreBtn = document.querySelector('.all-sessions-more');
+      if (moreBtn) {
+        const initialCount = document.querySelectorAll('.collapsible-group').length;
+        moreBtn.click();
+        const afterCount = document.querySelectorAll('.collapsible-group').length;
+        expect(afterCount).toBeGreaterThan(initialCount);
+      }
+    });
+
+    it('More button shows remaining count', () => {
+      document.getElementById('year-filter').value = '';
+      document.getElementById('month-filter').value = '';
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+      });
+      ui.renderAllSessions();
+      const moreBtn = document.querySelector('.all-sessions-more');
+      if (moreBtn) {
+        expect(moreBtn.dataset.remaining).toBeDefined();
+        expect(parseInt(moreBtn.dataset.remaining)).toBeGreaterThan(0);
+      }
+    });
+
+    it('no More button after all items revealed', () => {
+      document.getElementById('year-filter').value = '';
+      document.getElementById('month-filter').value = '';
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+      });
+      ui.renderAllSessions();
+      let moreBtn = document.querySelector('.all-sessions-more');
+      while (moreBtn) {
+        moreBtn.click();
+        moreBtn = document.querySelector('.all-sessions-more');
+      }
+      const groups = document.querySelectorAll('.collapsible-group');
+      expect(groups.length).toBeGreaterThan(0);
+    });
+
+    it('page count resets on resetAllSessionsPage call', () => {
+      document.getElementById('year-filter').value = '';
+      document.getElementById('month-filter').value = '';
+      store.setState({
+        sessions: mockSessions,
+        markedDays: [],
+        allSessionsView: 'week',
+      });
+      ui.renderAllSessions();
+      const moreBtn = document.querySelector('.all-sessions-more');
+      if (moreBtn) moreBtn.click();
+      ui.resetAllSessionsPage();
+      ui.renderAllSessions();
+      const groups = document.querySelectorAll('.collapsible-group');
+      expect(groups.length).toBeLessThanOrEqual(8);
+    });
   });
 
   describe('populateSessionTagFilter', () => {

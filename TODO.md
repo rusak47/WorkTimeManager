@@ -24,4 +24,5 @@ weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its s
 - [x] [rejected - doesnt happen] Prevent session from resetting when navigating between tabs while a session is running.
 - [ ] [normal - WIP] Polish UI after deepsite attempt — visual redesign of main (tracker) tab and the rest tabs. Code refactored, UI implementation pending. Design template system plan at `tasks/new/20260626-tracker-template-plan.md`. ** think about adding support for different design templates for tracker view **
 - [x] [high] - when in grid mode and session description is hidden add a tooltip with session description (spec: `tasks/done/2026-07-13-grid-card-note-tooltip.md`, 2026-07-13)
+- [x] [normal - must have] Paginate all sessions list — show initial batch of 8 top-level items, "More" button to load next batch. Applies to year/month/week views. (spec: `tasks/done/2026-07-25-paginated-all-sessions-list.md`, 2026-07-25)
 - [ ] [low - future] Set up E2E test infrastructure (Playwright) for full Electron app flows — listed as "future" in refactoring plan. Impact: UI regressions can slip past unit tests.

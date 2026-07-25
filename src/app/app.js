@@ -977,6 +977,7 @@ export function createEventHandlers(deps) {
       store.setState({ allSessionsView: view });
       document.querySelectorAll('.view-toggle').forEach(btn => btn.classList.remove('active'));
       document.getElementById(`view-${view}`)?.classList.add('active');
+      ui.resetAllSessionsPage();
       ui.renderAllSessions();
     };
     document.getElementById('view-year')?.addEventListener('click', () => setAllSessionsView('year'));
@@ -986,6 +987,12 @@ export function createEventHandlers(deps) {
       const header = e.target.closest('.group-header');
       if (header) {
         ui.toggleAllSessionGroup(header.dataset.groupId);
+        ui.renderAllSessions();
+        return;
+      }
+      const moreBtn = e.target.closest('.all-sessions-more');
+      if (moreBtn) {
+        ui.incrementAllSessionsPage();
         ui.renderAllSessions();
       }
     });

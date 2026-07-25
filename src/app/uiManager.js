@@ -1,6 +1,6 @@
 import { Chart } from 'chart.js/auto';
 import * as utils from '../js/utils.js';
-import { DEFAULT_TAGS, SECONDS_PER_HOUR } from './constants.js';
+import { DEFAULT_TAGS, SECONDS_PER_HOUR, PAGE_SIZE } from './constants.js';
 import { moveSubtagBetweenBuckets, removeTagFromBucket } from './tagManager.js';
 import {
   groupByYear, groupByMonth, groupByWeek,
@@ -781,6 +781,7 @@ export function createUIManager(store) {
 
   let expandedGroups = new Set();
   let currentAllSessionsView = null;
+  let allSessionsPageCount = 1;
 
   function renderSessionCard(session) {
     const card = document.createElement('div');
@@ -912,27 +913,43 @@ export function createUIManager(store) {
     };
     if (view === 'year') {
       const grouped = groupByYear(sessionsToRender);
+      const entries = [];
       for (const [year, months] of Object.entries(grouped)) {
         for (const [month, days] of Object.entries(months)) {
-          const groupSessions = Object.values(days).flat();
-          renderGroup(`year-${year}-${month}`, `${month} ${year}`, groupSessions, (group) => {
-            for (const [date, daySessions] of Object.entries(days)) {
-              renderDaySessions(date, daySessions, group);
-            }
-          });
+          entries.push({ year, month, days });
         }
+      }
+      const visibleEntries = entries.slice(0, allSessionsPageCount * PAGE_SIZE);
+      for (const { year, month, days } of visibleEntries) {
+        const groupSessions = Object.values(days).flat();
+        renderGroup(`year-${year}-${month}`, `${month} ${year}`, groupSessions, (group) => {
+          for (const [date, daySessions] of Object.entries(days)) {
+            renderDaySessions(date, daySessions, group);
+          }
+        });
+      }
+      if (entries.length > visibleEntries.length) {
+        const remaining = entries.length - visibleEntries.length;
+        const moreBtn = document.createElement('button');
+        moreBtn.className = 'all-sessions-more';
+        moreBtn.textContent = `More (${remaining})`;
+        moreBtn.dataset.remaining = remaining;
+        container.appendChild(moreBtn);
       }
     } else if (view === 'month') {
       const grouped = groupByMonth(sessionsToRender);
       if (view !== currentAllSessionsView) {
         expandedGroups = new Set();
+        allSessionsPageCount = 1;
         const defaultExpanded = getDefaultExpandedDays(grouped);
         for (const id of defaultExpanded) {
           expandedGroups.add(id);
         }
         currentAllSessionsView = view;
       }
-      for (const [week, days] of Object.entries(grouped)) {
+      const entries = Object.entries(grouped);
+      const visibleEntries = entries.slice(0, allSessionsPageCount * PAGE_SIZE);
+      for (const [week, days] of visibleEntries) {
         const groupSessions = Object.values(days).flat();
         const avg = getAverageDuration(groupSessions);
         const weekNum = week.split('-W')[1];
@@ -944,20 +961,46 @@ export function createUIManager(store) {
           }
         }, avgText);
       }
+      if (entries.length > visibleEntries.length) {
+        const remaining = entries.length - visibleEntries.length;
+        const moreBtn = document.createElement('button');
+        moreBtn.className = 'all-sessions-more';
+        moreBtn.textContent = `More (${remaining})`;
+        moreBtn.dataset.remaining = remaining;
+        container.appendChild(moreBtn);
+      }
     } else {
       const grouped = groupByWeek(sessionsToRender);
-      for (const [date, daySessions] of Object.entries(grouped)) {
+      const entries = Object.entries(grouped);
+      const visibleEntries = entries.slice(0, allSessionsPageCount * PAGE_SIZE);
+      for (const [date, daySessions] of visibleEntries) {
         renderGroup(`week-${date}`, new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }), daySessions, (group) => {
           for (const session of daySessions) {
             group.appendChild(renderSessionCard(session));
           }
         });
       }
+      if (entries.length > visibleEntries.length) {
+        const remaining = entries.length - visibleEntries.length;
+        const moreBtn = document.createElement('button');
+        moreBtn.className = 'all-sessions-more';
+        moreBtn.textContent = `More (${remaining})`;
+        moreBtn.dataset.remaining = remaining;
+        container.appendChild(moreBtn);
+      }
     }
   }
 
   function toggleAllSessionGroup(groupId) {
     expandedGroups = toggleGroup(expandedGroups, groupId);
+  }
+
+  function resetAllSessionsPage() {
+    allSessionsPageCount = 1;
+  }
+
+  function incrementAllSessionsPage() {
+    allSessionsPageCount++;
   }
 
   function populateYearSelector() {
@@ -2414,6 +2457,8 @@ export function createUIManager(store) {
     toggleRecentSessionsGrid,
     renderAllSessions,
     toggleAllSessionGroup,
+    resetAllSessionsPage,
+    incrementAllSessionsPage,
     populateYearSelector,
     populateYearFilter,
     populateSessionTagFilter,

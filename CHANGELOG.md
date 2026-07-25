@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- **Paginated all sessions list** — initial batch of 8 top-level items with "More" button to load more. Applies to year/month/week views. See `tasks/done/2026-07-25-paginated-all-sessions-list.md`.
 - **Collapsible days in month view** — days within weeks are now collapsible with chevron toggle, session count, and total duration. Week headers show average daily duration (`🕐 AVG 7h 01m`). One day per week expanded by default (oldest first). Days sorted ascending (Monday→Sunday). See `tasks/done/2026-07-25-collapsible-days-month-view.md`.
 - **All-sessions collapsible views** — session list now groups by time period (Year/Month/Week) with collapsible headers showing session count and total duration. View toggle buttons switch between modes. Groups expand/collapse on click with chevron animation. See `tasks/done/2026-07-18-all-sessions-collapsible-views.md`.
 - **Utils.js unit tests** — 24 tests covering all 6 exported functions (`formatTime`, `formatDuration`, `formatDate`, `parseDuration`, `formatDateTimeLocal`, `getDayTypeBadgeClass`). Includes round-trip inverse test. See `tasks/done/2026-07-18-utils-tests-and-font-awesome-local.md`.
