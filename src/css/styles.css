@@ -632,7 +632,6 @@
   bottom: 2px;
   width: 2px;
   border-radius: 2px;
-  background: var(--lt-300);
 }
 .dark-mode .as-session-accent {
   background: #4a5568;

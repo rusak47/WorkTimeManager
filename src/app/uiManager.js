@@ -788,7 +788,7 @@ export function createUIManager(store) {
     card.className = 'as-session-row';
     card.dataset.sessionId = session.id;
     const accent = document.createElement('div');
-    accent.className = `as-session-accent ${(session.dayType || '').toLowerCase()}`;
+    accent.className = `as-session-accent ${getStripeColor(session.tags)}`;
     card.appendChild(accent);
     const times = document.createElement('div');
     times.className = 'as-s-times';
