@@ -142,17 +142,17 @@
             <!-- Sessions Management Tab -->
             <div id="sessions-content" class="hidden fade-in">
                 <div class="bg-white rounded-xl shadow-md p-6 mb-6 dark:bg-gray-700 dark:text-white">
-                    <div class="flex justify-between items-center mb-6">
+                    <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-semibold">All Sessions</h2>
-                        <div class="flex space-x-3">
-                            <button id="mark-holiday" class="bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg flex items-center dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-100">
-                                <i class="fas fa-umbrella-beach mr-2"></i> Holiday
+                        <div class="flex gap-1.5">
+                            <button id="mark-holiday" class="icon-btn btn-holiday" title="Holiday">
+                                <i class="fas fa-umbrella-beach"></i>
                             </button>
-                            <button id="mark-vacation" class="bg-purple-100 hover:bg-purple-200 text-purple-800 px-3 py-2 rounded-lg flex items-center dark:bg-purple-800 dark:hover:bg-purple-700 dark:text-purple-100">
-                                <i class="fas fa-plane mr-2"></i> Vacation
+                            <button id="mark-vacation" class="icon-btn btn-vacation" title="Vacation">
+                                <i class="fas fa-plane"></i>
                             </button>
-                            <button id="add-session-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center">
-                                <i class="fas fa-plus mr-2"></i> Add Session
+                            <button id="add-session-btn" class="icon-btn btn-add" title="Add Session">
+                                <i class="fas fa-plus"></i>
                             </button>
                         </div>
                     </div>
@@ -184,12 +184,12 @@
                         </select>
                         <div class="as-filter-gap"></div>
                         <div class="relative">
-                            <button id="day-type-filter-btn" class="border border-gray-300 rounded-md px-3 py-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm min-w-[120px] text-left">All types</button>
+                            <button id="day-type-filter-btn" class="as-filter-select">All types</button>
                             <div id="day-type-dropdown" class="hidden absolute z-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-md shadow-lg mt-1 min-w-[120px] max-h-48 overflow-y-auto">
                             </div>
                         </div>
                         <div class="relative">
-                            <button id="session-tag-filter-btn" class="border border-gray-300 rounded-md px-3 py-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm min-w-[120px] text-left">All tags</button>
+                            <button id="session-tag-filter-btn" class="as-filter-select">All tags</button>
                             <div id="session-tag-dropdown" class="hidden absolute z-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-md shadow-lg mt-1 min-w-[120px] max-h-48 overflow-y-auto">
                             </div>
                         </div>
