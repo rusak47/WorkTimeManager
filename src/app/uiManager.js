@@ -955,9 +955,6 @@ export function createUIManager(store) {
       return;
     }
     container.innerHTML = '';
-    const panel = document.createElement('div');
-    panel.className = 'as-panel';
-    container.appendChild(panel);
     const renderGroup = (groupId, label, sessions, childRenderer, extraLabel) => {
       const group = document.createElement('div');
       group.className = 'collapsible-group';
@@ -965,7 +962,7 @@ export function createUIManager(store) {
       const { header } = renderGroupHeader(groupId, label, sessions.length, getTotalDuration(sessions), extraLabel);
       group.appendChild(header);
       if (expanded) childRenderer(group);
-      panel.appendChild(group);
+      container.appendChild(group);
     };
     if (view === 'year') {
       const grouped = groupByYear(sessionsToRender);
@@ -990,7 +987,7 @@ export function createUIManager(store) {
         moreBtn.className = 'all-sessions-more';
         moreBtn.textContent = `More (${remaining})`;
         moreBtn.dataset.remaining = remaining;
-        panel.appendChild(moreBtn);
+        container.appendChild(moreBtn);
       }
     } else if (view === 'month') {
       const grouped = groupByMonth(sessionsToRender);
@@ -1023,7 +1020,7 @@ export function createUIManager(store) {
         moreBtn.className = 'all-sessions-more';
         moreBtn.textContent = `More (${remaining})`;
         moreBtn.dataset.remaining = remaining;
-        panel.appendChild(moreBtn);
+        container.appendChild(moreBtn);
       }
     } else {
       const grouped = groupByWeek(sessionsToRender);
@@ -1047,7 +1044,7 @@ export function createUIManager(store) {
         moreBtn.className = 'all-sessions-more';
         moreBtn.textContent = `More (${remaining})`;
         moreBtn.dataset.remaining = remaining;
-        panel.appendChild(moreBtn);
+        container.appendChild(moreBtn);
       }
     }
   }
