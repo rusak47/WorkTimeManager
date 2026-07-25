@@ -975,14 +975,12 @@ export function createEventHandlers(deps) {
     });
     const setAllSessionsView = (view) => {
       store.setState({ allSessionsView: view });
-      document.querySelectorAll('.view-toggle').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(`view-${view}`)?.classList.add('active');
       ui.resetAllSessionsPage();
       ui.renderAllSessions();
     };
-    document.getElementById('view-year')?.addEventListener('click', () => setAllSessionsView('year'));
-    document.getElementById('view-month')?.addEventListener('click', () => setAllSessionsView('month'));
-    document.getElementById('view-week')?.addEventListener('click', () => setAllSessionsView('week'));
+    document.getElementById('view-select')?.addEventListener('change', (e) => {
+      setAllSessionsView(e.target.value);
+    });
     document.getElementById('all-sessions-list')?.addEventListener('click', (e) => {
       const header = e.target.closest('.as-group-header');
       if (header) {

@@ -33,9 +33,11 @@ function setupDOM() {
     <div id="recent-sessions"></div>
     <div id="all-sessions-list"></div>
     <div id="all-sessions-controls">
-      <button id="view-year" class="view-toggle">Year</button>
-      <button id="view-month" class="view-toggle">Month</button>
-      <button id="view-week" class="view-toggle">Week</button>
+      <select id="view-select">
+        <option value="year">Year</option>
+        <option value="month" selected>Month</option>
+        <option value="week">Week</option>
+      </select>
     </div>
     <select id="date-filter"><option value="">All Dates</option></select>
     <select id="month-filter"><option value="">All Months</option></select>

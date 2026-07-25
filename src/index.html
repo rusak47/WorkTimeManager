@@ -198,11 +198,11 @@
                     <!-- Sessions List -->
                     <div class="flex items-center gap-2 mb-3">
                         <span class="as-view-label">Group by</span>
-                        <div class="as-seg">
-                            <button id="view-year" class="as-seg-btn">Year</button>
-                            <button id="view-month" class="as-seg-btn">Month</button>
-                            <button id="view-week" class="as-seg-btn">Week</button>
-                        </div>
+                        <select id="view-select" class="as-filter-select">
+                            <option value="year">Year</option>
+                            <option value="month" selected>Month</option>
+                            <option value="week">Week</option>
+                        </select>
                     </div>
                     <div id="all-sessions-list" class="space-y-3">
                         <!-- All sessions will be loaded here -->
