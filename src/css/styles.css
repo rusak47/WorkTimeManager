@@ -451,8 +451,8 @@
 .as-group-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 6px;
+  padding: 4px 12px;
   cursor: pointer;
   user-select: none;
   transition: background 0.15s ease;
@@ -513,8 +513,8 @@
 .as-day-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 16px 6px 32px;
+  gap: 6px;
+  padding: 4px 12px 4px 24px;
   cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -614,8 +614,8 @@
 .as-session-row {
   display: flex;
   align-items: flex-start;
-  padding: 6px 16px 6px 48px;
-  gap: 12px;
+  padding: 4px 12px 4px 40px;
+  gap: 10px;
   position: relative;
   transition: background 0.15s ease;
 }
@@ -627,7 +627,7 @@
 }
 .as-session-accent {
   position: absolute;
-  left: 36px;
+  left: 32px;
   top: 4px;
   bottom: 4px;
   width: 2px;
