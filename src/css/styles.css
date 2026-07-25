@@ -444,14 +444,7 @@
 
 /* All Sessions Panel */
 .as-panel {
-  background: var(--lt-100);
-  border: 1px solid var(--lt-200);
-  border-radius: 12px;
   overflow: hidden;
-}
-.dark-mode .as-panel {
-  background: #1e2535;
-  border-color: #2d3748;
 }
 
 /* Group Header (week/month/year rows) */
