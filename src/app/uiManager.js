@@ -827,13 +827,6 @@ export function createUIManager(store) {
         tagEl.title = allTags;
         tagsEl.appendChild(tagEl);
       }
-      if (session.tags.length > 1) {
-        const more = document.createElement('span');
-        more.className = 'as-tag as-tag-more';
-        more.textContent = `+${session.tags.length - 1}`;
-        more.title = allTags;
-        tagsEl.appendChild(more);
-      }
       content.appendChild(tagsEl);
     }
     card.appendChild(content);
