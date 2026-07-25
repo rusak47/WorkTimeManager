@@ -767,13 +767,12 @@
   padding: 3px 6px;
   border-radius: 6px;
   border: 1px solid var(--lt-300);
-  background: var(--lt-100);
+  background: transparent;
   color: var(--lt-800);
   height: 28px;
 }
 .dark-mode .as-filter-bar input[type="date"],
 .dark-mode .as-filter-bar select {
-  background: #2d3748;
   border-color: #4a5568;
   color: #e2e8f0;
 }
@@ -789,13 +788,12 @@
   height: 26px;
   border-radius: 6px;
   border: 1px solid var(--lt-300);
-  background: var(--lt-100);
+  background: transparent;
   color: var(--lt-600);
   cursor: pointer;
   font-size: 12px;
 }
 .dark-mode .as-filter-confirm {
-  background: #2d3748;
   border-color: #4a5568;
   color: #a0aec0;
 }
@@ -804,7 +802,7 @@
   padding: 3px 6px;
   border-radius: 6px;
   border: 1px solid var(--lt-300);
-  background: var(--lt-100);
+  background: transparent;
   color: var(--lt-800);
   height: 28px;
   min-width: 82px;
@@ -812,7 +810,6 @@
   cursor: pointer;
 }
 .dark-mode .as-filter-select {
-  background: #2d3748;
   border-color: #4a5568;
   color: #e2e8f0;
 }
