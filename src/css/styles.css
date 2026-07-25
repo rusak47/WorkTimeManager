@@ -535,14 +535,16 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 8px 2px 6px;
+  padding: 3px 10px 3px 8px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
+  height: fit-content;
+  flex-shrink: 0;
 }
 .as-day-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
