@@ -787,9 +787,6 @@ export function createUIManager(store) {
     const card = document.createElement('div');
     card.className = 'as-session-row';
     card.dataset.sessionId = session.id;
-    const accent = document.createElement('div');
-    accent.className = `as-session-accent ${(session.dayType || '').toLowerCase()}`;
-    card.appendChild(accent);
     const times = document.createElement('div');
     times.className = 'as-s-times';
     const timeRange = document.createElement('span');
@@ -850,16 +847,19 @@ export function createUIManager(store) {
     group.className = 'collapsible-group';
     const groupId = `day-${date}`;
     const expanded = isGroupExpanded(expandedGroups, groupId);
-    const { header } = renderGroupHeader(groupId, '', sessions.length, getTotalDuration(sessions));
-    const dayRow = document.createElement('div');
-    dayRow.className = 'as-day-row';
+    const header = document.createElement('div');
+    header.className = 'as-day-row as-group-header';
+    header.dataset.groupId = groupId;
+    const chevron = document.createElement('i');
+    chevron.className = `fas fa-chevron-${expanded ? 'down' : 'right'} text-xs text-gray-400 transition-transform`;
+    header.appendChild(chevron);
     const pill = document.createElement('div');
     pill.className = `as-day-pill ${getDayPillClass(dayType)}`;
     const dot = document.createElement('div');
     dot.className = 'as-day-dot';
     pill.appendChild(dot);
     pill.appendChild(document.createTextNode(label));
-    dayRow.appendChild(pill);
+    header.appendChild(pill);
     const dayMeta = document.createElement('div');
     dayMeta.className = 'as-day-meta';
     const dayCount = document.createElement('span');
@@ -870,8 +870,7 @@ export function createUIManager(store) {
     totalStat.innerHTML = `<span class="as-meta-sym">Σ</span>${utils.formatDuration(getTotalDuration(sessions))}`;
     dayMeta.appendChild(dayCount);
     dayMeta.appendChild(totalStat);
-    dayRow.appendChild(dayMeta);
-    header.appendChild(dayRow);
+    header.appendChild(dayMeta);
     group.appendChild(header);
     if (expanded) {
       const sessionsContainer = document.createElement('div');
