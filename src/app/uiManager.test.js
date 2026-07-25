@@ -514,7 +514,7 @@ describe('uiManager', () => {
         allSessionsView: 'week',
       });
       ui.renderAllSessions();
-      expect(document.querySelectorAll('.group-header').length).toBe(2);
+      expect(document.querySelectorAll('.as-group-header').length).toBe(2);
     });
 
     it('renders collapsible groups in month view', () => {
@@ -529,7 +529,7 @@ describe('uiManager', () => {
       const groups = document.querySelectorAll('.collapsible-group');
       expect(groups.length).toBeGreaterThan(0);
       groups.forEach(g => {
-        expect(g.querySelector('.group-header')).toBeTruthy();
+        expect(g.querySelector('.as-group-header')).toBeTruthy();
         expect(g.querySelector('.fa-chevron-right, .fa-chevron-down')).toBeTruthy();
       });
     });
@@ -568,7 +568,7 @@ describe('uiManager', () => {
         allSessionsView: 'week',
       });
       ui.renderAllSessions();
-      const badges = document.querySelectorAll('.group-session-count');
+      const badges = document.querySelectorAll('.as-count-badge');
       const counts = Array.from(badges).map(b => parseInt(b.textContent));
       expect(counts).toContain(2);
     });
@@ -586,7 +586,7 @@ describe('uiManager', () => {
       const cb = document.querySelector('#session-tag-dropdown input[value="study"]');
       if (cb) cb.checked = false;
       ui.renderAllSessions();
-      const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
+      const counts = Array.from(document.querySelectorAll('.as-count-badge')).map(el => parseInt(el.textContent));
       const total = counts.reduce((a, b) => a + b, 0);
       expect(total).toBe(3);
     });
@@ -602,7 +602,7 @@ describe('uiManager', () => {
       });
       ui.populateSessionTagFilter();
       ui.renderAllSessions();
-      const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
+      const counts = Array.from(document.querySelectorAll('.as-count-badge')).map(el => parseInt(el.textContent));
       const total = counts.reduce((a, b) => a + b, 0);
       expect(total).toBe(3);
     });

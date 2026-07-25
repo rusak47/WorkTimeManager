@@ -442,6 +442,311 @@
             background-color: #374151 !important;
         }
 
+/* All Sessions Panel */
+.as-panel {
+  background: var(--lt-100);
+  border: 1px solid var(--lt-200);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.dark-mode .as-panel {
+  background: #1e2535;
+  border-color: #2d3748;
+}
+
+/* Group Header (week/month/year rows) */
+.as-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+.as-group-header:hover {
+  background: rgba(0,0,0,0.03);
+}
+.dark-mode .as-group-header:hover {
+  background: rgba(255,255,255,0.05);
+}
+.as-group-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--lt-800);
+  flex: 1;
+}
+.dark-mode .as-group-label {
+  color: #e2e8f0;
+}
+.as-group-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.as-count-badge {
+  background: var(--lt-100);
+  border: 1px solid var(--lt-300);
+  color: var(--lt-600);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  line-height: 1.4;
+}
+.dark-mode .as-count-badge {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: #a0aec0;
+}
+.as-meta-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--lt-600);
+}
+.dark-mode .as-meta-stat {
+  color: #a0aec0;
+}
+.as-meta-sym {
+  font-size: 10px;
+  color: var(--lt-400);
+}
+.dark-mode .as-meta-sym {
+  color: #718096;
+}
+
+/* Day Row */
+.as-day-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 6px 32px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.as-day-row:hover {
+  background: rgba(0,0,0,0.03);
+}
+.dark-mode .as-day-row:hover {
+  background: rgba(255,255,255,0.05);
+}
+.as-day-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.as-day-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.as-pill-work {
+  background: #ebf5ff;
+  border: 1px solid #93c5fd;
+  color: #1d4ed8;
+}
+.as-pill-work .as-day-dot { background: #3b82f6; }
+.as-pill-holiday {
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #047857;
+}
+.as-pill-holiday .as-day-dot { background: #10b981; }
+.as-pill-weekend {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+}
+.as-pill-weekend .as-day-dot { background: #ef4444; }
+.as-pill-vacation {
+  background: #f5f3ff;
+  border: 1px solid #c4b5fd;
+  color: #6d28d9;
+}
+.as-pill-vacation .as-day-dot { background: #8b5cf6; }
+.as-pill-other {
+  background: var(--lt-100);
+  border: 1px solid var(--lt-300);
+  color: var(--lt-700);
+}
+.as-pill-other .as-day-dot { background: var(--lt-400); }
+.dark-mode .as-pill-work {
+  background: #1e3a5f;
+  border-color: #2563eb;
+  color: #93c5fd;
+}
+.dark-mode .as-pill-holiday {
+  background: #064e3b;
+  border-color: #059669;
+  color: #6ee7b7;
+}
+.dark-mode .as-pill-weekend {
+  background: #450a0a;
+  border-color: #dc2626;
+  color: #fca5a5;
+}
+.dark-mode .as-pill-vacation {
+  background: #2e1065;
+  border-color: #7c3aed;
+  color: #c4b5fd;
+}
+.dark-mode .as-pill-other {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: #a0aec0;
+}
+.as-day-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+.as-day-count {
+  font-size: 11px;
+  color: var(--lt-400);
+}
+.dark-mode .as-day-count {
+  color: #718096;
+}
+
+/* Session Row */
+.as-session-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 6px 16px 6px 48px;
+  gap: 12px;
+  position: relative;
+  transition: background 0.15s ease;
+}
+.as-session-row:hover {
+  background: rgba(0,0,0,0.03);
+}
+.dark-mode .as-session-row:hover {
+  background: rgba(255,255,255,0.05);
+}
+.as-session-accent {
+  position: absolute;
+  left: 36px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--lt-300);
+}
+.dark-mode .as-session-accent {
+  background: #4a5568;
+}
+.as-session-accent.workday { background: #3b82f6; }
+.as-session-accent.holiday { background: #10b981; }
+.as-session-accent.weekend { background: #ef4444; }
+.as-session-accent.vacation { background: #8b5cf6; }
+.as-s-times {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 108px;
+}
+.as-s-time {
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--lt-800);
+}
+.dark-mode .as-s-time {
+  color: #e2e8f0;
+}
+.as-s-dur {
+  font-size: 11px;
+  color: var(--lt-400);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.dark-mode .as-s-dur {
+  color: #718096;
+}
+.as-s-note {
+  font-size: 12px;
+  color: var(--lt-600);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dark-mode .as-s-note {
+  color: #a0aec0;
+}
+.as-s-tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.as-tag {
+  background: var(--lt-100);
+  border: 1px solid var(--lt-200);
+  color: var(--lt-600);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+.dark-mode .as-tag {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: #a0aec0;
+}
+
+/* Segmented View Toggle */
+.as-seg {
+  display: inline-flex;
+  border: 1px solid var(--lt-300);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.dark-mode .as-seg {
+  border-color: #4a5568;
+}
+.as-seg-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--lt-600);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--lt-300);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.as-seg-btn:last-child {
+  border-right: none;
+}
+.as-seg-btn:hover {
+  background: rgba(0,0,0,0.04);
+}
+.as-seg-btn.active {
+  background: #3b82f6;
+  color: white;
+}
+.dark-mode .as-seg-btn {
+  color: #a0aec0;
+  border-right-color: #4a5568;
+}
+.dark-mode .as-seg-btn:hover {
+  background: rgba(255,255,255,0.08);
+}
+.dark-mode .as-seg-btn.active {
+  background: #2563eb;
+  color: white;
+}
+.as-view-label {
+  font-size: 11px;
+  color: var(--lt-500);
+}
+.dark-mode .as-view-label {
+  color: #718096;
+}
+
 .all-sessions-more {
   display: block;
   width: 100%;

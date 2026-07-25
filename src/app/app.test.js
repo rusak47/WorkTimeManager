@@ -497,7 +497,7 @@ describe('app event handlers', () => {
     });
     document.getElementById('date-filter').value = '2026-06-01';
     app.applyFilters();
-    const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
+    const counts = Array.from(document.querySelectorAll('.as-count-badge')).map(el => parseInt(el.textContent));
     expect(counts.reduce((a, b) => a + b, 0)).toBe(1);
   });
 
@@ -510,7 +510,7 @@ describe('app event handlers', () => {
       ],
     });
     app.applyFilters();
-    const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
+    const counts = Array.from(document.querySelectorAll('.as-count-badge')).map(el => parseInt(el.textContent));
     expect(counts.reduce((a, b) => a + b, 0)).toBe(1);
   });
 
@@ -523,7 +523,7 @@ describe('app event handlers', () => {
       ],
     });
     app.applyFilters();
-    const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
+    const counts = Array.from(document.querySelectorAll('.as-count-badge')).map(el => parseInt(el.textContent));
     expect(counts.reduce((a, b) => a + b, 0)).toBe(1);
   });
 
@@ -538,7 +538,7 @@ describe('app event handlers', () => {
     const yearFilter = document.getElementById('year-filter');
     yearFilter.value = '2025';
     yearFilter.dispatchEvent(new Event('change', { bubbles: true }));
-    const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
+    const counts = Array.from(document.querySelectorAll('.as-count-badge')).map(el => parseInt(el.textContent));
     expect(counts.reduce((a, b) => a + b, 0)).toBe(1);
   });
 
@@ -552,7 +552,7 @@ describe('app event handlers', () => {
       ],
     });
     app.applyFilters();
-    const counts = Array.from(document.querySelectorAll('.group-session-count')).map(el => parseInt(el.textContent));
+    const counts = Array.from(document.querySelectorAll('.as-count-badge')).map(el => parseInt(el.textContent));
     expect(counts.reduce((a, b) => a + b, 0)).toBe(1);
   });
 
