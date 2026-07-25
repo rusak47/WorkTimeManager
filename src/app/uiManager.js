@@ -785,29 +785,62 @@ export function createUIManager(store) {
 
   function renderSessionCard(session) {
     const card = document.createElement('div');
-    card.className = 'session-card bg-white border border-gray-200 px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:bg-gray-600 dark:border-gray-500 dark:hover:bg-gray-500';
+    card.className = 'as-session-row';
     card.dataset.sessionId = session.id;
-    const info = document.createElement('div');
-    const timeRange = document.createElement('div');
-    timeRange.className = 'text-sm font-medium dark:text-white';
-    timeRange.textContent = `${utils.formatTime(new Date(session.startTime))} - ${utils.formatTime(new Date(session.endTime))}`;
-    const duration = document.createElement('div');
-    duration.className = 'text-xs text-gray-500 dark:text-gray-300';
+    const accent = document.createElement('div');
+    accent.className = `as-session-accent ${getStripeColor(session.tags)}`;
+    card.appendChild(accent);
+    const times = document.createElement('div');
+    times.className = 'as-s-times';
+    const timeRange = document.createElement('span');
+    timeRange.className = 'as-s-time';
+    timeRange.textContent = `${utils.formatTime(new Date(session.startTime))} – ${utils.formatTime(new Date(session.endTime))}`;
+    const duration = document.createElement('span');
+    duration.className = 'as-s-dur';
     duration.textContent = session.duration;
-    info.appendChild(timeRange);
-    info.appendChild(duration);
+    times.appendChild(timeRange);
+    times.appendChild(duration);
     if (session.accumulatedPauseTimeSec) {
-      const restEl = document.createElement('div');
-      restEl.className = 'text-xs text-gray-400 dark:text-gray-400';
+      const restEl = document.createElement('span');
+      restEl.className = 'as-s-dur';
       restEl.textContent = `Rest ${utils.formatDuration(session.accumulatedPauseTimeSec)}`;
-      info.appendChild(restEl);
+      times.appendChild(restEl);
     }
-    const notes = document.createElement('div');
-    notes.className = 'text-sm text-gray-600 truncate max-w-xs dark:text-gray-200';
-    notes.textContent = session.notes || 'No notes';
-    card.appendChild(info);
-    card.appendChild(notes);
+    card.appendChild(times);
+    const content = document.createElement('div');
+    content.style.cssText = 'flex:1;min-width:0';
+    if (session.notes) {
+      const note = document.createElement('div');
+      note.className = 'as-s-note';
+      note.textContent = session.notes;
+      note.title = session.notes;
+      content.appendChild(note);
+    }
+    if (session.tags && session.tags.length > 0) {
+      const tagsEl = document.createElement('div');
+      tagsEl.className = 'as-s-tags';
+      const allTags = session.tags.join(', ');
+      for (const tag of session.tags) {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'as-tag';
+        tagEl.textContent = tag;
+        tagEl.title = allTags;
+        tagsEl.appendChild(tagEl);
+      }
+      content.appendChild(tagsEl);
+    }
+    card.appendChild(content);
     return card;
+  }
+
+  function getDayPillClass(dayType) {
+    switch (dayType) {
+      case 'Workday': return 'as-pill-work';
+      case 'Holiday': return 'as-pill-holiday';
+      case 'Weekend': return 'as-pill-weekend';
+      case 'Vacation': return 'as-pill-vacation';
+      default: return 'as-pill-other';
+    }
   }
 
   function renderDaySessions(date, sessions, container) {
@@ -819,16 +852,35 @@ export function createUIManager(store) {
     group.className = 'collapsible-group';
     const groupId = `day-${date}`;
     const expanded = isGroupExpanded(expandedGroups, groupId);
-    const { header } = renderGroupHeader(groupId, label, sessions.length, getTotalDuration(sessions));
-    const dayTypeBadge = document.createElement('span');
-    dayTypeBadge.className = 'text-xs px-2 py-1 rounded-full bg-white dark:bg-gray-600 ml-auto';
-    dayTypeBadge.textContent = dayType;
-    header.appendChild(dayTypeBadge);
+    const header = document.createElement('div');
+    header.className = 'as-day-row as-group-header';
+    header.dataset.groupId = groupId;
+    const pill = document.createElement('div');
+    pill.className = `as-day-pill ${getDayPillClass(dayType)}`;
+    const chevron = document.createElement('i');
+    chevron.className = `fas fa-chevron-${expanded ? 'down' : 'right'} text-xs transition-transform`;
+    pill.appendChild(chevron);
+    pill.appendChild(document.createTextNode(label));
+    header.appendChild(pill);
+    const dayMeta = document.createElement('div');
+    dayMeta.className = 'as-day-meta';
+    const dayCount = document.createElement('span');
+    dayCount.className = 'as-day-count';
+    dayCount.textContent = sessions.length === 1 ? '1 session' : `${sessions.length} sessions`;
+    const totalStat = document.createElement('span');
+    totalStat.className = 'as-meta-stat';
+    totalStat.innerHTML = `<span class="as-meta-sym">Σ</span>${utils.formatDuration(getTotalDuration(sessions))}`;
+    dayMeta.appendChild(dayCount);
+    dayMeta.appendChild(totalStat);
+    header.appendChild(dayMeta);
     group.appendChild(header);
     if (expanded) {
+      const sessionsContainer = document.createElement('div');
+      sessionsContainer.className = 'as-sessions';
       for (const session of sessions) {
-        group.appendChild(renderSessionCard(session));
+        sessionsContainer.appendChild(renderSessionCard(session));
       }
+      group.appendChild(sessionsContainer);
     }
     container.appendChild(group);
   }
@@ -836,29 +888,32 @@ export function createUIManager(store) {
   function renderGroupHeader(groupId, label, sessionCount, totalSec, extraLabel) {
     const expanded = isGroupExpanded(expandedGroups, groupId);
     const header = document.createElement('div');
-    header.className = 'group-header px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg select-none';
+    header.className = 'as-group-header';
     header.dataset.groupId = groupId;
     const chevron = document.createElement('i');
     chevron.className = `fas fa-chevron-${expanded ? 'down' : 'right'} text-xs text-gray-400 transition-transform`;
     const name = document.createElement('span');
-    name.className = 'font-medium text-sm dark:text-white';
+    name.className = 'as-group-label';
     name.textContent = label;
     header.appendChild(chevron);
     header.appendChild(name);
+    const meta = document.createElement('div');
+    meta.className = 'as-group-meta';
+    const countBadge = document.createElement('span');
+    countBadge.className = 'as-count-badge';
+    countBadge.textContent = sessionCount;
+    meta.appendChild(countBadge);
     if (extraLabel) {
       const extra = document.createElement('span');
-      extra.className = 'text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1';
-      extra.innerHTML = `<i class="fas fa-clock text-[10px]"></i>${extraLabel}`;
-      header.appendChild(extra);
+      extra.className = 'as-meta-stat';
+      extra.innerHTML = `<span class="as-meta-sym">x̄</span>${extraLabel.replace('AVG ', '')}`;
+      meta.appendChild(extra);
     }
-    const countBadge = document.createElement('span');
-    countBadge.className = 'group-session-count text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300';
-    countBadge.textContent = sessionCount;
-    const durationBadge = document.createElement('span');
-    durationBadge.className = 'text-xs text-gray-500 dark:text-gray-400';
-    durationBadge.textContent = utils.formatDuration(totalSec);
-    header.appendChild(countBadge);
-    header.appendChild(durationBadge);
+    const totalStat = document.createElement('span');
+    totalStat.className = 'as-meta-stat';
+    totalStat.innerHTML = `<span class="as-meta-sym">Σ</span>${utils.formatDuration(totalSec)}`;
+    meta.appendChild(totalStat);
+    header.appendChild(meta);
     return { header, expanded };
   }
 
@@ -974,9 +1029,14 @@ export function createUIManager(store) {
       const entries = Object.entries(grouped);
       const visibleEntries = entries.slice(0, allSessionsPageCount * PAGE_SIZE);
       for (const [date, daySessions] of visibleEntries) {
+        const dayGrouped = {};
+        for (const session of daySessions) {
+          if (!dayGrouped[session.date]) dayGrouped[session.date] = [];
+          dayGrouped[session.date].push(session);
+        }
         renderGroup(`week-${date}`, new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }), daySessions, (group) => {
-          for (const session of daySessions) {
-            group.appendChild(renderSessionCard(session));
+          for (const [dayDate, daySess] of Object.entries(dayGrouped).sort()) {
+            renderDaySessions(dayDate, daySess, group);
           }
         });
       }

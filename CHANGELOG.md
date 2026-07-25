@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- **All-sessions visual redesign (checkpoint)** — panel wrapper, segmented view toggle, colored day pills, session accent bars, monospace time display, group stats (count/avg/total). CSS classes in `styles.css`, DOM updates in `uiManager.js`. Tests updated for new class names. 436 tests passing.
 - **Paginated all sessions list** — initial batch of 8 top-level items with "More" button to load more. Applies to year/month/week views. See `tasks/done/2026-07-25-paginated-all-sessions-list.md`.
 - **Collapsible days in month view** — days within weeks are now collapsible with chevron toggle, session count, and total duration. Week headers show average daily duration (`🕐 AVG 7h 01m`). One day per week expanded by default (oldest first). Days sorted ascending (Monday→Sunday). See `tasks/done/2026-07-25-collapsible-days-month-view.md`.
 - **All-sessions collapsible views** — session list now groups by time period (Year/Month/Week) with collapsible headers showing session count and total duration. View toggle buttons switch between modes. Groups expand/collapse on click with chevron animation. See `tasks/done/2026-07-18-all-sessions-collapsible-views.md`.

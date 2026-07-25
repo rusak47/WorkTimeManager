@@ -975,16 +975,14 @@ export function createEventHandlers(deps) {
     });
     const setAllSessionsView = (view) => {
       store.setState({ allSessionsView: view });
-      document.querySelectorAll('.view-toggle').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(`view-${view}`)?.classList.add('active');
       ui.resetAllSessionsPage();
       ui.renderAllSessions();
     };
-    document.getElementById('view-year')?.addEventListener('click', () => setAllSessionsView('year'));
-    document.getElementById('view-month')?.addEventListener('click', () => setAllSessionsView('month'));
-    document.getElementById('view-week')?.addEventListener('click', () => setAllSessionsView('week'));
+    document.getElementById('view-select')?.addEventListener('change', (e) => {
+      setAllSessionsView(e.target.value);
+    });
     document.getElementById('all-sessions-list')?.addEventListener('click', (e) => {
-      const header = e.target.closest('.group-header');
+      const header = e.target.closest('.as-group-header');
       if (header) {
         ui.toggleAllSessionGroup(header.dataset.groupId);
         ui.renderAllSessions();
@@ -1022,7 +1020,7 @@ export function createEventHandlers(deps) {
         showDeleteModal(parseInt(deleteBtn.dataset.id, 10));
         return;
       }
-      const sessionCard = e.target.closest('.session-card, .session-card-grid');
+      const sessionCard = e.target.closest('.session-card, .session-card-grid, .as-session-row');
       if (sessionCard && !e.target.closest('button')) {
         const sid = sessionCard.dataset.sessionId || sessionCard.querySelector('[data-id]')?.dataset.id;
         if (sid) editSession(parseInt(sid, 10));
