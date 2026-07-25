@@ -819,6 +819,7 @@ export function createUIManager(store) {
     if (session.tags && session.tags.length > 0) {
       const tagsEl = document.createElement('div');
       tagsEl.className = 'as-s-tags';
+      const allTags = session.tags.join(', ');
       const max = 3;
       const shown = session.tags.slice(0, max);
       const overflow = session.tags.length - max;
@@ -826,13 +827,14 @@ export function createUIManager(store) {
         const tagEl = document.createElement('span');
         tagEl.className = 'as-tag';
         tagEl.textContent = tag;
+        tagEl.title = allTags;
         tagsEl.appendChild(tagEl);
       }
       if (overflow > 0) {
         const more = document.createElement('span');
         more.className = 'as-tag as-tag-more';
         more.textContent = `+${overflow}`;
-        more.title = session.tags.join(', ');
+        more.title = allTags;
         tagsEl.appendChild(more);
       }
       content.appendChild(tagsEl);
