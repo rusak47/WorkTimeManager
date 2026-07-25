@@ -652,8 +652,12 @@
 }
 .as-s-tags {
   display: flex;
+  flex-wrap: nowrap;
   gap: 4px;
   margin-top: 4px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+  mask-image: linear-gradient(to right, #000 85%, transparent 100%);
 }
 .as-tag {
   background: transparent;
@@ -669,8 +673,15 @@
   color: #718096;
 }
 .as-tag-more {
+  position: sticky;
+  right: 0;
+  flex-shrink: 0;
   color: var(--lt-400);
+  background: var(--lt-50, #fafafa);
   cursor: default;
+}
+.dark-mode .as-tag-more {
+  background: #1a202c;
 }
 
 /* Filter bar compact inputs */
