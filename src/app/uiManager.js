@@ -820,20 +820,16 @@ export function createUIManager(store) {
       const tagsEl = document.createElement('div');
       tagsEl.className = 'as-s-tags';
       const allTags = session.tags.join(', ');
-      const max = 3;
-      const shown = session.tags.slice(0, max);
-      const overflow = session.tags.length - max;
-      for (const tag of shown) {
+      for (const tag of session.tags) {
         const tagEl = document.createElement('span');
         tagEl.className = 'as-tag';
         tagEl.textContent = tag;
         tagEl.title = allTags;
         tagsEl.appendChild(tagEl);
       }
-      if (overflow > 0) {
+      if (session.tags.length > 1) {
         const more = document.createElement('span');
         more.className = 'as-tag as-tag-more';
-        more.textContent = `+${overflow}`;
         more.title = allTags;
         tagsEl.appendChild(more);
       }
@@ -1059,7 +1055,36 @@ export function createUIManager(store) {
         container.appendChild(moreBtn);
       }
     }
+    truncateTagOverflow();
   }
+
+  function truncateTagOverflow() {
+    document.querySelectorAll('.as-s-tags').forEach(tagsEl => {
+      const tags = tagsEl.querySelectorAll('.as-tag:not(.as-tag-more)');
+      const more = tagsEl.querySelector('.as-tag-more');
+      if (!more || tags.length === 0) return;
+      const containerRight = tagsEl.parentElement.getBoundingClientRect().right;
+      more.style.display = 'none';
+      let lastVisible = -1;
+      tags.forEach((tag, i) => {
+        if (tag.getBoundingClientRect().right <= containerRight) lastVisible = i;
+      });
+      if (lastVisible < tags.length - 1) {
+        for (let i = lastVisible + 1; i < tags.length; i++) tags[i].style.display = 'none';
+        more.style.display = '';
+        more.textContent = `+${tags.length - lastVisible - 1}`;
+      } else {
+        more.style.display = 'none';
+        tags.forEach(t => t.style.display = '');
+      }
+    });
+  }
+
+  let tagTruncateTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(tagTruncateTimer);
+    tagTruncateTimer = setTimeout(truncateTagOverflow, 100);
+  });
 
   function toggleAllSessionGroup(groupId) {
     expandedGroups = toggleGroup(expandedGroups, groupId);
