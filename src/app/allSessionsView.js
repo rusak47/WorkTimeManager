@@ -129,6 +129,21 @@ function getTotalDuration(sessions) {
   return sessions.reduce((sum, s) => sum + (s.durationSec || 0), 0);
 }
 
+function getAverageDuration(sessions) {
+  if (sessions.length === 0) return 0;
+  const days = new Set(sessions.map(s => s.date));
+  return Math.floor(getTotalDuration(sessions) / days.size);
+}
+
+function getDefaultExpandedDays(grouped) {
+  const expanded = new Set();
+  for (const days of Object.values(grouped)) {
+    const dates = Object.keys(days).sort();
+    if (dates.length > 0) expanded.add(`day-${dates[0]}`);
+  }
+  return expanded;
+}
+
 export {
   groupByYear,
   groupByMonth,
@@ -139,4 +154,6 @@ export {
   toggleGroup,
   isGroupExpanded,
   getTotalDuration,
+  getAverageDuration,
+  getDefaultExpandedDays,
 };

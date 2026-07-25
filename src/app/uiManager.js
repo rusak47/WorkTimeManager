@@ -5,6 +5,7 @@ import { moveSubtagBetweenBuckets, removeTagFromBucket } from './tagManager.js';
 import {
   groupByYear, groupByMonth, groupByWeek,
   toggleGroup, isGroupExpanded, getTotalDuration,
+  getAverageDuration, getDefaultExpandedDays,
 } from './allSessionsView.js';
 
 function formatGridDate(dateStr) {
@@ -779,6 +780,7 @@ export function createUIManager(store) {
   }
 
   let expandedGroups = new Set();
+  let currentAllSessionsView = null;
 
   function renderSessionCard(session) {
     const card = document.createElement('div');
@@ -811,23 +813,26 @@ export function createUIManager(store) {
     const s = store.getState();
     const md = s.markedDays.find(d => d.date === date);
     const dayType = md ? md.dayType : (() => { const d = new Date(date); return (d.getDay() === 0 || d.getDay() === 6) ? 'Weekend' : 'Workday'; })();
-    const dateHeader = document.createElement('div');
-    dateHeader.className = `day-header px-4 py-2 rounded-t-lg flex justify-between items-center ${dayType.toLowerCase()}`;
-    const dateText = document.createElement('span');
-    dateText.className = 'font-medium';
-    dateText.textContent = new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const label = new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const group = document.createElement('div');
+    group.className = 'collapsible-group';
+    const groupId = `day-${date}`;
+    const expanded = isGroupExpanded(expandedGroups, groupId);
+    const { header } = renderGroupHeader(groupId, label, sessions.length, getTotalDuration(sessions));
     const dayTypeBadge = document.createElement('span');
-    dayTypeBadge.className = 'text-xs px-2 py-1 rounded-full bg-white dark:bg-gray-600';
+    dayTypeBadge.className = 'text-xs px-2 py-1 rounded-full bg-white dark:bg-gray-600 ml-auto';
     dayTypeBadge.textContent = dayType;
-    dateHeader.appendChild(dateText);
-    dateHeader.appendChild(dayTypeBadge);
-    container.appendChild(dateHeader);
-    for (const session of sessions) {
-      container.appendChild(renderSessionCard(session));
+    header.appendChild(dayTypeBadge);
+    group.appendChild(header);
+    if (expanded) {
+      for (const session of sessions) {
+        group.appendChild(renderSessionCard(session));
+      }
     }
+    container.appendChild(group);
   }
 
-  function renderGroupHeader(groupId, label, sessionCount, totalSec) {
+  function renderGroupHeader(groupId, label, sessionCount, totalSec, extraLabel) {
     const expanded = isGroupExpanded(expandedGroups, groupId);
     const header = document.createElement('div');
     header.className = 'group-header px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg select-none';
@@ -837,14 +842,20 @@ export function createUIManager(store) {
     const name = document.createElement('span');
     name.className = 'font-medium text-sm dark:text-white';
     name.textContent = label;
+    header.appendChild(chevron);
+    header.appendChild(name);
+    if (extraLabel) {
+      const extra = document.createElement('span');
+      extra.className = 'text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1';
+      extra.innerHTML = `<i class="fas fa-clock text-[10px]"></i>${extraLabel}`;
+      header.appendChild(extra);
+    }
     const countBadge = document.createElement('span');
     countBadge.className = 'group-session-count text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300';
     countBadge.textContent = sessionCount;
     const durationBadge = document.createElement('span');
     durationBadge.className = 'text-xs text-gray-500 dark:text-gray-400';
     durationBadge.textContent = utils.formatDuration(totalSec);
-    header.appendChild(chevron);
-    header.appendChild(name);
     header.appendChild(countBadge);
     header.appendChild(durationBadge);
     return { header, expanded };
@@ -890,11 +901,11 @@ export function createUIManager(store) {
       return;
     }
     container.innerHTML = '';
-    const renderGroup = (groupId, label, sessions, childRenderer) => {
+    const renderGroup = (groupId, label, sessions, childRenderer, extraLabel) => {
       const group = document.createElement('div');
       group.className = 'collapsible-group';
       const expanded = isGroupExpanded(expandedGroups, groupId);
-      const { header } = renderGroupHeader(groupId, label, sessions.length, getTotalDuration(sessions));
+      const { header } = renderGroupHeader(groupId, label, sessions.length, getTotalDuration(sessions), extraLabel);
       group.appendChild(header);
       if (expanded) childRenderer(group);
       container.appendChild(group);
@@ -913,13 +924,25 @@ export function createUIManager(store) {
       }
     } else if (view === 'month') {
       const grouped = groupByMonth(sessionsToRender);
+      if (view !== currentAllSessionsView) {
+        expandedGroups = new Set();
+        const defaultExpanded = getDefaultExpandedDays(grouped);
+        for (const id of defaultExpanded) {
+          expandedGroups.add(id);
+        }
+        currentAllSessionsView = view;
+      }
       for (const [week, days] of Object.entries(grouped)) {
         const groupSessions = Object.values(days).flat();
-        renderGroup(`month-${week}`, `Week ${week.split('-W')[1]}`, groupSessions, (group) => {
-          for (const [date, daySessions] of Object.entries(days)) {
+        const avg = getAverageDuration(groupSessions);
+        const weekNum = week.split('-W')[1];
+        const label = `Week ${weekNum}`;
+        const avgText = `AVG ${utils.formatDuration(avg)}`;
+        renderGroup(`month-${week}`, label, groupSessions, (group) => {
+          for (const [date, daySessions] of Object.entries(days).sort()) {
             renderDaySessions(date, daySessions, group);
           }
-        });
+        }, avgText);
       }
     } else {
       const grouped = groupByWeek(sessionsToRender);

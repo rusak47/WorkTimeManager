@@ -9,6 +9,8 @@ import {
   toggleGroup,
   isGroupExpanded,
   getTotalDuration,
+  getAverageDuration,
+  getDefaultExpandedDays,
 } from './allSessionsView.js';
 
 const sessions = [
@@ -184,5 +186,67 @@ describe('getTotalDuration', () => {
 
   it('returns 0 for empty array', () => {
     expect(getTotalDuration([])).toBe(0);
+  });
+});
+
+describe('getAverageDuration', () => {
+  it('calculates average per day with sessions', () => {
+    const weekSessions = [
+      { id: 1, date: '2026-07-14', durationSec: 3600 },
+      { id: 2, date: '2026-07-14', durationSec: 5400 },
+      { id: 3, date: '2026-07-15', durationSec: 3600 },
+    ];
+    expect(getAverageDuration(weekSessions)).toBe(6300);
+  });
+
+  it('returns 0 for empty array', () => {
+    expect(getAverageDuration([])).toBe(0);
+  });
+
+  it('handles single day', () => {
+    const singleDay = [{ id: 1, date: '2026-07-14', durationSec: 7200 }];
+    expect(getAverageDuration(singleDay)).toBe(7200);
+  });
+
+  it('handles three days with different durations', () => {
+    const threeDays = [
+      { id: 1, date: '2026-07-14', durationSec: 3600 },
+      { id: 2, date: '2026-07-15', durationSec: 7200 },
+      { id: 3, date: '2026-07-16', durationSec: 5400 },
+    ];
+    expect(getAverageDuration(threeDays)).toBe(5400);
+  });
+});
+
+describe('getDefaultExpandedDays', () => {
+  it('returns first day of each week (oldest first)', () => {
+    const grouped = {
+      '2026-W29': {
+        '2026-07-14': [],
+        '2026-07-15': [],
+        '2026-07-16': [],
+      },
+    };
+    const result = getDefaultExpandedDays(grouped);
+    expect(result).toEqual(new Set(['day-2026-07-14']));
+  });
+
+  it('returns first day from multiple weeks', () => {
+    const grouped = {
+      '2026-W29': {
+        '2026-07-14': [],
+        '2026-07-15': [],
+      },
+      '2026-W30': {
+        '2026-07-21': [],
+        '2026-07-22': [],
+      },
+    };
+    const result = getDefaultExpandedDays(grouped);
+    expect(result).toEqual(new Set(['day-2026-07-14', 'day-2026-07-21']));
+  });
+
+  it('returns empty set for empty grouped', () => {
+    expect(getDefaultExpandedDays({})).toEqual(new Set());
   });
 });

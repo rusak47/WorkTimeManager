@@ -11,10 +11,11 @@ make buttons to switch view - year/month/week view.
 year - sessions collapsed by month (Jan/Feb/...) - when pressing some month, this month weeks uncollapse 
 month - sessions collapsed by weeks (Week 1/Week 2/... ) - when pressing some week, this week days uncollapse 
 weeks - sessions collapsed by days (Mon/Tue/...) - when pressing some days its sessions uncollapse (spec: `tasks/done/2026-07-18-all-sessions-collapsible-views.md`, 2026-07-18)
+- [x] [normal - must have] "month - sessions collapsed by weeks (Week 1/Week 2/... ) - when pressing some week, this week days uncollapse" <- make days collapsible too and show day work time too (spec: `tasks/done/2026-07-25-collapsible-days-month-view.md`, 2026-07-25)
 - [ ] [normal - must have] Add delete button in all-sessions tab (currently only present in recent sessions preview).
-- [ ] [low prior - maybe] Save session instantly, then open edit window for adjustments.
+- [ ] [rejected - implemented as part of session start] Save session instantly, then open edit window for adjustments.
 - [ ] [low priority - maybe] Show session start time on tracker tab while timer is running.
-- [ ] [low priority - maybe] Support multiple notes per session (store as array).
+- [ ] [rejected - not useful] Support multiple notes per session (store as array).
 
 ## Statistics
 - [ ] [low - must have] Add refresh button in statistics tab (auto-refresh on tab switch is insufficient).

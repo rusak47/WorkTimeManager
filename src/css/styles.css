@@ -26,6 +26,9 @@
         .dark-mode .collapsible-group .group-header:hover {
             background-color: rgba(55, 65, 81, 0.5);
         }
+        .collapsible-group .collapsible-group {
+            margin-left: 1.5rem;
+        }
         .view-toggle.active {
             background-color: #3b82f6;
             color: white;
