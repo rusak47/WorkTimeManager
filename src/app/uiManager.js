@@ -853,13 +853,6 @@ export function createUIManager(store) {
     const { header } = renderGroupHeader(groupId, '', sessions.length, getTotalDuration(sessions));
     const dayRow = document.createElement('div');
     dayRow.className = 'as-day-row';
-    const pill = document.createElement('div');
-    pill.className = `as-day-pill ${getDayPillClass(dayType)}`;
-    const dot = document.createElement('div');
-    dot.className = 'as-day-dot';
-    pill.appendChild(dot);
-    pill.appendChild(document.createTextNode(label));
-    dayRow.appendChild(pill);
     const dayMeta = document.createElement('div');
     dayMeta.className = 'as-day-meta';
     const dayCount = document.createElement('span');
@@ -871,6 +864,13 @@ export function createUIManager(store) {
     dayMeta.appendChild(dayCount);
     dayMeta.appendChild(totalStat);
     dayRow.appendChild(dayMeta);
+    const pill = document.createElement('div');
+    pill.className = `as-day-pill ${getDayPillClass(dayType)}`;
+    const dot = document.createElement('div');
+    dot.className = 'as-day-dot';
+    pill.appendChild(dot);
+    pill.appendChild(document.createTextNode(label));
+    dayRow.appendChild(pill);
     header.appendChild(dayRow);
     group.appendChild(header);
     if (expanded) {

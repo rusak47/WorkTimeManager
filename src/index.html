@@ -158,49 +158,39 @@
                     </div>
 
                     <!-- Filter Controls -->
-                    <div class="flex flex-wrap items-end gap-3 mb-3">
-                        <div>
-                            <input type="date" id="date-filter" class="border border-gray-300 rounded-md px-3 py-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                        </div>
-                        <div class="flex items-end">
-                            <button id="apply-filters" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium" title="Apply date filter">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            </button>
-                        </div>
-                        <div>
-                            <select id="year-filter" class="border border-gray-300 rounded-md px-3 py-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                                <option value="">All Years</option>
-                            </select>
-                        </div>
-                        <div>
-                            <select id="month-filter" class="border border-gray-300 rounded-md px-3 py-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                                <option value="">All Months</option>
-                                <option value="1">January</option>
-                                <option value="2">February</option>
-                                <option value="3">March</option>
-                                <option value="4">April</option>
-                                <option value="5">May</option>
-                                <option value="6">June</option>
-                                <option value="7">July</option>
-                                <option value="8">August</option>
-                                <option value="9">September</option>
-                                <option value="10">October</option>
-                                <option value="11">November</option>
-                                <option value="12">December</option>
-                            </select>
-                        </div>
-                        <div>
-                            <div class="relative">
-                                <button id="day-type-filter-btn" class="border border-gray-300 rounded-md px-3 py-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm min-w-[120px] text-left">All types</button>
-                                <div id="day-type-dropdown" class="hidden absolute z-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-md shadow-lg mt-1 min-w-[120px] max-h-48 overflow-y-auto">
-                                </div>
+                    <div class="as-filter-bar">
+                        <input type="date" id="date-filter">
+                        <button id="apply-filters" class="as-filter-confirm" title="Apply date filter">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </button>
+                        <div class="as-filter-gap"></div>
+                        <select id="year-filter">
+                            <option value="">All Years</option>
+                        </select>
+                        <select id="month-filter">
+                            <option value="">All Months</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                        <div class="as-filter-gap"></div>
+                        <div class="relative">
+                            <button id="day-type-filter-btn" class="border border-gray-300 rounded-md px-3 py-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm min-w-[120px] text-left">All types</button>
+                            <div id="day-type-dropdown" class="hidden absolute z-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-md shadow-lg mt-1 min-w-[120px] max-h-48 overflow-y-auto">
                             </div>
                         </div>
-                        <div>
-                            <div class="relative">
-                                <button id="session-tag-filter-btn" class="border border-gray-300 rounded-md px-3 py-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm min-w-[120px] text-left">All tags</button>
-                                <div id="session-tag-dropdown" class="hidden absolute z-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-md shadow-lg mt-1 min-w-[120px] max-h-48 overflow-y-auto">
-                                </div>
+                        <div class="relative">
+                            <button id="session-tag-filter-btn" class="border border-gray-300 rounded-md px-3 py-2 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-sm min-w-[120px] text-left">All tags</button>
+                            <div id="session-tag-dropdown" class="hidden absolute z-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-md shadow-lg mt-1 min-w-[120px] max-h-48 overflow-y-auto">
                             </div>
                         </div>
                     </div>

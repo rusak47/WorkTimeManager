@@ -687,17 +687,17 @@
   margin-top: 4px;
 }
 .as-tag {
-  background: var(--lt-100);
+  background: transparent;
   border: 1px solid var(--lt-200);
-  color: var(--lt-600);
+  color: var(--lt-500);
   font-size: 11px;
   padding: 1px 6px;
   border-radius: 6px;
 }
 .dark-mode .as-tag {
-  background: #2d3748;
+  background: transparent;
   border-color: #4a5568;
-  color: #a0aec0;
+  color: #718096;
 }
 
 /* Segmented View Toggle */
@@ -747,6 +747,57 @@
 }
 .dark-mode .as-view-label {
   color: #718096;
+}
+
+/* Filter bar compact inputs */
+.as-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--lt-200);
+}
+.dark-mode .as-filter-bar {
+  border-bottom-color: #2d3748;
+}
+.as-filter-bar input[type="date"],
+.as-filter-bar select {
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--lt-300);
+  background: var(--lt-100);
+  color: var(--lt-800);
+  height: 28px;
+}
+.dark-mode .as-filter-bar input[type="date"],
+.dark-mode .as-filter-bar select {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+.as-filter-bar .as-filter-gap {
+  width: 6px;
+  flex-shrink: 0;
+}
+.as-filter-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--lt-300);
+  background: var(--lt-100);
+  color: var(--lt-600);
+  cursor: pointer;
+  font-size: 12px;
+}
+.dark-mode .as-filter-confirm {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: #a0aec0;
 }
 
 .all-sessions-more {
