@@ -130,6 +130,11 @@ function setupDOM() {
     <div id="crash-recovery-banner" class="hidden"></div>
     <button id="dismiss-recovery-banner"></button>
     <input id="backup-interval" value="300" />
+    <div id="inject-rest-modal" class="hidden"></div>
+    <input id="inject-rest-duration" />
+    <div id="inject-rest-error" class="hidden"></div>
+    <button id="inject-rest-cancel"></button>
+    <button id="inject-rest-confirm"></button>
   `;
 }
 
@@ -1144,6 +1149,121 @@ describe('app event handlers', () => {
     expect(breakSessions[0].notes).toBe('Reading documentation');
     expect(breakSessions[0].tags).toContain('research');
     expect(breakSessions[0].mood).toBe(4);
+
+    vi.useRealTimers();
+  });
+
+  it('long press on pause-btn opens inject modal and cancel hides it', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-03T10:00:00'));
+    app.setupEventListeners();
+    app.startSession();
+
+    const pauseBtn = document.getElementById('pause-btn');
+    pauseBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    vi.advanceTimersByTime(600);
+    pauseBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+
+    expect(document.getElementById('inject-rest-modal').classList.contains('hidden')).toBe(false);
+    expect(store.getState().tracker.isPaused).toBe(false);
+    document.getElementById('inject-rest-cancel').click();
+    expect(document.getElementById('inject-rest-modal').classList.contains('hidden')).toBe(true);
+
+    vi.useRealTimers();
+  });
+
+  it('short press on pause-btn toggles pause without opening inject modal', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-03T10:00:00'));
+    app.setupEventListeners();
+    app.startSession();
+
+    const pauseBtn = document.getElementById('pause-btn');
+    pauseBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    pauseBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+
+    expect(store.getState().tracker.isPaused).toBe(true);
+    expect(document.getElementById('inject-rest-modal').classList.contains('hidden')).toBe(true);
+
+    vi.useRealTimers();
+  });
+
+  it('long press on pause-btn while paused does not open inject modal', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-03T10:00:00'));
+    app.setupEventListeners();
+    app.startSession();
+    app.togglePause();
+
+    const pauseBtn = document.getElementById('pause-btn');
+    pauseBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    vi.advanceTimersByTime(600);
+    pauseBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+
+    expect(document.getElementById('inject-rest-modal').classList.contains('hidden')).toBe(true);
+
+    vi.useRealTimers();
+  });
+
+  it('inject rest confirm derives rest start from now minus duration and persists', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-03T10:00:00'));
+    app.setupEventListeners();
+
+    app.startSession();
+    vi.advanceTimersByTime(30 * 60 * 1000);
+    const now = new Date('2026-08-03T10:30:00').getTime();
+    const restStart = now - 10 * 60 * 1000;
+    document.getElementById('inject-rest-duration').value = '10';
+    document.getElementById('inject-rest-confirm').click();
+
+    const s = store.getState();
+    const workSegs = s.sessions.filter(x => !x.isBreak);
+    const breakSegs = s.sessions.filter(x => x.isBreak);
+    expect(workSegs).toHaveLength(1);
+    expect(breakSegs).toHaveLength(1);
+    expect(workSegs[0].durationSec).toBe(20 * 60);
+    expect(breakSegs[0].durationSec).toBe(600);
+    expect(breakSegs[0].tags).toEqual(['rest']);
+    expect(s.tracker.segmentStartTime).toBe(restStart + 600 * 1000);
+    expect(s.tracker.startTime).toBe(new Date('2026-08-03T10:00:00').getTime());
+    expect(storage.saveState).toHaveBeenCalled();
+    expect(document.getElementById('inject-rest-modal').classList.contains('hidden')).toBe(true);
+
+    vi.useRealTimers();
+  });
+
+  it('inject rest confirm with duration longer than elapsed segment shows error and does not mutate state', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-03T10:00:00'));
+    app.setupEventListeners();
+
+    app.startSession();
+    vi.advanceTimersByTime(5 * 60 * 1000);
+    document.getElementById('inject-rest-duration').value = '30';
+    document.getElementById('inject-rest-confirm').click();
+
+    const s = store.getState();
+    expect(s.sessions).toHaveLength(0);
+    expect(document.getElementById('inject-rest-error').classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('inject-rest-error').textContent).toBeTruthy();
+
+    vi.useRealTimers();
+  });
+
+  it('inject rest confirm with non-positive duration shows error and keeps modal open', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-03T10:00:00'));
+    app.setupEventListeners();
+
+    app.startSession();
+    document.getElementById('inject-rest-duration').value = '0';
+    document.getElementById('inject-rest-confirm').click();
+
+    const s = store.getState();
+    expect(s.sessions).toHaveLength(0);
+    expect(document.getElementById('inject-rest-error').classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('inject-rest-error').textContent).toBeTruthy();
 
     vi.useRealTimers();
   });

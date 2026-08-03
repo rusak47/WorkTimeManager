@@ -3,6 +3,9 @@
 ## Bugs
 - [x] [low] — year selector dropdown in session view doesn't filter sessions when changed (2026-07-18)
 
+## Tracker
+ - [x] [high - must have] - there should be possibility to inject rest record while timer is active and not in break mode. the functionality is simple: when pressing a popup appear to enter rest start and duration - based on that current work is saved (work_start, rest_start), break is saved (rest_start, rest_end (based on duration)) and tracker time is modified accordingly - current lap start from rest_end (spec: `tasks/done/2026-08-03-inject-rest-record.md`, 2026-08-03)
+
 ## Sessions
 - [ ] [normal+ - must have] Filter sessions by tags and/or text — input field with tag autocomplete/suggestion in the sessions tab.
 - [ ] [normal - must have] Exclude breaks from totals chart rendering — allow tag-based filtering of which sessions count toward chart totals.
