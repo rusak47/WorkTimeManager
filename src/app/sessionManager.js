@@ -150,5 +150,60 @@ export function createSessionManager(store) {
     resetTracker() {
       store.setState({ tracker: { ...CURRENT_SESSION_INIT } });
     },
+
+    injectRest(restStartMs, durationSec, formValues = {}, breakValues = {}) {
+      const tracker = getTracker();
+      const now = Date.now();
+      if (!tracker.startTime) return { error: 'No active session' };
+      if (tracker.isPaused) return { error: 'Session is paused, resume before injecting rest' };
+      if (!Number.isFinite(restStartMs) || restStartMs < tracker.segmentStartTime) {
+        return { error: 'Rest start must be after the current segment start' };
+      }
+      if (!Number.isFinite(durationSec) || durationSec <= 0) {
+        return { error: 'Duration must be positive' };
+      }
+      const restEndMs = restStartMs + durationSec * 1000;
+      if (restEndMs > now) return { error: 'Break end is in the future' };
+      const workDurationSec = Math.floor((restStartMs - tracker.segmentStartTime) / 1000);
+
+      const workSegment = {
+        id: Date.now(),
+        date: utils.formatDate(new Date(tracker.segmentStartTime)),
+        startTime: new Date(tracker.segmentStartTime).toISOString(),
+        endTime: new Date(restStartMs).toISOString(),
+        duration: utils.formatDuration(workDurationSec),
+        durationSec: workDurationSec,
+        dayType: formValues.dayType || 'Workday',
+        notes: formValues.notes || '',
+        tags: formValues.tags || ['work'],
+        mood: formValues.mood !== undefined ? formValues.mood : 5,
+        bucket: formValues.bucket,
+        workBlockId: tracker.workBlockId,
+        isBreak: false,
+      };
+      const breakSession = {
+        id: Date.now() + 1,
+        date: utils.formatDate(new Date(restStartMs)),
+        startTime: new Date(restStartMs).toISOString(),
+        endTime: new Date(restEndMs).toISOString(),
+        duration: utils.formatDuration(durationSec),
+        durationSec,
+        dayType: breakValues.dayType || 'Workday',
+        notes: breakValues.notes || 'Break session',
+        tags: breakValues.tags || ['rest'],
+        mood: breakValues.mood !== undefined ? breakValues.mood : 5,
+        workBlockId: tracker.workBlockId,
+        isBreak: true,
+      };
+      store.setState({
+        sessions: [breakSession, workSegment, ...getSessions()],
+        tracker: {
+          ...tracker,
+          totalSavedDurationMs: tracker.totalSavedDurationMs + (restStartMs - tracker.segmentStartTime),
+          segmentStartTime: restEndMs,
+        },
+      });
+      return { workSession: workSegment, breakSession };
+    },
   };
 }

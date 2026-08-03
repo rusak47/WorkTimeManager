@@ -132,6 +132,11 @@ function setupDOM() {
     <div id="current-session-accumulated-rest-duration-input"></div>
     <button id="recent-sessions-grid-toggle"></button>
     <div id="bucket-stats"></div>
+    <div id="inject-rest-modal" class="hidden"></div>
+    <input id="inject-rest-duration" />
+    <div id="inject-rest-error" class="hidden"></div>
+    <button id="inject-rest-cancel"></button>
+    <button id="inject-rest-confirm"></button>
   `;
 }
 
@@ -385,6 +390,31 @@ describe('uiManager', () => {
       expect(document.getElementById('start-btn').disabled).toBe(false);
       expect(document.getElementById('stop-btn').disabled).toBe(true);
       expect(document.getElementById('pause-btn').disabled).toBe(true);
+    });
+  });
+
+  describe('inject rest modal', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-08-03T12:00:00'));
+    });
+    afterEach(() => { vi.useRealTimers(); });
+
+    it('showInjectRestModal reveals modal and prefills duration with default', () => {
+      ui.showInjectRestModal();
+      const modal = document.getElementById('inject-rest-modal');
+      expect(modal.classList.contains('hidden')).toBe(false);
+      expect(document.getElementById('inject-rest-duration').value).toBe('15');
+      expect(document.getElementById('inject-rest-error').classList.contains('hidden')).toBe(true);
+    });
+
+    it('hideInjectRestModal hides modal and clears error', () => {
+      ui.showInjectRestModal();
+      document.getElementById('inject-rest-error').classList.remove('hidden');
+      document.getElementById('inject-rest-error').textContent = 'boom';
+      ui.hideInjectRestModal();
+      expect(document.getElementById('inject-rest-modal').classList.contains('hidden')).toBe(true);
+      expect(document.getElementById('inject-rest-error').textContent).toBe('');
     });
   });
 

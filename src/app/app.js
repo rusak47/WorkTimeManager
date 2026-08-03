@@ -369,6 +369,34 @@ export function createEventHandlers(deps) {
     persistAndRender();
   }
 
+  function injectRestBreak() {
+    const s = store.getState();
+    const tracker = s.tracker;
+    if (!tracker.startTime || tracker.isPaused) return;
+    const durationInput = document.getElementById('inject-rest-duration');
+    const errorEl = document.getElementById('inject-rest-error');
+    const durationMin = durationInput ? parseFloat(durationInput.value) : NaN;
+    const durationSec = Math.floor((Number.isFinite(durationMin) ? durationMin : 0) * 60);
+    const restStartMs = Date.now() - durationSec * 1000;
+    const workValues = {
+      ...readTrackerFormValues(),
+      dayType: getDayType(utils.formatDate(new Date(tracker.segmentStartTime)), s),
+    };
+    const breakValues = {
+      dayType: getDayType(utils.formatDate(new Date(restStartMs)), s),
+    };
+    const result = sessionManager.injectRest(restStartMs, durationSec, workValues, breakValues);
+    if (result.error) {
+      if (errorEl) {
+        errorEl.textContent = result.error;
+        errorEl.classList.remove('hidden');
+      }
+      return;
+    }
+    ui.hideInjectRestModal();
+    persistAndRender();
+  }
+
   function showAddSessionModal() {
     ui.showAddSessionModal();
   }
@@ -905,7 +933,55 @@ export function createEventHandlers(deps) {
       });
     }
     document.getElementById('stop-btn')?.addEventListener('click', stopSession);
-    document.getElementById('pause-btn')?.addEventListener('click', togglePause);
+    let pausePressTimer = null;
+    let pauseLongPress = false;
+    const pauseBtnEl = document.getElementById('pause-btn');
+    if (pauseBtnEl) {
+      pauseBtnEl.addEventListener('mousedown', () => {
+        const tracker = store.getState().tracker;
+        if (!tracker.startTime || tracker.isPaused) return;
+        pauseLongPress = false;
+        pausePressTimer = setTimeout(() => {
+          pauseLongPress = true;
+          ui.showInjectRestModal();
+        }, 500);
+      });
+      pauseBtnEl.addEventListener('mouseup', () => {
+        clearTimeout(pausePressTimer);
+        pausePressTimer = null;
+        if (pauseLongPress) {
+          pauseLongPress = false;
+          return;
+        }
+        togglePause();
+      });
+      pauseBtnEl.addEventListener('mouseleave', () => {
+        clearTimeout(pausePressTimer);
+        pausePressTimer = null;
+      });
+      pauseBtnEl.addEventListener('touchstart', (e) => {
+        const tracker = store.getState().tracker;
+        if (!tracker.startTime || tracker.isPaused) return;
+        pauseLongPress = false;
+        pausePressTimer = setTimeout(() => {
+          pauseLongPress = true;
+          ui.showInjectRestModal();
+        }, 500);
+      }, { passive: true });
+      pauseBtnEl.addEventListener('touchend', () => {
+        clearTimeout(pausePressTimer);
+        pausePressTimer = null;
+        if (pauseLongPress) {
+          pauseLongPress = false;
+          return;
+        }
+        togglePause();
+      });
+      pauseBtnEl.addEventListener('touchcancel', () => {
+        clearTimeout(pausePressTimer);
+        pausePressTimer = null;
+      });
+    }
     document.getElementById('recent-sessions-grid-toggle')?.addEventListener('click', () => ui.toggleRecentSessionsGrid());
     document.getElementById('add-session-btn')?.addEventListener('click', showAddSessionModal);
     document.getElementById('close-modal')?.addEventListener('click', hideSessionModal);
@@ -944,6 +1020,8 @@ export function createEventHandlers(deps) {
         tdd.classList.add('hidden');
       }
     });
+    document.getElementById('inject-rest-cancel')?.addEventListener('click', () => ui.hideInjectRestModal());
+    document.getElementById('inject-rest-confirm')?.addEventListener('click', injectRestBreak);
     document.getElementById('mark-holiday')?.addEventListener('click', () => showMarkDayModal('Holiday'));
     document.getElementById('mark-vacation')?.addEventListener('click', () => showMarkDayModal('Vacation'));
     document.getElementById('save-mark-day')?.addEventListener('click', saveMarkedDay);
@@ -1141,7 +1219,7 @@ export function createEventHandlers(deps) {
 
   return {
     init,
-    startSession, stopSession, togglePause,
+    startSession, stopSession, togglePause, injectRestBreak,
     showAddSessionModal, hideSessionModal, editSession, handleSessionFormSubmit,
     showDeleteModal, hideDeleteModal, confirmDeleteSession,
     applyFilters, saveMarkedDay, showMarkDayModal, hideMarkDayModal,

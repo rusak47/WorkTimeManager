@@ -1260,6 +1260,29 @@ export function createUIManager(store) {
     }
   }
 
+  function showInjectRestModal() {
+    const modal = document.getElementById('inject-rest-modal');
+    const durationInput = document.getElementById('inject-rest-duration');
+    const errorEl = document.getElementById('inject-rest-error');
+    if (!modal) return;
+    if (durationInput) durationInput.value = '15';
+    if (errorEl) {
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+    }
+    modal.classList.remove('hidden');
+  }
+
+  function hideInjectRestModal() {
+    const modal = document.getElementById('inject-rest-modal');
+    const errorEl = document.getElementById('inject-rest-error');
+    if (modal) modal.classList.add('hidden');
+    if (errorEl) {
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+    }
+  }
+
   function showConfigHistoryModal() {
     const list = document.getElementById('config-history-list');
     const modal = document.getElementById('config-history-modal');
@@ -2532,7 +2555,9 @@ export function createUIManager(store) {
     showMarkDayModal,
     hideMarkDayModal,
     showDeleteModal,
-    hideDeleteModal,
+     hideDeleteModal,
+     showInjectRestModal,
+     hideInjectRestModal,
     showConfigHistoryModal,
     hideConfigHistoryModal,
     viewConfigDetails,
